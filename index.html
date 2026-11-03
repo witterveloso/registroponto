@@ -600,7 +600,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,exigirMfa:co.exigir_mfa!==false};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -664,7 +664,7 @@ const ST={ok:['Regular','ok'],atraso:['Atraso','warn'],falta:['Falta','bad'],inc
 const stChip=s=>`<span class="chip ${ST[s][1]}">${ST[s][0]}</span>`;
 /* Ocorrências: dias que o colaborador precisa relatar antes do fechamento do mês */
 const ANOM={falta:'Falta',atraso:'Atraso na entrada',incompleto:'Marcação incompleta',saida:'Saída antecipada'};
-function anomDe(di){if(di.ds>=today()||di.status==='futuro')return null;if(['falta','atraso','incompleto'].includes(di.status))return di.status;if(di.sched&&di.marks.length&&di.saldo!=null&&di.saldo<0&&di.status==='ok')return 'saida';return null}
+function anomDe(di){if(di.ds>=today()||di.status==='futuro'||di.ds<(S.config.inicioPonto||'0000'))return null;if(['falta','atraso','incompleto'].includes(di.status))return di.status;if(di.sched&&di.marks.length&&di.saldo!=null&&di.saldo<0&&di.status==='ok')return 'saida';return null}
 const relatoDe=(e,ds)=>S.requests.find(r=>r.empId===e.id&&r.status!=='recusado'&&ds>=r.data&&ds<=(r.ate||r.data));
 function fechamentoDe(ym){const[y,m]=ym.split('-').map(Number);const dia=Math.min(28,Math.max(1,S.config.diaFech||5));return `${m===12?y+1:y}-${pad(m===12?1:m+1)}-${pad(dia)}`}
 const mesFechado=(e,ym)=>{const a=aprovDe(e.id,ym);return today()>fechamentoDe(ym)||!!(a&&a.status==='aprovado')};
@@ -682,7 +682,7 @@ function pendBox(e,ym,compacto){
 function monthDays(ym){const[y,m]=ym.split('-').map(Number);const n=new Date(y,m,0).getDate();return Array.from({length:n},(_,i)=>`${ym}-${pad(i+1)}`)}
 function monthSummary(e,ym){
   const td=today();let worked=0,exp=0,saldo=0,extra=0,atrasos=0,faltas=0,days=[];
-  const adm=e.admissao||'0000';
+  const ini=S.config.inicioPonto||'0000';const adm=(e.admissao||'0000')>ini?(e.admissao||'0000'):ini;
   monthDays(ym).forEach(ds=>{const di=dayInfo(e,ds);if(ds<adm){di.status='futuro';di.saldo=null;di.credit=0;di.exp=0}days.push(di);if(ds>td||ds<adm)return;worked+=di.credit;if(ds<td||di.saldo!=null)exp+=di.exp;if(di.saldo!=null){saldo+=di.saldo;if(di.saldo>0)extra+=di.saldo}if(di.atraso)atrasos++;if(di.status==='falta')faltas++});
   return{days,worked,exp,saldo,extra,atrasos,faltas};
 }
@@ -1052,7 +1052,7 @@ function rhPainel(){
     if(tdi.worked>600)al.push(['bad',`${e.nome} passou de 10h de trabalho hoje`,'Limite de 2h extras diárias (CLT art. 59)']);
     const y1=new Date(d.getFullYear(),d.getMonth(),d.getDate()-1);const ym=marksOf(e.id,dstr(y1));
     if(ym.length&&tdi.marks.length){const gap=(parseD(tdi.marks[0].ts)-parseD(ym[ym.length-1].ts))/6e4;if(gap<660)al.push(['bad',`${e.nome}: interjornada de ${dur(gap)}`,'Mínimo de 11h entre jornadas (CLT art. 66)'])}
-    for(let b=1;b<8;b++){const x=dstr(new Date(d.getFullYear(),d.getMonth(),d.getDate()-b));if(e.admissao&&x<e.admissao)break;const di=dayInfo(e,x);if(di.status==='incompleto'){al.push(['warn',`${e.nome} tem marcação incompleta em ${fmtDate(x)}`,'Falta registrar uma saída']);break}if(di.status==='falta'){al.push(['bad',`${e.nome} faltou em ${fmtDate(x)} sem justificativa`,'Nenhuma marcação no dia']);break}}
+    for(let b=1;b<8;b++){const x=dstr(new Date(d.getFullYear(),d.getMonth(),d.getDate()-b));if((e.admissao&&x<e.admissao)||x<(S.config.inicioPonto||''))break;const di=dayInfo(e,x);if(di.status==='incompleto'){al.push(['warn',`${e.nome} tem marcação incompleta em ${fmtDate(x)}`,'Falta registrar uma saída']);break}if(di.status==='falta'){al.push(['bad',`${e.nome} faltou em ${fmtDate(x)} sem justificativa`,'Nenhuma marcação no dia']);break}}
   });
   S.punches.filter(p=>p.revisao==='pendente').forEach(p=>{const e=emp(p.empId);if(e)al.push(['info',`${e.nome}: marcação ${p.foraCerca?'fora da cerca virtual':'para revisão'}`,`${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)} · ${p.local}`])});
   const col={warn:'var(--warn)',bad:'var(--bad)',info:'var(--info)'};
@@ -1274,6 +1274,7 @@ function rhConfig(){
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
       <div class="field"><label>Forma de registro</label><span>Assinatura com PIN de 6 números e localização obrigatória</span></div>
       <div class="field"><label for="c-mfa">Verificação em duas etapas no painel do RH</label><select class="input" id="c-mfa" name="mfa"><option value="0" ${!c.exigirMfa?'selected':''}>Dispensada (fase de testes)</option><option value="1" ${c.exigirMfa?'selected':''}>Exigida (recomendado em produção)</option></select></div>
+      <div class="field"><label for="c-ini">Início do controle de ponto</label><input class="input" type="date" id="c-ini" name="inicioPonto" value="${esc(c.inicioPonto||'')}"><span class="muted" style="font-size:.78rem">Dias anteriores não contam como falta nem como ocorrência.</span></div>
       <div class="field"><label for="c-fe">Fechamento da folha</label><select class="input" id="c-fe" name="diaFech">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${(c.diaFech||5)===n?'selected':''}>Dia ${n} do mês seguinte</option>`).join('')}</select></div>
       <div class="field"><label for="c-pw">Marcações com PIN</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha!=='revisao'?'selected':''}>Valem direto</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Passam por revisão do RH</option></select></div></div></div>
     <div class="row"><button class="btn primary" type="submit">Salvar configurações</button></div></div></form>
@@ -1776,7 +1777,7 @@ document.addEventListener('submit',async ev=>{
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
