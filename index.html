@@ -317,10 +317,11 @@ const marksOf=(eid,ds)=>S.punches.filter(p=>p.empId===eid&&p.ts.startsWith(ds)).
 const TIPOS=['Entrada','Saída intervalo','Retorno intervalo','Saída'];
 const tipoN=i=>i<4?TIPOS[i]:(i%2===0?'Entrada extra':'Saída extra');
 const isRH=()=>ME&&ME.papel==='rh';
-const senhaOk=()=>S.config.modoSenha!=='bloqueada';
+const senhaOk=()=>S.config.modoSenha!=='bloqueada'||!S.config.facial;
+const facialOn=()=>S.config.facial!==false;
 const meusSetores=()=>ME?S.setores.filter(s=>s.gestor_id===ME.id):[];
 const isGestor=()=>meusSetores().length>0;
-const minhaEquipe=()=>{const ids=meusSetores().map(s=>s.id);return S.emps.filter(e=>e.setorId&&ids.includes(e.setorId)&&e.id!==ME.id).sort((a,b)=>a.nome.localeCompare(b.nome))};
+const minhaEquipe=(ym)=>{const ids=meusSetores().map(s=>s.id);return S.emps.filter(e=>e.setorId&&ids.includes(e.setorId)&&e.id!==ME.id&&(!ym||!e.admissao||e.admissao<=ym+'-31')).sort((a,b)=>a.nome.localeCompare(b.nome))};
 const setorDe=e=>S.setores.find(s=>s.id===e.setorId);
 const aprovDe=(id,ym)=>S.aprov.find(a=>a.colaborador_id===id&&a.competencia===ym);
 const podeAprovar=e=>isRH()||(e.id!==ME.id&&meusSetores().some(s=>s.id===e.setorId));
@@ -328,41 +329,83 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
   return a.status==='aprovado'?`<span class="chip ${alt?'warn':'ok'}">${alt?'Alterado após aprovação':'Aprovado'}</span>`:'<span class="chip bad">Devolvido</span>'}
 
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
-const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:c.face_sig?{sig:c.face_sig,thumb:c.face_thumb}:null});
+const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_sig||c.face_thumb)?{sig:c.face_sig||null,thumb:c.face_thumb}:null});
 const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
 
-async function loadAll(){
-  const d=NOW();const since=new Date(d.getFullYear(),d.getMonth()-5,1).toISOString();
-  const cols='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash';
-  const [e,j,c,r]=await Promise.all([
+let LOADED_FROM=null;
+const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash';
+const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,setor_id,trocar_senha';
+const monthStart=ym=>new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);
+async function fetchPunches(fromDate,toDate){
+  let out=[];
+  for(const modo of ['revisadas','normais']){
+    for(let from=0;;from+=1000){
+      let q=sb.from('marcacoes').select(PCOLS).gte('ts',fromDate.toISOString());
+      if(toDate)q=q.lt('ts',toDate.toISOString());
+      q=modo==='revisadas'?q.neq('revisao','desconsiderada'):q.is('revisao',null);
+      const r=await q.order('ts').range(from,from+999);if(r.error)throw r.error;
+      out=out.concat(r.data);if(r.data.length<1000)break;
+    }
+  }
+  return out.map(mapPunch);
+}
+async function loadFotosPendentes(){
+  const pend=await sb.from('marcacoes').select('id,foto').eq('revisao','pendente');
+  (pend.data||[]).forEach(r=>{const p=S.punches.find(x=>x.id===r.id);if(p)p.foto=r.foto});
+}
+async function loadReqs(){const r=await sb.from('solicitacoes').select('*').order('criado_em',{ascending:false}).limit(1000);if(r.error)throw r.error;S.requests=r.data.map(mapReq)}
+async function loadAprov(){const r=await sb.from('aprovacoes_ponto').select('*');if(r.error)throw r.error;S.aprov=r.data}
+// Carrega cadastros e configurações. As marcações só são buscadas de novo quando pedido,
+// porque as novas chegam ao vivo uma a uma.
+async function loadAll(opts){
+  opts=opts||{};
+  const [e,j,c,st]=await Promise.all([
     sb.from('empresa').select('*').eq('id',1).single(),
     sb.from('jornadas').select('*').order('criado_em'),
-    sb.from('colaboradores').select('*').order('nome'),
-    sb.from('solicitacoes').select('*').order('criado_em',{ascending:false}).limit(1000)]);
-  for(const x of [e,j,c,r])if(x.error)throw x.error;
-  const [st,ap]=await Promise.all([sb.from('setores').select('*').order('nome'),sb.from('aprovacoes_ponto').select('*')]);
-  if(st.error)throw st.error;if(ap.error)throw ap.error;
-  S.setores=st.data;S.aprov=ap.data;
-  let punches=[];for(let from=0;;from+=1000){const q=await sb.from('marcacoes').select(cols).gte('ts',since).neq('revisao','desconsiderada').order('ts').range(from,from+999);
-    // neq exclui nulos no PostgREST, então buscamos os nulos à parte
-    if(q.error)throw q.error;punches=punches.concat(q.data);if(q.data.length<1000)break}
-  for(let from=0;;from+=1000){const q=await sb.from('marcacoes').select(cols).gte('ts',since).is('revisao',null).order('ts').range(from,from+999);if(q.error)throw q.error;punches=punches.concat(q.data);if(q.data.length<1000)break}
-  const pend=await sb.from('marcacoes').select('id,foto').eq('revisao','pendente');
-  const fotos={};(pend.data||[]).forEach(p=>fotos[p.id]=p.foto);
+    sb.from('colaboradores').select(CCOLS).order('nome'),
+    sb.from('setores').select('*').order('nome')]);
+  for(const x of [e,j,c,st])if(x.error)throw x.error;
+  await Promise.all([loadReqs(),loadAprov()]);
+  if(!LOADED_FROM||opts.punches){
+    const d=NOW();const from=LOADED_FROM||new Date(d.getFullYear(),d.getMonth()-1,1);
+    S.punches=await fetchPunches(from);LOADED_FROM=from;
+  }
+  await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida'};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false};
   S.jornadas=j.data.map(mapJor);
+  S.setores=st.data;
   S.emps=c.data.map(mapEmp);
-  S.punches=punches.map(p=>{const m=mapPunch(p);if(fotos[p.id])m.foto=fotos[p.id];return m});
-  S.requests=r.data.map(mapReq);
-  const me=S.emps.find(x=>x.id===ME.id);if(me)ME=me;
+  const me=S.emps.find(x=>x.id===ME.id);
+  if(me){if(ME.face&&ME.face.sig&&me.face)me.face.sig=ME.face.sig;ME=me}
 }
-function scheduleReload(){clearTimeout(scheduleReload.t);scheduleReload.t=setTimeout(async()=>{try{await loadAll();if($('#modal-root').innerHTML)DIRTY=true;else render()}catch(e){}},700)}
+// Meses antigos são buscados só quando alguém abre esse mês
+async function ensureMonth(ym){
+  const st=monthStart(ym);
+  if(!LOADED_FROM||st>=LOADED_FROM)return;
+  toast('Carregando '+MES[st.getMonth()]+'…');
+  const mais=await fetchPunches(st,LOADED_FROM);
+  const ids=new Set(S.punches.map(p=>p.id));
+  S.punches=mais.filter(p=>!ids.has(p.id)).concat(S.punches);LOADED_FROM=st;
+}
+function softRender(){clearTimeout(softRender.t);softRender.t=setTimeout(()=>{if($('#modal-root').innerHTML)DIRTY=true;else if(!document.activeElement.matches('input,select,textarea'))render()},400)}
+function onPunchChange(pl){
+  const row=pl.new&&pl.new.id?pl.new:null;
+  if(pl.eventType==='DELETE'&&pl.old){S.punches=S.punches.filter(p=>p.id!==pl.old.id);return softRender()}
+  if(!row)return;
+  const i=S.punches.findIndex(p=>p.id===row.id);
+  if(row.revisao==='desconsiderada'){if(i>=0)S.punches.splice(i,1);return softRender()}
+  if(!LOADED_FROM||new Date(row.ts)<LOADED_FROM)return;
+  const m=mapPunch(row);if(row.revisao==='pendente'&&row.foto)m.foto=row.foto;
+  if(i>=0)S.punches[i]=m;else S.punches.push(m);
+  softRender();
+}
+function onLight(fn){clearTimeout(fn.t);fn.t=setTimeout(async()=>{try{await fn();softRender()}catch(e){}},500)}
 function subscribe(){
   if(CH)sb.removeChannel(CH);
-  CH=sb.channel('ponto-ao-vivo').on('postgres_changes',{event:'*',schema:'public',table:'marcacoes'},scheduleReload).on('postgres_changes',{event:'*',schema:'public',table:'solicitacoes'},scheduleReload).on('postgres_changes',{event:'*',schema:'public',table:'aprovacoes_ponto'},scheduleReload).subscribe();
+  CH=sb.channel('ponto-ao-vivo').on('postgres_changes',{event:'*',schema:'public',table:'marcacoes'},onPunchChange).on('postgres_changes',{event:'*',schema:'public',table:'solicitacoes'},()=>onLight(loadReqs)).on('postgres_changes',{event:'*',schema:'public',table:'aprovacoes_ponto'},()=>onLight(loadAprov)).subscribe();
 }
 
 /* ================= CÁLCULO ================= */
@@ -494,9 +537,9 @@ function empPonto(e){
     ${di.hol?`<span class="chip warn">Feriado · ${esc(di.hol)}</span>`:''}</div>
     <div class="big-clock">${clockHTML()}</div>
     <div class="cc-meta"><span class="chip plain">${esc(j.nome)}</span><span class="chip plain">${j.ini} às ${j.fim}</span><span class="chip plain">Intervalo ${j.intIni} às ${j.intFim}</span></div>
-    <button class="punch-btn" data-act="punch">${IC.face}Registrar ${esc(next.toLowerCase())}</button>
-    ${senhaOk()?`<button class="btn" style="background:transparent;color:var(--deep-ink);border-color:var(--deep-line);width:100%;padding:12px" data-act="punch-pw">Sem câmera? Registrar com senha</button>`:''}
-    <div style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)} · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}</div>
+    ${facialOn()?`<button class="punch-btn" data-act="punch">${IC.face}Registrar ${esc(next.toLowerCase())}</button>`:`<button class="punch-btn" data-act="punch-pw">${IC.clock}Registrar ${esc(next.toLowerCase())}</button>`}
+    ${facialOn()&&senhaOk()?`<button class="btn" style="background:transparent;color:var(--deep-ink);border-color:var(--deep-line);width:100%;padding:12px" data-act="punch-pw">Sem câmera? Registrar com senha</button>`:''}
+    <div style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)}${facialOn()?` · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}`:' · registro com a sua senha de acesso'}</div>
   </section>
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2>Marcações de hoje</h2><div class="spacer"></div>${n?`<button class="btn sm ghost" data-act="receipt" data-id="${di.marks[n-1].id}">Último comprovante</button>`:''}</div>
@@ -557,7 +600,7 @@ function apForm(id,ym,status){
 
 /* ---------- Gestor: minha equipe ---------- */
 function empEquipe(){
-  const ym=UI.teamMonth||prevMonth();const team=minhaEquipe();
+  const ym=UI.teamMonth||prevMonth();const team=minhaEquipe(ym);
   if(UI.teamEmp&&team.some(x=>x.id===UI.teamEmp)){
     const e=emp(UI.teamEmp),{ms,html}=mirrorTable(e,ym);
     return `<div class="row"><button class="btn sm ghost" data-act="team-back">← Equipe</button><div class="spacer"></div><select class="input" style="width:auto" id="tm2" data-change="team-month">${monthOpts(ym)}</select></div>
@@ -654,8 +697,8 @@ function empPerfil(e){
   <section class="card"><div class="card-h"><h3>Dados funcionais</h3></div><div class="card-b grid2">
     ${[['Login',e.login],['CPF',e.cpf||'Não informado'],['Admissão',e.admissao?fmtDate(e.admissao):'Não informada'],['E-mail',e.email||'Não informado'],['Jornada',j.nome],['Horário',`${j.ini} às ${j.fim}, intervalo ${j.intIni} às ${j.intFim}`]].map(x=>`<div class="field"><label>${x[0]}</label><span class="${x[0]==='Login'||x[0]==='CPF'?'mono':''}">${esc(x[1])}</span></div>`).join('')}
   </div></section>
-  <section class="card"><div class="card-h"><h3>Biometria facial</h3><span class="chip ${bio[1]}">${bio[0]}</span><div class="spacer"></div><button class="btn sm" data-act="enroll">Recadastrar rosto</button></div>
-    <div class="card-b muted" style="font-size:.88rem">A referência facial fica vinculada ao seu cadastro. Ao recadastrar, o RH precisa validar a nova foto.</div></section>
+  ${facialOn()?`<section class="card"><div class="card-h"><h3>Biometria facial</h3><span class="chip ${bio[1]}">${bio[0]}</span><div class="spacer"></div><button class="btn sm" data-act="enroll">Recadastrar rosto</button></div>
+    <div class="card-b muted" style="font-size:.88rem">A referência facial fica vinculada ao seu cadastro. Ao recadastrar, o RH precisa validar a nova foto.</div></section>`:''}
   <section class="card"><div class="card-h"><h3>Comprovantes recentes</h3></div><div class="list">${last.map(p=>`<div class="li"><div class="grow"><div class="ttl mono">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,16)}</div><div class="sub">NSR ${String(p.nsr).padStart(9,'0')} · ${esc(p.local)}</div></div><button class="btn sm" data-act="receipt" data-id="${p.id}">Ver</button></div>`).join('')||'<div class="empty">Sem marcações ainda.</div>'}</div></section>`;
 }
 
@@ -880,6 +923,7 @@ function rhConfig(){
       <div class="field"><label for="c-blq">Fora da cerca</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Biometria</div><div class="grid2">
       <div class="field"><label for="c-lim">Limiar de similaridade (0,50 a 0,95)</label><input class="input mono" id="c-lim" name="limiar" type="number" step="0.01" min="0.5" max="0.95" value="${c.limiar}"></div>
+      <div class="field"><label for="c-fa">Reconhecimento facial</label><select class="input" id="c-fa" name="facial"><option value="1" ${c.facial!==false?'selected':''}>Ativado</option><option value="0" ${c.facial===false?'selected':''}>Desativado (ponto somente por senha)</option></select></div>
       <div class="field"><label for="c-pw">Marcação por senha (alternativa ao rosto)</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha==='permitida'?'selected':''}>Permitida</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Permitida com revisão do RH</option><option value="bloqueada" ${c.modoSenha==='bloqueada'?'selected':''}>Não permitida</option></select></div>
       <div class="field"><label for="c-ex">Marcação sem biometria</label><select class="input" id="c-ex" name="exigir"><option value="1" ${c.exigirFace?'selected':''}>Permitir com revisão do RH</option><option value="0" ${!c.exigirFace?'selected':''}>Permitir sem revisão</option></select></div></div></div>
     <div class="row"><button class="btn primary" type="submit">Salvar configurações</button></div></div></form>
@@ -1097,7 +1141,7 @@ async function boot(){
   if(MODE==='login'){try{const {data}=await sb.rpc('existe_rh');BOOT.existeRH=data!==false}catch(e){}}
   BOOT.loading=false;render();
 }
-async function logout(){if(CH){sb.removeChannel(CH);CH=null}await sb.auth.signOut();ME=null;MODE='login';S.emps=[];S.punches=[];S.requests=[];UI.empTab='ponto';UI.rhTab='painel';render()}
+async function logout(){LOADED_FROM=null;if(CH){sb.removeChannel(CH);CH=null}await sb.auth.signOut();ME=null;MODE='login';S.emps=[];S.punches=[];S.requests=[];UI.empTab='ponto';UI.rhTab='painel';render()}
 
 /* ================= EVENTOS ================= */
 document.addEventListener('click',async ev=>{
@@ -1131,10 +1175,10 @@ document.addEventListener('click',async ev=>{
     case 'ap-ok':apForm(t.dataset.id,t.dataset.ym,'aprovado');break;
     case 'ap-dev':apForm(t.dataset.id,t.dataset.ym,'devolvido');break;
     case 'ap-reabrir':{t.disabled=true;const {error}=await sb.rpc('reabrir_aprovacao',{p_colab:t.dataset.id,p_comp:t.dataset.ym});if(error)throw error;await loadAll();render();toast('Aprovação desfeita');break}
-    case 'ap-lote':{const ym=t.dataset.ym;const alvo=minhaEquipe().filter(e=>!aprovDe(e.id,ym)).map(e=>({e,ms:monthSummary(e,ym)})).filter(r=>!r.ms.faltas&&!r.ms.days.some(d=>d.status==='incompleto'));
+    case 'ap-lote':{const ym=t.dataset.ym;const alvo=minhaEquipe(ym).filter(e=>!aprovDe(e.id,ym)).map(e=>({e,ms:monthSummary(e,ym)})).filter(r=>!r.ms.faltas&&!r.ms.days.some(d=>d.status==='incompleto'));
       if(!alvo.length){toast('Ninguém sem pendências para aprovar');break}
       openModal(`<div class="modal-h"><h3>Aprovar ${alvo.length} espelho(s)</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b"><p>Vou aprovar o ponto de ${MES[+ym.slice(5)-1]} de: ${alvo.map(r=>esc(r.e.nome)).join(', ')}.</p><div class="notice">Todos estão sem faltas e sem marcações incompletas. A aprovação fica registrada com o seu nome.</div></div><div class="modal-f"><button class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" data-act="ap-lote-ok" data-ym="${ym}">Aprovar todos</button></div>`);break}
-    case 'ap-lote-ok':{t.disabled=true;const ym=t.dataset.ym;let n=0;for(const e of minhaEquipe().filter(e=>!aprovDe(e.id,ym))){const ms=monthSummary(e,ym);if(ms.faltas||ms.days.some(d=>d.status==='incompleto'))continue;const {error}=await sb.rpc('aprovar_ponto',{p_colab:e.id,p_comp:ym,p_status:'aprovado',p_obs:null,p_resumo:{trabalhado:ms.worked,previsto:ms.exp,saldo:ms.saldo,extras:ms.extra,atrasos:ms.atrasos,faltas:ms.faltas}});if(error)throw error;n++}
+    case 'ap-lote-ok':{t.disabled=true;const ym=t.dataset.ym;let n=0;for(const e of minhaEquipe(ym).filter(e=>!aprovDe(e.id,ym))){const ms=monthSummary(e,ym);if(ms.faltas||ms.days.some(d=>d.status==='incompleto'))continue;const {error}=await sb.rpc('aprovar_ponto',{p_colab:e.id,p_comp:ym,p_status:'aprovado',p_obs:null,p_resumo:{trabalhado:ms.worked,previsto:ms.exp,saldo:ms.saldo,extras:ms.extra,atrasos:ms.atrasos,faltas:ms.faltas}});if(error)throw error;n++}
       await loadAll();closeModal();toast(`${n} espelho(s) aprovado(s)`);break}
     case 'setor-form':setorForm(t.dataset.id);break;
     case 'setor-del':{const s=S.setores.find(x=>x.id===t.dataset.id);openModal(`<div class="modal-h"><h3>Excluir setor</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b"><p>O setor <b>${esc(s.nome)}</b> será excluído. Os colaboradores dele ficam sem setor, e o ponto deles passa a ser aprovado pelo RH. As aprovações já feitas continuam guardadas.</p></div><div class="modal-f"><button class="btn ghost" data-act="close">Cancelar</button><button class="btn danger" data-act="setor-del-ok" data-id="${s.id}">Excluir</button></div>`);break}
@@ -1156,7 +1200,7 @@ document.addEventListener('click',async ev=>{
     case 'add-punch':addPunchForm(t.dataset.id);break;
     case 'req-dec':decideForm(t.dataset.id,t.dataset.v);break;
     case 'anexo':{const {data,error}=await sb.storage.from('anexos').createSignedUrl(t.dataset.path,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');break}
-    case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll();render();toast(t.dataset.v==='aceita'?'Marcação aceita':'Marcação desconsiderada e arquivada');break}
+    case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll({punches:true});render();toast(t.dataset.v==='aceita'?'Marcação aceita':'Marcação desconsiderada e arquivada');break}
     case 'bio-dec':{t.disabled=true;const patch={bio_status:t.dataset.v};if(t.dataset.v==='rejeitada'){patch.face_sig=null;patch.face_thumb=null}const {error}=await sb.from('colaboradores').update(patch).eq('id',t.dataset.id);if(error)throw error;await loadAll();render();toast(t.dataset.v==='validada'?'Biometria validada':'Cadastro facial recusado');break}
     case 'clear-face':{const {error}=await sb.from('colaboradores').update({face_sig:null,face_thumb:null,bio_status:'nenhuma'}).eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Referência facial apagada');break}
     case 'use-geo':{toast('Buscando sua localização…');const g=await getGeo();if(!g){toast('Não foi possível obter a localização. Permita o acesso no navegador.');break}$('#c-lat').value=g.lat.toFixed(6);$('#c-lng').value=g.lng.toFixed(6);$('#c-at').value='1';toast('Localização preenchida. Salve para aplicar.');break}
@@ -1166,10 +1210,10 @@ document.addEventListener('change',ev=>{
   const t=ev.target;
   if(t.id==='selfie'&&t.files&&t.files[0]){const img=new Image();img.onload=()=>processCapture(frameFromImg(img));img.onerror=()=>toast('Não foi possível ler a imagem');img.src=URL.createObjectURL(t.files[0]);return}
   const c=t.dataset.change;if(!c)return;
-  if(c==='month'){UI.mirrorMonth=t.value;render()}
+  if(c==='month'){UI.mirrorMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
   if(c==='memp'){UI.mirrorEmp=t.value;render()}
   if(c==='reqtipo')reqForm(t.value);
-  if(c==='team-month'){UI.teamMonth=t.value;render()}
+  if(c==='team-month'){UI.teamMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
 });
 document.addEventListener('input',ev=>{const t=ev.target;const k=t.dataset.input;if(k==='s-filter'){const q=t.value.toLowerCase();document.querySelectorAll('#s-list [data-filtro]').forEach(el=>{el.hidden=!!q&&!el.dataset.filtro.includes(q)});return}if(k==='sug-login'){const o=$('#'+t.dataset.target);if(o&&!o.dataset.manual)o.value=sugereLogin(t.value);return}if(t.id==='u-login'||t.id==='f-login'){t.dataset.manual='1';return}if(k==='q'||k==='uq'){UI[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);if(n){n.focus();n.setSelectionRange(pos,pos)}}});
 async function invoke(body){const {data,error}=await sb.functions.invoke('gerenciar-acesso',{body});if(error){let m=error.message;try{const j=await error.context.json();if(j&&j.erro)m=j.erro}catch(e){}throw new Error(m)}if(data&&data.erro)throw new Error(data.erro);return data}
@@ -1279,12 +1323,12 @@ document.addEventListener('submit',async ev=>{
     const {error}=id?await sb.from('jornadas').update(row).eq('id',id):await sb.from('jornadas').insert(row);if(error)throw error;
     await loadAll();closeModal();toast('Jornada salva');return;
   }
-  if(k==='addp'){const {error}=await sb.rpc('incluir_marcacao',{p_colab:f.dataset.id,p_ts:brIso(fd.data,fd.hora),p_obs:fd.obs});if(error)throw error;await loadAll();closeModal();toast('Marcação incluída');return}
-  if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll();closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
+  if(k==='addp'){const {error}=await sb.rpc('incluir_marcacao',{p_colab:f.dataset.id,p_ts:brIso(fd.data,fd.hora),p_obs:fd.obs});if(error)throw error;await loadAll({punches:true});closeModal();toast('Marcação incluída');return}
+  if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     const lat=fd.lat===''?null:+fd.lat,lng=fd.lng===''?null:+fd.lng;
     if(fd.ativa==='1'&&(lat==null||lng==null||isNaN(lat)||isNaN(lng)))throw new Error('Para ativar a cerca virtual, informe latitude e longitude.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_lat:lat,cerca_lng:lng,cerca_raio:Math.max(30,+fd.raio||200),cerca_bloquear:fd.bloquear==='1',limiar:Math.min(.95,Math.max(.5,+fd.limiar||.78)),revisar_sem_bio:fd.exigir==='1',modo_senha:fd.modoSenha,atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_lat:lat,cerca_lng:lng,cerca_raio:Math.max(30,+fd.raio||200),cerca_bloquear:fd.bloquear==='1',limiar:Math.min(.95,Math.max(.5,+fd.limiar||.78)),revisar_sem_bio:fd.exigir==='1',modo_senha:fd.facial==='0'&&fd.modoSenha==='bloqueada'?'permitida':fd.modoSenha,facial_ativo:fd.facial==='1',atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
