@@ -721,14 +721,14 @@ function viewLogin(){
   if(BOOT.existeRH)form=`
     <div class="seg lg-seg" role="radiogroup" aria-label="Entrar como"><button type="button" role="radio" aria-checked="${!rh}" data-act="lrole" data-v="emp" class="${!rh?'on':''}">${IC.user}Colaborador</button><button type="button" role="radio" aria-checked="${rh}" data-act="lrole" data-v="rh" class="${rh?'on':''}">${IC.grid}RH · Gestão</button></div>
     ${googleBtn(rh?'Entrar no RH com o Google':'Entrar com o Google corporativo')}
-    <div class="ou"><span>ou use login e senha</span></div>
+    <div class="ou"><span>ou use e-mail e senha</span></div>
     <form data-form="login" class="lg-fields">
-      <div class="field"><label for="l-user">Login</label><input class="input" id="l-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
+      <div class="field"><label for="l-user">E-mail</label><input class="input" id="l-user" name="login" type="text" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="seu.nome@tvtecjundiai.com.br" required></div>
       <div class="field"><label for="l-pw">Senha</label><input class="input" id="l-pw" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required></div>
       <div class="err" id="l-err" role="alert" aria-live="polite">${esc(BOOT.msg)}</div>
       <button class="btn primary lg-submit" type="submit">${rh?'Entrar no painel do RH':'Entrar para bater o ponto'}</button>
     </form>
-    <div class="lg-help"><span>Primeiro acesso? Use o link de convite enviado pelo RH.</span><span>Esqueceu o login ou a senha? Fale com o RH.</span></div>`;
+    <div class="lg-help"><span>Primeiro acesso? Use o link de convite enviado pelo RH.</span><span>Esqueceu a senha? Fale com o RH.</span></div>`;
   else form=`<form data-form="bootstrap" class="lg-fields">
       <div class="notice">Primeiro acesso: crie a conta de administrador do RH. Depois disso, este formulário deixa de aparecer.</div>
       <div class="field"><label for="b-n">Seu nome</label><input class="input" id="b-n" name="nome" required></div>
@@ -1107,7 +1107,7 @@ function userForm(){
     </div>
     <div class="eyebrow" style="margin-top:4px">Acesso ao sistema</div>
     <div class="grid2">
-      <div class="field"><label for="u-login">Login</label><input class="input mono" id="u-login" name="login" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
+      <div class="field"><label for="u-login">Login (e-mail)</label><input class="input mono" id="u-login" name="login" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="nome@tvtecjundiai.com.br" required></div>
       <div class="field"><label for="u-papel">Perfil</label><select class="input" id="u-papel" name="papel"><option value="colaborador">Colaborador</option><option value="rh">Administrador do RH</option></select></div>
       <div class="field" style="grid-column:1/-1"><label for="u-modo">Forma de acesso</label><select class="input" id="u-modo" name="modo" data-change="u-modo"><option value="google">Convite por link com Google corporativo (recomendado)</option><option value="senha">Login e senha provisória</option></select></div>
       <div class="field" style="grid-column:1/-1"><label for="u-email">E-mail corporativo (Google)</label><input class="input" type="email" id="u-email" name="email" autocomplete="off" autocapitalize="none" required></div>
@@ -1417,7 +1417,7 @@ function empForm(id){
   openModal(`<form data-form="emp" data-id="${id||''}"><div class="modal-h"><h3>${id?'Editar colaborador':'Novo colaborador'}</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="grid2">
     ${[['nome','Nome completo',e.nome],['cargo','Cargo',e.cargo],['vinculo','Vínculo',e.vinculo||''],['depto','Setor',e.depto],['email','E-mail',e.email],['cpf','CPF',e.cpf]].map(f=>`<div class="field"><label for="f-${f[0]}">${f[1]}</label><input class="input ${f[0]==='cpf'?'mono':''}" id="f-${f[0]}" name="${f[0]}" ${f[0]==='email'?'type="email"':''} value="${esc(f[2])}" ${f[0]==='nome'?`required ${id?'':'data-input="sug-login" data-target="f-login"'}`:''}></div>`).join('')}
-    <div class="field"><label for="f-login">Login</label><input class="input mono" id="f-login" name="login" value="${esc(e.login)}" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
+    <div class="field"><label for="f-login">Login (e-mail)</label><input class="input mono" id="f-login" name="login" value="${esc(e.login)}" autocapitalize="none" spellcheck="false" placeholder="nome@tvtecjundiai.com.br" required></div>
     <div class="field"><label for="f-admissao">Admissão</label><input class="input" type="date" id="f-admissao" name="admissao" value="${esc(e.admissao)}"></div>
     <div class="field"><label for="f-j">Jornada</label><select class="input" id="f-j" name="jornadaId">${S.jornadas.map(j=>`<option value="${j.id}" ${j.id===e.jornadaId?'selected':''}>${esc(j.nome)}</option>`).join('')}</select></div>
     <div class="field"><label for="f-p">Perfil de acesso</label><select class="input" id="f-p" name="papel"><option value="colaborador" ${e.papel!=='rh'?'selected':''}>Colaborador</option><option value="rh" ${e.papel==='rh'?'selected':''}>RH (administrador)</option></select></div>
@@ -1617,7 +1617,7 @@ document.addEventListener('click',async ev=>{
       t.disabled=true;await invoke({acao:'acesso',colaborador_id:e.id,ativo:true});await loadAll();render();toast('Acesso desbloqueado');break}
     case 'u-block-ok':{t.disabled=true;await invoke({acao:'acesso',colaborador_id:t.dataset.id,ativo:false});await loadAll();closeModal();toast('Acesso bloqueado');break}
     case 'bulk-access':{const n=S.emps.filter(e=>e.ativo&&!e.temAcesso).length;openModal(`<form data-form="bulk"><div class="modal-h"><h3>Criar acessos</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
-      <p>Cria o login de ${n} colaborador(es) ativo(s) que ainda não têm acesso. Cada um entra com o próprio <b>login</b> (nome.sobrenome) e esta senha inicial, e cria uma senha pessoal no primeiro acesso.</p>
+      <p>Cria o login de ${n} colaborador(es) ativo(s) que ainda não têm acesso. Cada um entra com o próprio <b>login</b> e esta senha inicial, e cria uma senha pessoal no primeiro acesso.</p>
       <div class="field"><label for="bk-s">Senha inicial (mínimo 8 caracteres, com letras e números)</label><input class="input" id="bk-s" name="senha" type="text" minlength="8" autocomplete="off" required></div>
       <div class="notice">Pode levar alguns segundos. Prestadores PJ também recebem acesso. Se não devem bater ponto, marque-os como desligados antes.</div>
       </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Criar ${n} acesso(s)</button></div></form>`);break}
