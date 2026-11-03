@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Ponto FTVTEC</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src https://anotrdjomxzgyqvvdzbe.supabase.co wss://anotrdjomxzgyqvvdzbe.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0A1628">
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -328,12 +331,32 @@ td.wrap{white-space:normal}
   .emp .card-h .spacer{display:none}
   .punch-btn,.clockcard>.btn{align-self:stretch}
 }
+.gbtn{display:inline-flex;align-items:center;justify-content:center;gap:12px;width:100%;height:44px;padding:0 16px;border-radius:22px;border:1px solid #747775;background:#fff;color:#1F1F1F;font-family:'Roboto','IBM Plex Sans',system-ui,sans-serif;font-weight:500;font-size:14px;letter-spacing:.25px;cursor:pointer}
+.gbtn:hover{background:#F8F9FA;box-shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15)}
+.gbtn svg{flex:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .gbtn{background:#131314;color:#E3E3E3;border-color:#8E918F}:root:not([data-theme="light"]) .gbtn:hover{background:#1f1f20}}
+:root[data-theme="dark"] .gbtn{background:#131314;color:#E3E3E3;border-color:#8E918F}
+.ou{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.8rem}
+.ou::before,.ou::after{content:"";flex:1;height:1px;background:var(--line)}
+.link-btn{border:0;background:transparent;color:var(--accent);font-weight:500;cursor:pointer;padding:0;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+.auth-wrap{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding-block:calc(24px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.auth-card{width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px}
+.auth-form{display:flex;flex-direction:column;gap:14px}
+.termo{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--surface-2);font-size:.85rem;display:flex;flex-direction:column;gap:8px;text-align:left}
+.modal .termo{max-height:none;border:0;background:transparent;padding:0}
+.termo-box summary{cursor:pointer;font-weight:600;margin-bottom:8px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;text-align:left;cursor:pointer}
+.check input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--accent)}
+.pin-in{letter-spacing:.4em;text-align:center;font-size:1.3rem}
+.qr{display:grid;place-items:center;background:#fff;border-radius:10px;padding:10px;min-height:200px}
+.steps-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.88rem;text-align:left}
+@media (max-width:900px){.auth-card{text-align:center}.auth-card .field label{text-align:center}}
 </style>
 </head><body>
 <div id="app"></div>
 <div id="modal-root"></div>
 <div id="toast-root"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 (function(){
 "use strict";
@@ -343,7 +366,9 @@ const SB_KEY='sb_publishable__JQhHNgikP7uGF-iVFCdsQ_Q6pOaU6C';
 const LOGIN_DOM='batida-ponto.app';
 const mem={};
 const safeStorage={getItem:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},setItem:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}},removeItem:k=>{try{localStorage.removeItem(k)}catch(e){delete mem[k]}}};
-const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storage:safeStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const SITE=location.origin+location.pathname;
+const ss={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return mem['s:'+k]||null}},set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){mem['s:'+k]=v}},del:k=>{try{sessionStorage.removeItem(k)}catch(e){delete mem['s:'+k]}}};
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storage:safeStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});
 
 /* ================= UTIL ================= */
 const $=s=>document.querySelector(s);
@@ -376,6 +401,23 @@ const HOL={'2026-01-01':'Confraternização Universal','2026-04-03':'Sexta-feira
 
 const LOGO='data:image/png;base64,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';
 const logoPill=(h,extra)=>`<span class="logo-pill" style="${extra||''}"><img src="${LOGO}" alt="FTVTEC" style="height:${h}px"></span>`;
+const GLOGO='<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+const googleBtn=(label,act)=>`<button type="button" class="gbtn" data-act="${act||'google'}">${GLOGO}<span>${label||'Fazer login com o Google'}</span></button>`;
+const senhaForte=s=>typeof s==='string'&&s.length>=8&&/[A-Za-z]/.test(s)&&/\d/.test(s);
+const MSG_SENHA='Use pelo menos 8 caracteres, com letras e números.';
+const maskCPF=c=>{const d=String(c||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.•••.•••-'+d.slice(9):(c||'não informado')};
+function termoHTML(){return `<div class="termo">
+  <p><b>Quem trata os dados.</b> ${esc(S.company.razao||'A instituição')}, para controlar a jornada de trabalho, como exige a legislação trabalhista.</p>
+  <p><b>Quais dados.</b> Nome, cargo, vínculo, CPF, e-mail corporativo, horários de entrada e saída, a localização no momento de cada registro e as solicitações que você enviar. A foto da marcação só é guardada quando ela vai para revisão do RH, e é apagada depois da revisão.</p>
+  <p><b>Biometria facial.</b> É opcional e depende de autorização separada. O sistema guarda uma referência numérica do rosto e uma miniatura, usadas só para confirmar que é você no registro. Você pode revogar a qualquer momento no seu Perfil, e os dados biométricos são apagados na hora. Sem biometria, você registra o ponto com senha ou PIN.</p>
+  <p><b>Quem vê.</b> Você, o gestor do seu setor (só os seus horários e solicitações) e o RH. Nenhum dado é vendido ou compartilhado para outros fins.</p>
+  <p><b>Base legal.</b> Cumprimento de obrigação legal (LGPD, art. 7º, II) para o controle de jornada, e consentimento específico (art. 11, I) para a biometria.</p>
+  <p><b>Por quanto tempo.</b> Os registros de ponto ficam guardados pelo prazo exigido pela legislação trabalhista. A biometria fica até você revogar ou até o desligamento.</p>
+  <p><b>Segurança.</b> Conexão criptografada, dados armazenados com criptografia, acesso por perfil validado no servidor, verificação em duas etapas para o RH, registros de ponto que não podem ser apagados nem alterados e histórico de auditoria de todas as alterações.</p>
+  <p><b>Seus direitos.</b> Você pode consultar seus dados no próprio sistema, pedir correção ao RH e revogar a biometria. Dúvidas sobre privacidade: fale com o RH.</p>
+  <p class="muted" style="font-size:.78rem">Versão ${esc(S.config.termoVersao||'v1')}</p></div>`}
+function authShell(inner){return `<div class="auth-wrap"><div class="card card-b auth-card">${logoPill(34,'align-self:center;border:1px solid var(--line)')}${inner}</div></div>`}
+const holOf=ds=>(S.hol||HOL)[ds];
 const IC={
  face:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="9.5" cy="10" r=".6" fill="currentColor"/><circle cx="14.5" cy="10" r=".6" fill="currentColor"/><path d="M9 15c1.6 1.3 4.4 1.3 6 0"/></svg>',
  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
@@ -393,7 +435,9 @@ const IC={
 };
 
 /* ================= ESTADO ================= */
-let S={company:{razao:'',cnpj:'',local:''},config:{cerca:{}},jornadas:[],emps:[],punches:[],requests:[],setores:[],aprov:[]};
+let S={company:{razao:'',cnpj:'',local:''},config:{cerca:{}},jornadas:[],emps:[],punches:[],requests:[],setores:[],aprov:[],convites:[]};
+let AAL='aal1';
+const isRHsession=()=>ME&&ME.papel==='rh'&&AAL==='aal2'&&UI.loginRole==='rh';
 let ME=null,MODE='login',BOOT={loading:true,existeRH:true,msg:''},CH=null,DIRTY=false;
 let UI={empTab:'ponto',rhTab:'painel',loginRole:(safeStorage.getItem('batida.perfil')==='rh'?'rh':'emp'),mirrorMonth:null,mirrorEmp:null,q:''};
 const emp=id=>S.emps.find(e=>e.id===id)||(ME&&ME.id===id?ME:null);
@@ -415,13 +459,13 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
   return a.status==='aprovado'?`<span class="chip ${alt?'warn':'ok'}">${alt?'Alterado após aprovação':'Aprovado'}</span>`:'<span class="chip bad">Devolvido</span>'}
 
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
-const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_sig||c.face_thumb)?{sig:c.face_sig||null,thumb:c.face_thumb}:null});
+const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin});
 const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
 
 let LOADED_FROM=null;
 const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash';
-const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,setor_id,trocar_senha';
+const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,face_em,setor_id,trocar_senha,tem_pin';
 const monthStart=ym=>new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);
 async function fetchPunches(fromDate,toDate){
   let out=[];
@@ -446,6 +490,8 @@ async function loadAprov(){const r=await sb.from('aprovacoes_ponto').select('*')
 // porque as novas chegam ao vivo uma a uma.
 async function loadAll(opts){
   opts=opts||{};
+  const [fe,lo]=await Promise.all([sb.from('feriados').select('id,data,nome,tipo').order('data'),sb.from('locais').select('id,nome,lat,lng,raio').order('nome')]);
+  S.feriados=fe.data||[];S.locais=lo.data||[];S.hol={};S.feriados.forEach(f=>S.hol[f.data]=f.nome);
   const [e,j,c,st]=await Promise.all([
     sb.from('empresa').select('*').eq('id',1).single(),
     sb.from('jornadas').select('*').order('criado_em'),
@@ -453,6 +499,7 @@ async function loadAll(opts){
     sb.from('setores').select('*').order('nome')]);
   for(const x of [e,j,c,st])if(x.error)throw x.error;
   await Promise.all([loadReqs(),loadAprov()]);
+  if(MODE==='rh'||isRHsession()){const cv=await sb.from('convites').select('id,colaborador_id,email,criado_em,expira_em,usado_em,cancelado_em').order('criado_em',{ascending:false});S.convites=cv.data||[]}else S.convites=[];
   if(!LOADED_FROM||opts.punches){
     const d=NOW();const from=LOADED_FROM||new Date(d.getFullYear(),d.getMonth()-1,1);
     S.punches=await fetchPunches(from);LOADED_FROM=from;
@@ -460,12 +507,12 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1'};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
   const me=S.emps.find(x=>x.id===ME.id);
-  if(me){if(ME.face&&ME.face.sig&&me.face)me.face.sig=ME.face.sig;ME=me}
+  if(me){me.consent=ME.consent;me.google=ME.google;ME=me}
 }
 // Meses antigos são buscados só quando alguém abre esse mês
 async function ensureMonth(ym){
@@ -496,7 +543,7 @@ function subscribe(){
 
 /* ================= CÁLCULO ================= */
 function dayInfo(e,ds){
-  const j=jor(e.jornadaId),d=parseD(ds),dow=d.getDay(),hol=HOL[ds],td=today();
+  const j=jor(e.jornadaId),d=parseD(ds),dow=d.getDay(),hol=holOf(ds),td=today();
   const marks=marksOf(e.id,ds);
   const sched=j.dias.includes(dow)&&!hol;
   const exp=sched?expMin(j):0;
@@ -543,11 +590,20 @@ function render(){
   const app=$('#app');
   if(BOOT.loading){app.innerHTML=`<div style="min-height:100vh;display:grid;place-items:center;padding:16px"><div style="display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted)">${logoPill(48,'border:1px solid var(--line)')}Carregando o ponto eletrônico…</div></div>`;return}
   if(MODE==='login'){app.innerHTML=viewLogin();return}
+  if(MODE==='convite'){app.innerHTML=viewConvite();return}
+  if(MODE==='termos'){app.innerHTML=authShell(`<form data-form="termos" class="auth-form"><div><h2>Termo de uso e privacidade</h2><p class="muted" style="margin-top:4px">Antes de continuar, leia como os seus dados são tratados.</p></div>${termoHTML()}
+    <label class="check"><input type="checkbox" name="ok" required> Li e concordo com o termo de uso e privacidade.</label>
+    <div class="err" id="l-err"></div><button class="btn primary" type="submit">Concordar e continuar</button><button type="button" class="btn ghost" data-act="logout">Sair</button></form>`);return}
+  if(MODE==='pin'){app.innerHTML=authShell(`<form data-form="pin" class="auth-form"><div><h2>Crie seu PIN de ponto</h2><p class="muted" style="margin-top:4px">O PIN tem 6 números e serve para registrar o ponto quando a câmera não estiver disponível. Não use datas ou sequências.</p></div>
+    <div class="field"><label for="pin1">PIN de 6 números</label><input class="input mono pin-in" id="pin1" name="pin" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="new-password" required></div>
+    <div class="field"><label for="pin2">Confirme o PIN</label><input class="input mono pin-in" id="pin2" name="pin2" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="new-password" required></div>
+    <div class="err" id="l-err"></div><button class="btn primary" type="submit">Salvar PIN</button>${ME.temPin?'<button type="button" class="btn ghost" data-act="pin-cancel">Cancelar</button>':'<button type="button" class="btn ghost" data-act="logout">Sair</button>'}</form>`);return}
+  if(MODE==='mfa'||MODE==='mfa-enroll'){app.innerHTML=viewMfa();if(MODE==='mfa-enroll'&&!UI.mfa)startMfaEnroll();return}
   if(MODE==='senha'){app.innerHTML=`<div style="min-height:100vh;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))"><form data-form="nova-senha" class="card card-b" style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px">
     ${logoPill(34,'align-self:flex-start;border:1px solid var(--line)')}
     <div><h2>Olá, ${esc(first(ME.nome))}</h2><p class="muted" style="margin-top:4px">Por segurança, crie uma senha pessoal antes de continuar. A senha inicial foi definida pelo RH.</p></div>
-    <div class="field"><label for="n-s">Nova senha (mínimo 6 caracteres)</label><input class="input" id="n-s" name="senha" type="password" minlength="6" autocomplete="new-password" required></div>
-    <div class="field"><label for="n-s2">Confirme a nova senha</label><input class="input" id="n-s2" name="senha2" type="password" minlength="6" autocomplete="new-password" required></div>
+    <div class="field"><label for="n-s">Nova senha (mínimo 8 caracteres, com letras e números)</label><input class="input" id="n-s" name="senha" type="password" minlength="8" autocomplete="new-password" required></div>
+    <div class="field"><label for="n-s2">Confirme a nova senha</label><input class="input" id="n-s2" name="senha2" type="password" minlength="8" autocomplete="new-password" required></div>
     <div class="err" id="l-err"></div>
     <button class="btn primary" type="submit">Salvar e entrar</button><button type="button" class="btn ghost" data-act="logout">Sair</button></form></div>`;return}
   if(MODE==='emp')app.innerHTML=viewEmp(ME);else app.innerHTML=viewRH();
@@ -560,6 +616,42 @@ setInterval(tick,1000);
 setInterval(()=>{if(MODE!=='login'&&!$('#modal-root').innerHTML&&!document.activeElement.matches('input,select,textarea'))render()},60000);
 
 /* ================= LOGIN ================= */
+function viewConvite(){
+  const c=BOOT.convite||{valido:false,motivo:'Convite não encontrado.'};
+  if(!c.valido&&!BOOT.conviteErro)return authShell(`<div class="auth-form"><h2>Convite indisponível</h2><p class="muted">${esc(c.motivo||'Convite inválido.')}</p><button class="btn primary" data-act="convite-sair">Ir para a tela de login</button></div>`);
+  return authShell(`<form data-form="convite" class="auth-form"><div><div class="eyebrow">Convite do RH</div><h2 style="margin-top:6px">${c.nome?'Olá, '+esc(c.nome)+'!':'Bem-vindo(a)!'}</h2><p class="muted" style="margin-top:6px">Você foi convidado(a) para usar o Registro de Ponto. Entre com a sua conta Google corporativa <b class="mono">${esc(c.email||'')}</b>.</p></div>
+    ${BOOT.conviteErro?`<div class="notice" style="border-color:var(--bad);color:var(--bad)">${esc(BOOT.conviteErro)}</div>`:''}
+    <details class="termo-box" open><summary>Termo de uso e privacidade</summary>${termoHTML()}</details>
+    <label class="check"><input type="checkbox" name="termos" required> Li e concordo com o termo de uso e privacidade.</label>
+    <label class="check"><input type="checkbox" name="biometria"> Autorizo o uso da minha biometria facial para registrar o ponto (opcional, posso revogar quando quiser).</label>
+    <div class="err" id="l-err"></div>
+    ${googleBtn('Continuar com o Google','google-convite')}
+    ${BOOT.conviteErro?'<button type="button" class="btn ghost" data-act="convite-trocar">Usar outra conta Google</button>':''}
+    <p class="muted" style="font-size:.78rem">O link vale até ${c.expira_em?fmtDate(localTs(c.expira_em).slice(0,10)):'a data definida pelo RH'} e só pode ser usado uma vez.</p></form>`);
+}
+function viewMfa(){
+  if(MODE==='mfa')return authShell(`<form data-form="mfa" class="auth-form"><div><div class="eyebrow">Painel do RH</div><h2 style="margin-top:6px">Verificação em duas etapas</h2><p class="muted" style="margin-top:6px">Digite o código de 6 números que aparece no seu aplicativo autenticador.</p></div>
+    <div class="field"><label for="mfa-c">Código</label><input class="input mono pin-in" id="mfa-c" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\\d{6}" required autofocus></div>
+    <div class="err" id="l-err">${esc(BOOT.msg)}</div><button class="btn primary" type="submit">Verificar</button><button type="button" class="btn ghost" data-act="logout">Sair</button></form>`);
+  const m=UI.mfa;
+  return authShell(`<form data-form="mfa-enroll" class="auth-form"><div><div class="eyebrow">Painel do RH</div><h2 style="margin-top:6px">Ative a verificação em duas etapas</h2><p class="muted" style="margin-top:6px">O painel do RH tem dados de todos os colaboradores. Por isso, além da senha, ele pede um código do celular.</p></div>
+    <ol class="steps-list"><li>Instale um aplicativo autenticador, como Google Authenticator ou Microsoft Authenticator.</li><li>No aplicativo, escaneie o QR code abaixo.</li><li>Digite o código de 6 números que aparecer.</li></ol>
+    <div class="qr">${m&&m.qr?`<img src="${m.qr}" alt="QR code para o aplicativo autenticador" width="180" height="180">`:'<span class="muted">Gerando QR code…</span>'}</div>
+    ${m&&m.secret?`<div class="muted" style="font-size:.8rem">Sem câmera? Digite a chave no aplicativo:<br><span class="mono" style="word-break:break-all;color:var(--ink)">${esc(m.secret)}</span></div>`:''}
+    <div class="field"><label for="mfa-c">Código</label><input class="input mono pin-in" id="mfa-c" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\\d{6}" required></div>
+    <div class="err" id="l-err">${esc(BOOT.msg)}</div><button class="btn primary" type="submit" ${m&&m.id?'':'disabled'}>Ativar e entrar</button><button type="button" class="btn ghost" data-act="logout">Sair</button></form>`);
+}
+async function startMfaEnroll(){
+  UI.mfa={};
+  try{
+    const {data:l}=await sb.auth.mfa.listFactors();
+    for(const f of ((l&&l.all)||[]).filter(f=>f.status==='unverified'))await sb.auth.mfa.unenroll({factorId:f.id});
+    const {data,error}=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'Ponto FTVTEC '+Date.now().toString(36)});
+    if(error)throw error;
+    UI.mfa={id:data.id,qr:data.totp.qr_code,secret:data.totp.secret};
+  }catch(e){BOOT.msg=errMsg(e)}
+  render();
+}
 function viewLogin(){
   const d=NOW();
   let form;
@@ -569,13 +661,17 @@ function viewLogin(){
       <div class="field"><label for="l-pw">Senha</label><input class="input" id="l-pw" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required></div>
       <div class="err" id="l-err">${esc(BOOT.msg)}</div>
       <button class="btn primary" type="submit">${UI.loginRole==='rh'?'Entrar no painel do RH':'Entrar para bater o ponto'}</button>
-    </form><p class="muted" style="font-size:.85rem">Esqueceu o login ou a senha? Fale com o RH.</p>`;
+    </form>
+    <div class="ou"><span>ou</span></div>
+    ${googleBtn('Fazer login com o Google')}
+    <p class="muted" style="font-size:.85rem">Primeiro acesso? Use o link de convite enviado pelo RH. Esqueceu o login ou a senha? Fale com o RH.</p>
+    <button type="button" class="link-btn" data-act="privacidade">Como seus dados são protegidos</button>`;
   else form=`<form data-form="bootstrap" style="display:flex;flex-direction:column;gap:14px">
       <div class="notice">Primeiro acesso: crie a conta de administrador do RH. Depois disso, este formulário deixa de aparecer.</div>
       <div class="field"><label for="b-n">Seu nome</label><input class="input" id="b-n" name="nome" required></div>
       <div class="field"><label for="b-l">Login</label><input class="input" id="b-l" name="login" autocomplete="username" autocapitalize="none" required></div>
-      <div class="field"><label for="b-s">Senha (mínimo 6 caracteres)</label><input class="input" id="b-s" name="senha" type="password" minlength="6" autocomplete="new-password" required></div>
-      <div class="field"><label for="b-s2">Confirme a senha</label><input class="input" id="b-s2" name="senha2" type="password" minlength="6" autocomplete="new-password" required></div>
+      <div class="field"><label for="b-s">Senha (mínimo 8 caracteres, com letras e números)</label><input class="input" id="b-s" name="senha" type="password" minlength="8" autocomplete="new-password" required></div>
+      <div class="field"><label for="b-s2">Confirme a senha</label><input class="input" id="b-s2" name="senha2" type="password" minlength="8" autocomplete="new-password" required></div>
       <div class="err" id="l-err">${esc(BOOT.msg)}</div>
       <button class="btn primary" type="submit">Criar acesso do RH</button>
     </form>`;
@@ -585,7 +681,7 @@ function viewLogin(){
     <div>
       <div class="eyebrow" style="color:var(--deep-muted)">Horário oficial de Brasília</div>
       <div class="hero-clock">${clockHTML()}</div>
-      <div class="hero-date">${esc(fmtLong(d))}${HOL[dstr(d)]?' · Feriado: '+esc(HOL[dstr(d)]):''}</div>
+      <div class="hero-date">${esc(fmtLong(d))}${holOf(dstr(d))?' · Feriado: '+esc(holOf(dstr(d))):''}</div>
     </div>
     <div class="hero-feats">
       <div class="hero-feat"><b>Reconhecimento facial</b><span>Validação do rosto e da imagem a cada marcação</span></div>
@@ -625,8 +721,8 @@ function empPonto(e){
     <div class="big-clock">${clockHTML()}</div>
     <div class="cc-meta"><span class="chip plain">${esc(j.nome)}</span><span class="chip plain">${j.ini} às ${j.fim}</span><span class="chip plain">Intervalo ${j.intIni} às ${j.intFim}</span></div>
     ${facialOn()?`<button class="punch-btn" data-act="punch">${IC.face}Registrar ${esc(next.toLowerCase())}</button>`:`<button class="punch-btn" data-act="punch-pw">${IC.clock}Registrar ${esc(next.toLowerCase())}</button>`}
-    ${facialOn()&&senhaOk()?`<button class="btn" style="background:transparent;color:var(--deep-ink);border-color:var(--deep-line);width:100%;padding:12px" data-act="punch-pw">Sem câmera? Registrar com senha</button>`:''}
-    <div class="cc-loc" style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)}${facialOn()?` · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}`:' · registro com a sua senha de acesso'}</div>
+    ${facialOn()&&senhaOk()?`<button class="btn" style="background:transparent;color:var(--deep-ink);border-color:var(--deep-line);width:100%;padding:12px" data-act="punch-pw">Sem câmera? Registrar com ${ME.temPin?'PIN':'senha'}</button>`:''}
+    <div class="cc-loc" style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)}${facialOn()?` · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}`:` · registro com ${ME.temPin?'o seu PIN':'a sua senha de acesso'}`}</div>
   </section>
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2>Marcações de hoje</h2><div class="spacer"></div>${n?`<button class="btn sm ghost" data-act="receipt" data-id="${di.marks[n-1].id}">Último comprovante</button>`:''}</div>
@@ -790,6 +886,12 @@ function empPerfil(e){
   </div></section>
   ${facialOn()?`<section class="card"><div class="card-h"><h3>Biometria facial</h3><span class="chip ${bio[1]}">${bio[0]}</span><div class="spacer"></div><button class="btn sm" data-act="enroll">Recadastrar rosto</button></div>
     <div class="card-b muted" style="font-size:.88rem">A referência facial fica vinculada ao seu cadastro. Ao recadastrar, o RH precisa validar a nova foto.</div></section>`:''}
+  <section class="card"><div class="card-h"><h3>Privacidade e segurança</h3></div><div class="list">
+    <div class="li"><div class="grow"><div class="ttl">Termo de uso e privacidade</div><div class="sub">${temConsent('termos')?'Aceito':'Pendente'}</div></div><button class="btn sm" data-act="privacidade">Ler</button></div>
+    <div class="li"><div class="grow"><div class="ttl">Biometria facial</div><div class="sub">${temConsent('biometria')?'Autorizada. Revogar apaga seus dados biométricos na hora.':'Não autorizada'}</div></div>${temConsent('biometria')?'<button class="btn sm danger" data-act="bio-revogar">Revogar</button>':''}</div>
+    ${ME.google||ME.temPin?`<div class="li"><div class="grow"><div class="ttl">PIN de ponto</div><div class="sub">${ME.temPin?'Definido':'Não definido'}</div></div><button class="btn sm" data-act="pin-alterar">${ME.temPin?'Alterar':'Criar'}</button></div>`:''}
+    <div class="li"><div class="grow"><div class="ttl">Forma de acesso</div><div class="sub">${ME.google?'Conta Google corporativa':'Login e senha'}${ME.email?' · '+esc(ME.email):''}</div></div></div>
+  </div></section>
   <section class="card"><div class="card-h"><h3>Comprovantes recentes</h3></div><div class="list">${last.map(p=>`<div class="li"><div class="grow"><div class="ttl mono">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,16)}</div><div class="sub">NSR ${String(p.nsr).padStart(9,'0')} · ${esc(p.local)}</div></div><button class="btn sm" data-act="receipt" data-id="${p.id}">Ver</button></div>`).join('')||'<div class="empty">Sem marcações ainda.</div>'}</div></section>`;
 }
 
@@ -797,8 +899,8 @@ function empPerfil(e){
 function pendingCount(){return S.requests.filter(r=>r.status==='pendente').length+S.punches.filter(p=>p.revisao==='pendente').length+S.emps.filter(e=>e.bio==='pendente').length}
 function viewRH(){
   const t=UI.rhTab,pc=pendingCount();
-  const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['config','Configurações',IC.gear]];
-  const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,config:rhConfig}[t]();
+  const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['auditoria','Auditoria',IC.check],['config','Configurações',IC.gear]];
+  const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,auditoria:rhAuditoria,config:rhConfig}[t]();
   return `<div class="rh"><aside class="side${UI.navOpen?' open':''}"><div class="side-logo"><button class="logo-btn" data-act="home" aria-label="Voltar ao painel">${logoPill(38)}</button><span class="eyebrow" style="color:var(--deep-muted)">Gestão de ponto</span></div>
     <div class="m-cur">${esc((nav.find(n=>n[0]===t)||[])[1]||'')}</div>
     <button class="menu-btn" data-act="nav-toggle" aria-expanded="${!!UI.navOpen}" aria-label="Abrir menu">${UI.navOpen?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'}Menu${pc&&!UI.navOpen?`<span class="badge">${pc}</span>`:''}</button>
@@ -832,7 +934,7 @@ function rhPainel(){
   });
   S.punches.filter(p=>p.revisao==='pendente').forEach(p=>{const e=emp(p.empId);if(e)al.push(['info',`${e.nome}: marcação ${p.foraCerca?'fora da cerca virtual':'sem biometria'}`,`${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)} · ${p.local}`])});
   const col={warn:'var(--warn)',bad:'var(--bad)',info:'var(--info)'};
-  return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div><div class="spacer"></div>${HOL[td]?`<span class="chip warn">Feriado · ${esc(HOL[td])}</span>`:''}<span class="chip ok">Ao vivo · ${clockHTML()}</span></div>
+  return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div><div class="spacer"></div>${holOf(td)?`<span class="chip warn">Feriado · ${esc(holOf(td))}</span>`:''}<span class="chip ok">Ao vivo · ${clockHTML()}</span></div>
   <section class="kpis">
     <div class="card kpi"><span class="l">Trabalhando agora</span><span class="v">${cnt('Trabalhando')}<span class="muted" style="font-size:.9rem"> / ${act.length}</span></span></div>
     <div class="card kpi"><span class="l">Em intervalo</span><span class="v">${cnt('Em intervalo')}</span></div>
@@ -861,6 +963,26 @@ function rhEquipe(){
   </tbody></table></section>`;
 }
 function loginDe(e){return e.login}
+const conviteDe=id=>(S.convites||[]).find(c=>c.colaborador_id===id&&!c.usado_em&&!c.cancelado_em&&new Date(c.expira_em)>new Date());
+function inviteForm(id){
+  const e=emp(id);const doms=S.config.dominios||[];
+  openModal(`<form data-form="u-invite" data-id="${id}"><div class="modal-h"><div><div class="eyebrow">Convite de acesso</div><h3>${esc(e.nome)}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <p class="muted">A pessoa recebe um link de uso único, válido por 7 dias. Ela entra com a conta Google corporativa informada abaixo, aceita o termo de privacidade e cria um PIN de ponto. Qualquer outra conta Google é recusada.</p>
+    <div class="field"><label for="iv-e">E-mail corporativo (Google)</label><input class="input" id="iv-e" name="email" type="email" value="${esc(e.email||'')}" placeholder="${doms[0]?'nome@'+esc(doms[0]):'nome@empresa.com.br'}" required autocapitalize="none" spellcheck="false"></div>
+    ${doms.length?`<div class="notice">Domínios aceitos: ${doms.map(esc).join(', ')}</div>`:'<div class="notice">Dica: cadastre o domínio corporativo em Configurações para o sistema recusar e-mails de fora da empresa.</div>'}
+    ${conviteDe(id)?'<div class="notice">Gerar um novo link cancela o convite anterior.</div>':''}
+    <div class="err" id="u-err"></div>
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Gerar link de convite</button></div></form>`);
+}
+function inviteLinkModal(e,email,tok){
+  const link=SITE+'?convite='+tok;
+  const msg=`Olá, ${first(e.nome)}! Você foi convidado(a) para o Registro de Ponto da ${S.company.razao||'empresa'}. Entre pelo link abaixo com o seu Google corporativo (${email}). O link vale por 7 dias e só pode ser usado uma vez:\n${link}`;
+  CRED=msg;
+  openModal(`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Convite criado</div><h3>${esc(e.nome)}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <div class="field"><label for="iv-l">Link de convite</label><input class="input mono" id="iv-l" value="${esc(link)}" readonly style="font-size:.8rem"></div>
+    <div class="notice">Envie o link só para ${esc(email)}. Por segurança, ele não fica visível de novo depois que esta janela fechar. Se perder, gere outro.</div>
+  </div><div class="modal-f"><a class="btn" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn" href="mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('Convite: Registro de Ponto')}&body=${encodeURIComponent(msg)}">E-mail</a><button class="btn" data-act="u-copy">Copiar mensagem</button><button class="btn primary" data-act="close">Concluir</button></div>`);
+}
 function rhUsuarios(){
   const f=UI.uf||'todos',q=(UI.uq||'').toLowerCase();
   const all=S.emps;
@@ -872,7 +994,7 @@ function rhUsuarios(){
     if(f==='bloq'&&e.ativo)return false;
     if(f==='rh'&&e.papel!=='rh')return false;
     return !q||(e.nome+e.login+e.email+e.cargo).toLowerCase().includes(q)});
-  const st=e=>!e.ativo?'<span class="chip bad">Bloqueado</span>':!e.temAcesso?'<span class="chip plain">Sem acesso</span>':e.trocarSenha?'<span class="chip warn">Aguardando 1º acesso</span>':'<span class="chip ok">Ativo</span>';
+  const st=e=>!e.ativo?'<span class="chip bad">Bloqueado</span>':!e.temAcesso?(conviteDe(e.id)?`<span class="chip info">Convite enviado · até ${fmtDate(localTs(conviteDe(e.id).expira_em).slice(0,10)).slice(0,5)}</span>`:'<span class="chip plain">Sem acesso</span>'):e.trocarSenha?'<span class="chip warn">Aguardando 1º acesso</span>':'<span class="chip ok">Ativo</span>';
   const filt=[['todos','Todos'],['sem','Sem acesso'],['inicial','Aguardando 1º acesso'],['ativos','Ativos'],['bloq','Bloqueados'],['rh','Administradores']];
   return `<div class="page-h"><div><div class="eyebrow">Administração</div><h1>Usuários e acessos</h1></div><div class="spacer"></div>
     ${cnt.sem?`<button class="btn" data-act="bulk-access">Liberar todos sem acesso (${cnt.sem})</button>`:''}<button class="btn primary" data-act="u-new">Cadastrar usuário</button></div>
@@ -892,14 +1014,14 @@ function rhUsuarios(){
     <td>${st(e)}</td>
     <td class="wrap"><div class="u-actions">
       ${!e.ativo?`<button class="btn sm" data-act="u-block" data-id="${e.id}" data-v="1">Desbloquear</button>`:
-        !e.temAcesso?`<button class="btn sm primary" data-act="u-pass" data-id="${e.id}">Criar acesso</button>`:
+        !e.temAcesso?`<button class="btn sm primary" data-act="u-invite" data-id="${e.id}">${conviteDe(e.id)?'Reenviar convite':'Enviar convite'}</button>${conviteDe(e.id)?`<button class="btn sm ghost" data-act="u-invite-cancel" data-id="${e.id}">Cancelar convite</button>`:''}<button class="btn sm ghost" data-act="u-pass" data-id="${e.id}">Acesso por senha</button>`:
         `<button class="btn sm" data-act="u-pass" data-id="${e.id}">Redefinir senha</button>`}
       ${e.ativo&&e.id!==ME.id?`<button class="btn sm ghost" data-act="u-role" data-id="${e.id}">${e.papel==='rh'?'Tirar de admin':'Tornar admin'}</button>`:''}
       ${e.ativo&&e.id!==ME.id?`<button class="btn sm danger" data-act="u-block" data-id="${e.id}" data-v="0">Bloquear</button>`:''}
       <button class="btn sm ghost" data-act="emp-form" data-id="${e.id}">Editar dados</button>
     </div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nenhum usuário neste filtro.</td></tr>'}
   </tbody></table></section>
-  <p class="notice">Todos entram com <b>login e senha</b>. Toda senha criada ou redefinida pelo RH é provisória: no primeiro acesso a pessoa cria a própria senha.</p>`;
+  <p class="notice">O jeito recomendado é <b>Enviar convite</b>: a pessoa recebe um link de uso único e entra com o Google corporativo. Quem não tem Google corporativo pode receber <b>acesso por senha</b>, que é provisória e trocada no primeiro acesso.</p>`;
 }
 function userForm(){
   openModal(`<form data-form="u-new"><div class="modal-h"><div><div class="eyebrow">Administração</div><h3>Cadastrar usuário</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
@@ -916,17 +1038,18 @@ function userForm(){
     <div class="grid2">
       <div class="field"><label for="u-login">Login</label><input class="input mono" id="u-login" name="login" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
       <div class="field"><label for="u-papel">Perfil</label><select class="input" id="u-papel" name="papel"><option value="colaborador">Colaborador</option><option value="rh">Administrador do RH</option></select></div>
-      <div class="field" style="grid-column:1/-1"><label for="u-email">E-mail <span class="muted">(opcional)</span></label><input class="input" type="email" id="u-email" name="email" autocomplete="off"></div>
-      <div class="field" style="grid-column:1/-1"><label for="u-senha">Senha provisória (mínimo 6 caracteres)</label><div class="row" style="flex-wrap:nowrap"><input class="input mono" id="u-senha" name="senha" type="text" minlength="6" autocomplete="off" required><button type="button" class="btn" data-act="u-gen" data-target="u-senha">Gerar</button></div></div>
+      <div class="field" style="grid-column:1/-1"><label for="u-modo">Forma de acesso</label><select class="input" id="u-modo" name="modo" data-change="u-modo"><option value="google">Convite por link com Google corporativo (recomendado)</option><option value="senha">Login e senha provisória</option></select></div>
+      <div class="field" style="grid-column:1/-1"><label for="u-email">E-mail corporativo (Google)</label><input class="input" type="email" id="u-email" name="email" autocomplete="off" autocapitalize="none" required></div>
+      <div class="field" style="grid-column:1/-1" id="u-senha-f" hidden><label for="u-senha">Senha provisória (mínimo 8 caracteres, com letras e números)</label><div class="row" style="flex-wrap:nowrap"><input class="input mono" id="u-senha" name="senha" type="text" minlength="8" autocomplete="off"><button type="button" class="btn" data-act="u-gen" data-target="u-senha">Gerar</button></div></div>
     </div>
     <div class="err" id="u-err"></div>
-  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Cadastrar e liberar acesso</button></div></form>`,true);
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Cadastrar</button></div></form>`,true);
 }
 function passForm(id){
   const e=emp(id);
   openModal(`<form data-form="u-pass" data-id="${id}"><div class="modal-h"><h3>${e.temAcesso?'Redefinir senha':'Criar acesso'}</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div><b>${esc(e.nome)}</b><div class="muted" style="font-size:.85rem">Login: <span class="mono">${esc(e.login)}</span></div></div>
-    <div class="field"><label for="p-s">Senha provisória (mínimo 6 caracteres)</label><div class="row" style="flex-wrap:nowrap"><input class="input mono" id="p-s" name="senha" type="text" minlength="6" autocomplete="off" required><button type="button" class="btn" data-act="u-gen" data-target="p-s">Gerar</button></div></div>
+    <div class="field"><label for="p-s">Senha provisória (mínimo 8 caracteres, com letras e números)</label><div class="row" style="flex-wrap:nowrap"><input class="input mono" id="p-s" name="senha" type="text" minlength="8" autocomplete="off" required><button type="button" class="btn" data-act="u-gen" data-target="p-s">Gerar</button></div></div>
     <div class="notice">A pessoa entra com essa senha e cria a própria senha no primeiro acesso.</div>
     <div class="err" id="u-err"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">${e.temAcesso?'Redefinir senha':'Criar acesso'}</button></div></form>`);
@@ -950,7 +1073,7 @@ function sugereLogin(nome){
   while(S.emps.some(x=>x.login.toLowerCase()===c)){n++;c=base+n}
   return c;
 }
-function genPass(){const c='abcdefghjkmnpqrstuvwxyz23456789';const a=new Uint32Array(8);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join('')}
+function genPass(){const L='abcdefghjkmnpqrstuvwxyz',N='23456789',c=L+N;const a=new Uint32Array(10);crypto.getRandomValues(a);const s=Array.from(a,x=>c[x%c.length]);s[a[0]%10]=L[a[1]%L.length];s[(a[0]+3)%10]=N[a[2]%N.length];return s.join('')}
 
 function rhAprov(){
   const reqs=S.requests.filter(r=>r.status==='pendente').sort((a,b)=>a.criado<b.criado?-1:1);
@@ -982,7 +1105,7 @@ function rhEspelho(){
     <div class="card kpi"><span class="l">Atrasos · faltas</span><span class="v">${ms.atrasos} · ${ms.faltas}</span></div>
   </section>
   ${aprovBlock(e,ym,ms)}
-  <section class="card"><div class="card-h"><div><h3>${esc(e.nome)}</h3><div class="muted" style="font-size:.82rem">${esc(e.cargo)} · ${esc(e.login)} · CPF ${esc(e.cpf||'não informado')} · ${esc(jor(e.jornadaId).nome)}</div></div><div class="spacer"></div>
+  <section class="card"><div class="card-h"><div><h3>${esc(e.nome)}</h3><div class="muted" style="font-size:.82rem">${esc(e.cargo)} · ${esc(e.login)} · CPF ${esc(maskCPF(e.cpf))} · ${esc(jor(e.jornadaId).nome)}</div></div><div class="spacer"></div>
     <button class="btn sm" data-act="add-punch" data-id="${e.id}">Incluir marcação</button><button class="btn sm" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">CSV</button><button class="btn sm" data-act="afd" data-ym="${ym}">Gerar AFD</button></div>${html}</section>`;
 }
 function rhRelat(){
@@ -1005,25 +1128,74 @@ function rhRelat(){
   ${Object.entries(deps).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div><div class="row" style="justify-content:space-between;font-size:.88rem"><span>${esc(k)}</span><span class="mono">${dur(v)}</span></div><div style="height:8px;border-radius:4px;background:var(--surface-2);margin-top:4px;overflow:hidden"><div style="height:100%;width:${(v/mx*100).toFixed(1)}%;background:var(--accent);border-radius:4px"></div></div></div>`).join('')||'<div class="empty">Sem dados no período.</div>'}
   </div></section></div>`;
 }
+const TAB_N={colaboradores:'Colaborador',empresa:'Configuração',jornadas:'Jornada',setores:'Setor',feriados:'Feriado',locais:'Local de trabalho',solicitacoes:'Solicitação',aprovacoes_ponto:'Aprovação de ponto',convites:'Convite',consentimentos:'Consentimento LGPD',marcacoes:'Marcação'};
+const OP_N={INSERT:'Inclusão',UPDATE:'Alteração',DELETE:'Exclusão'};
+function rhAuditoria(){
+  if(!UI.audit){loadAudit();return `<div class="page-h"><div><div class="eyebrow">Segurança</div><h1>Auditoria</h1></div></div><div class="empty">Carregando histórico…</div>`}
+  const q=(UI.aq||'').toLowerCase();
+  const nomeReg=a=>{const d=a.detalhes||{};if(a.tabela==='colaboradores'||a.tabela==='convites'||a.tabela==='consentimentos'||a.tabela==='aprovacoes_ponto'||a.tabela==='marcacoes'||a.tabela==='solicitacoes'){const id=a.tabela==='colaboradores'?a.registro_id:(d.colaborador_id&&(d.colaborador_id.para||d.colaborador_id));const e=id&&emp(typeof id==='string'?id:'');return e?e.nome:''}return (d.nome&&(d.nome.para||d.nome))||''};
+  const resumo=a=>{const d=a.detalhes||{};if(a.operacao!=='UPDATE')return '';return Object.keys(d).filter(k=>!['atualizado_em'].includes(k)).map(k=>{const v=d[k];const f=x=>x==null||x===''?'vazio':(typeof x==='object'?JSON.stringify(x):String(x));return `${k}: ${f(v.de)} → ${f(v.para)}`}).join(' · ')};
+  const rows=UI.audit.filter(a=>!q||JSON.stringify(a).toLowerCase().includes(q));
+  return `<div class="page-h"><div><div class="eyebrow">Segurança</div><h1>Auditoria</h1></div><div class="spacer"></div><input class="input search" id="aq" data-input="aq" placeholder="Filtrar por nome, ação ou campo" value="${esc(UI.aq||'')}"><button class="btn" data-act="audit-reload">Atualizar</button></div>
+  <p class="muted" style="max-width:70ch">Toda alteração em cadastros, acessos, convites, configurações, ajustes de ponto, aprovações e consentimentos fica registrada aqui com quem fez e quando. Esse histórico não pode ser editado nem apagado pela tela. Dados sensíveis, como biometria e PIN, nunca aparecem.</p>
+  <section class="card tablewrap"><table><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Registro</th><th>Detalhes</th></tr></thead><tbody>
+  ${rows.slice(0,300).map(a=>{const t=localTs(a.em);return `<tr><td class="mono">${fmtDate(t.slice(0,10))} ${t.slice(11,16)}</td><td>${esc(a.ator_nome||'Sistema')}</td><td>${OP_N[a.operacao]||a.operacao} · ${TAB_N[a.tabela]||a.tabela}</td><td>${esc(nomeReg(a))}</td><td class="wrap" style="max-width:420px;font-size:.82rem">${esc(resumo(a))}</td></tr>`}).join('')||'<tr><td colspan="5" class="empty">Nenhum registro.</td></tr>'}
+  </tbody></table></section>`;
+}
+async function loadAudit(){const {data,error}=await sb.from('auditoria').select('*').order('em',{ascending:false}).limit(500);UI.audit=error?[]:data;if(error)toast(errMsg(error));render()}
+
 function rhConfig(){
   const c=S.config,co=S.company;
+  const listaVazia=t=>`<div class="empty" style="padding:18px">${t}</div>`;
   return `<div class="page-h"><div><div class="eyebrow">Regras do ponto</div><h1>Configurações</h1></div></div>
   <form class="card" data-form="cfg"><div class="card-h"><h3>Empresa e regras</h3></div><div class="card-b" style="display:flex;flex-direction:column;gap:18px">
-    <div class="grid2"><div class="field"><label for="c-raz">Razão social</label><input class="input" id="c-raz" name="razao" value="${esc(co.razao)}" required></div><div class="field"><label for="c-cnpj">CNPJ</label><input class="input mono" id="c-cnpj" name="cnpj" value="${esc(co.cnpj)}" required></div><div class="field"><label for="c-loc">Local de trabalho</label><input class="input" id="c-loc" name="local" value="${esc(co.local)}" required></div></div>
-    <div><div class="row" style="margin-bottom:10px"><div class="eyebrow">Cerca virtual</div><div class="spacer"></div><button type="button" class="btn sm" data-act="use-geo">Usar minha localização atual</button></div><div class="grid2">
-      <div class="field"><label for="c-at">Cerca virtual</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
-      <div class="field"><label for="c-lat">Latitude</label><input class="input mono" id="c-lat" name="lat" value="${c.cerca.lat??''}" placeholder="-23.56140"></div><div class="field"><label for="c-lng">Longitude</label><input class="input mono" id="c-lng" name="lng" value="${c.cerca.lng??''}" placeholder="-46.65590"></div><div class="field"><label for="c-raio">Raio permitido (metros)</label><input class="input mono" id="c-raio" name="raio" type="number" min="30" value="${c.cerca.raio}"></div>
+    <div class="grid2"><div class="field"><label for="c-raz">Razão social</label><input class="input" id="c-raz" name="razao" value="${esc(co.razao)}" required></div><div class="field"><label for="c-cnpj">CNPJ</label><input class="input mono" id="c-cnpj" name="cnpj" value="${esc(co.cnpj)}" required></div><div class="field"><label for="c-loc">Nome do local principal</label><input class="input" id="c-loc" name="local" value="${esc(co.local)}" required></div></div>
+    <div><div class="eyebrow" style="margin-bottom:10px">Cerca virtual</div><div class="grid2">
+      <div class="field"><label for="c-at">Cerca virtual</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada (usa os locais de trabalho abaixo)</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
       <div class="field"><label for="c-blq">Fora da cerca</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
-    <div><div class="eyebrow" style="margin-bottom:10px">Biometria</div><div class="grid2">
-      <div class="field"><label for="c-lim">Limiar de similaridade (0,50 a 0,95)</label><input class="input mono" id="c-lim" name="limiar" type="number" step="0.01" min="0.5" max="0.95" value="${c.limiar}"></div>
-      <div class="field"><label for="c-fa">Reconhecimento facial</label><select class="input" id="c-fa" name="facial"><option value="1" ${c.facial!==false?'selected':''}>Ativado</option><option value="0" ${c.facial===false?'selected':''}>Desativado (ponto somente por senha)</option></select></div>
-      <div class="field"><label for="c-pw">Marcação por senha (alternativa ao rosto)</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha==='permitida'?'selected':''}>Permitida</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Permitida com revisão do RH</option><option value="bloqueada" ${c.modoSenha==='bloqueada'?'selected':''}>Não permitida</option></select></div>
+    <div><div class="eyebrow" style="margin-bottom:10px">Biometria e senha</div><div class="grid2">
+      <div class="field"><label for="c-fa">Reconhecimento facial</label><select class="input" id="c-fa" name="facial"><option value="1" ${c.facial!==false?'selected':''}>Ativado</option><option value="0" ${c.facial===false?'selected':''}>Desativado (ponto somente por senha ou PIN)</option></select></div>
+      <div class="field"><label for="c-pw">Marcação por senha ou PIN</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha==='permitida'?'selected':''}>Permitida</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Permitida com revisão do RH</option><option value="bloqueada" ${c.modoSenha==='bloqueada'?'selected':''}>Não permitida</option></select></div>
+      <div class="field"><label for="c-lim">Limiar de similaridade facial (0,50 a 0,95)</label><input class="input mono" id="c-lim" name="limiar" type="number" step="0.01" min="0.5" max="0.95" value="${c.limiar}"></div>
       <div class="field"><label for="c-ex">Marcação sem biometria</label><select class="input" id="c-ex" name="exigir"><option value="1" ${c.exigirFace?'selected':''}>Permitir com revisão do RH</option><option value="0" ${!c.exigirFace?'selected':''}>Permitir sem revisão</option></select></div></div></div>
     <div class="row"><button class="btn primary" type="submit">Salvar configurações</button></div></div></form>
-  <section class="card"><div class="card-h"><h3>Jornadas de trabalho</h3><div class="spacer"></div><button class="btn sm" data-act="jor-form">Nova jornada</button></div><div class="tablewrap"><table><thead><tr><th>Nome</th><th>Entrada</th><th>Intervalo</th><th>Saída</th><th>Dias</th><th class="num">Diária</th><th class="num">Tolerância</th><th></th></tr></thead><tbody>
-  ${S.jornadas.map(j=>`<tr><td style="font-weight:600">${esc(j.nome)}</td><td class="mono">${j.ini}</td><td class="mono">${j.intIni} às ${j.intFim}</td><td class="mono">${j.fim}</td><td>${j.dias.map(x=>DOW[x]).join(', ')}</td><td class="num mono">${dur(expMin(j))}</td><td class="num mono">${j.tol} min</td><td><button class="btn sm" data-act="jor-form" data-id="${j.id}">Editar</button></td></tr>`).join('')}</tbody></table></div></section>
-  <section class="card"><div class="card-h"><h3>Feriados nacionais</h3></div><div class="card-b" style="display:flex;flex-wrap:wrap;gap:8px">${Object.entries(HOL).filter(([k])=>k.startsWith(String(NOW().getFullYear()))).map(([k,v])=>`<span class="chip plain">${fmtDate(k).slice(0,5)} · ${esc(v)}</span>`).join('')}</div></section>`;
+
+  <section class="card"><div class="card-h"><div><h3>Domínios do Google corporativo</h3><div class="muted" style="font-size:.82rem">Convites só são aceitos para e-mails destes domínios.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="dom-add">Adicionar domínio</button></div>
+    <div class="list">${(c.dominios||[]).map(d=>`<div class="li"><div class="grow"><div class="ttl mono">@${esc(d)}</div></div><button class="btn sm danger" data-act="dom-del" data-v="${esc(d)}">Excluir</button></div>`).join('')||listaVazia('Nenhum domínio cadastrado. Sem domínio, o convite aceita qualquer conta Google, desde que seja exatamente o e-mail informado pelo RH.')}</div></section>
+
+  <section class="card"><div class="card-h"><div><h3>Locais de trabalho</h3><div class="muted" style="font-size:.82rem">A marcação vale dentro do raio de qualquer local da lista.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="local-form">Adicionar local</button></div>
+    <div class="list">${(S.locais||[]).map(l=>`<div class="li"><div class="grow"><div class="ttl">${esc(l.nome)}</div><div class="sub mono">${(+l.lat).toFixed(5)}, ${(+l.lng).toFixed(5)} · raio ${l.raio} m</div></div><button class="btn sm" data-act="local-form" data-id="${l.id}">Editar</button><button class="btn sm danger" data-act="local-del" data-id="${l.id}">Excluir</button></div>`).join('')||listaVazia('Nenhum local cadastrado. Adicione a sede para ativar a cerca virtual.')}</div></section>
+
+  <section class="card"><div class="card-h"><h3>Jornadas de trabalho</h3><div class="spacer"></div><button class="btn sm primary" data-act="jor-form">Adicionar jornada</button></div><div class="tablewrap"><table><thead><tr><th>Nome</th><th>Entrada</th><th>Intervalo</th><th>Saída</th><th>Dias</th><th class="num">Diária</th><th class="num">Tolerância</th><th>Ações</th></tr></thead><tbody>
+  ${S.jornadas.map(j=>{const uso=S.emps.filter(e=>e.jornadaId===j.id).length;return `<tr><td style="font-weight:600">${esc(j.nome)}<div class="muted" style="font-size:.78rem;font-weight:400">${uso} colaborador(es)</div></td><td class="mono">${j.ini}</td><td class="mono">${j.intIni} às ${j.intFim}</td><td class="mono">${j.fim}</td><td>${j.dias.map(x=>DOW[x]).join(', ')||'Sem dias fixos'}</td><td class="num mono">${dur(expMin(j))}</td><td class="num mono">${j.tol} min</td><td><div class="u-actions"><button class="btn sm" data-act="jor-form" data-id="${j.id}">Editar</button><button class="btn sm danger" data-act="jor-del" data-id="${j.id}">Excluir</button></div></td></tr>`}).join('')}</tbody></table></div></section>
+
+  <section class="card"><div class="card-h"><div><h3>Feriados</h3><div class="muted" style="font-size:.82rem">Nacionais, estaduais, municipais e pontos facultativos. Dias da lista não contam como falta.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="fer-form">Adicionar feriado</button></div>
+    <div class="list">${(S.feriados||[]).filter(f=>f.data>=String(NOW().getFullYear())+'-01-01').map(f=>`<div class="li"><div class="mono" style="min-width:86px">${fmtDate(f.data)}</div><div class="grow"><div class="ttl">${esc(f.nome)}</div><div class="sub">${{nacional:'Nacional',estadual:'Estadual',municipal:'Municipal',facultativo:'Ponto facultativo'}[f.tipo]||f.tipo}</div></div><button class="btn sm danger" data-act="fer-del" data-id="${f.id}">Excluir</button></div>`).join('')||listaVazia('Nenhum feriado cadastrado.')}</div></section>`;
 }
+function localForm(id){
+  const l=id?S.locais.find(x=>x.id===id):{nome:'',lat:'',lng:'',raio:200};
+  openModal(`<form data-form="local" data-id="${id||''}"><div class="modal-h"><h3>${id?'Editar local':'Adicionar local de trabalho'}</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <div class="field"><label for="lo-n">Nome</label><input class="input" id="lo-n" name="nome" value="${esc(l.nome)}" placeholder="Ex.: Sede, Estúdio, Unidade Centro" required></div>
+    <div class="grid2"><div class="field"><label for="lo-lat">Latitude</label><input class="input mono" id="lo-lat" name="lat" value="${l.lat}" inputmode="decimal" required></div><div class="field"><label for="lo-lng">Longitude</label><input class="input mono" id="lo-lng" name="lng" value="${l.lng}" inputmode="decimal" required></div>
+    <div class="field"><label for="lo-r">Raio permitido (metros)</label><input class="input mono" id="lo-r" name="raio" type="number" min="30" max="5000" value="${l.raio}" required></div></div>
+    <button type="button" class="btn" data-act="lo-geo">Usar minha localização atual</button>
+    <div class="notice">Dica: no Google Maps, toque e segure no local para ver a latitude e a longitude.</div>
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Salvar local</button></div></form>`);
+}
+function ferForm(){
+  openModal(`<form data-form="fer"><div class="modal-h"><h3>Adicionar feriado</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <div class="grid2"><div class="field"><label for="fe-d">Data</label><input class="input" type="date" id="fe-d" name="data" required></div>
+    <div class="field"><label for="fe-t">Tipo</label><select class="input" id="fe-t" name="tipo"><option value="municipal">Municipal</option><option value="estadual">Estadual</option><option value="nacional">Nacional</option><option value="facultativo">Ponto facultativo</option></select></div></div>
+    <div class="field"><label for="fe-n">Nome</label><input class="input" id="fe-n" name="nome" placeholder="Ex.: Aniversário de Jundiaí" required></div>
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Adicionar</button></div></form>`);
+}
+function domForm(){
+  openModal(`<form data-form="dom"><div class="modal-h"><h3>Adicionar domínio corporativo</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <div class="field"><label for="do-d">Domínio</label><input class="input mono" id="do-d" name="dominio" placeholder="empresa.com.br" autocapitalize="none" spellcheck="false" required></div>
+    <div class="notice">Digite só o que vem depois do @ no e-mail corporativo.</div>
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Adicionar</button></div></form>`);
+}
+function confirmar(titulo,texto,act,id,v){openModal(`<div class="modal-h"><h3>${titulo}</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b"><p>${texto}</p></div><div class="modal-f"><button class="btn ghost" data-act="close">Cancelar</button><button class="btn danger" data-act="${act}" data-id="${id||''}" data-v="${esc(v||'')}">Excluir</button></div>`)}
 
 /* ================= MODAIS ================= */
 function openModal(html,wide){$('#modal-root').innerHTML=`<div class="modal-bg" data-act="modal-bg"><div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div></div>`}
@@ -1054,6 +1226,13 @@ let STREAM=null,CAP=null;
 function stopCam(){if(STREAM){STREAM.getTracks().forEach(t=>t.stop());STREAM=null}}
 function startCapture(mode){
   const e=ME;const enrolling=mode==='enroll'||!e.face;
+  if(enrolling&&!temConsent('biometria')){
+    openModal(`<div class="modal-h"><h3>Autorizar biometria facial</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+      <p>Para registrar o ponto pelo rosto, o sistema guarda uma referência numérica do seu rosto e uma miniatura. Elas ficam protegidas no servidor e só servem para confirmar que é você.</p>
+      <p class="muted">A autorização é opcional. Sem ela, você registra o ponto com ${ME.temPin?'o PIN':'a senha'}. Você pode revogar quando quiser no seu Perfil, e os dados são apagados na hora.</p>
+    </div><div class="modal-f"><button class="btn ghost" data-act="close">Agora não</button><button class="btn primary" data-act="bio-ok" data-mode="${mode}">Autorizar e continuar</button></div>`);
+    return;
+  }
   CAP={mode,enrolling};
   const n=marksOf(e.id,today()).length;
   openModal(`<div class="modal-h"><div><div class="eyebrow">${enrolling?'Cadastro biométrico':'Registro de ponto'}</div><h3>${enrolling?'Cadastre sua referência facial':esc(tipoN(n))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div>
@@ -1067,7 +1246,7 @@ function startCapture(mode){
     <input type="file" id="selfie" accept="image/*" capture="user" hidden>
   </div>`);
   const actions=$('#cap-actions');
-  const fallback=why=>{$('#cam').innerHTML=`<div class="cam-ph">${esc(why)}<br><br>${senhaOk()&&!(enrolling&&mode==='enroll')?'Tire uma selfie com a câmera frontal ou registre com a sua senha.':'Use a câmera frontal do celular para tirar uma selfie.'}</div>`;actions.innerHTML=`<button class="btn primary" data-act="selfie">Tirar selfie</button>${senhaOk()&&mode==='punch'?'<button class="btn" data-act="use-pw">Registrar com senha</button>':''}`};
+  const fallback=why=>{$('#cam').innerHTML=`<div class="cam-ph">${esc(why)}<br><br>${senhaOk()&&!(enrolling&&mode==='enroll')?'Tire uma selfie com a câmera frontal ou registre com a sua senha.':'Use a câmera frontal do celular para tirar uma selfie.'}</div>`;actions.innerHTML=`<button class="btn primary" data-act="selfie">Tirar selfie</button>${senhaOk()&&mode==='punch'?`<button class="btn" data-act="use-pw">Registrar com ${ME.temPin?'PIN':'senha'}</button>`:''}`};
   if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
     navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:640}},audio:false}).then(st=>{
       if(!CAP){st.getTracks().forEach(t=>t.stop());return}
@@ -1094,11 +1273,11 @@ async function processCapture(canvas){
   $('#cam').innerHTML=`<img class="snap" src="${canvas.toDataURL('image/jpeg',.8)}" alt="Captura">`;
   $('#ring').className='ring';$('#scan').hidden=false;$('#cap-actions').innerHTML='';
   const stepsEl=$('#steps');stepsEl.hidden=false;
-  const names=enrolling?['Detectando rosto','Verificando qualidade da imagem','Salvando referência biométrica']:['Detectando rosto','Verificando qualidade da imagem','Comparando com a referência','Registrando no servidor'];
+  const names=enrolling?['Detectando rosto','Verificando qualidade da imagem','Salvando referência biométrica']:['Detectando rosto','Verificando qualidade da imagem','Conferindo o rosto no servidor e registrando'];
   stepsEl.innerHTML=names.map((n,i)=>`<div class="step" id="st${i}"><i></i><span>${n}</span></div>`).join('');
   const setS=(i,st,txt)=>{const el=$('#st'+i);if(!el)return;el.className='step '+st;el.querySelector('i').textContent=st==='ok'?'✓':(st==='fail'?'!':'');if(txt)el.querySelector('span').textContent=txt};
   const fail=(i,msg)=>{setS(i,'fail');$('#ring').className='ring bad';$('#scan').hidden=true;$('#cap-msg').innerHTML=`<b style="color:#fff">${esc(msg)}</b>`;
-    $('#cap-actions').innerHTML=`<button class="btn" data-act="retry">Tentar novamente</button>${mode==='punch'?(senhaOk()?'<button class="btn" data-act="use-pw">Registrar com senha</button>':(!enrolling?'<button class="btn ghost" data-act="nobio">Registrar sem biometria</button>':'')):''}`;CAP.lastCanvas=canvas};
+    $('#cap-actions').innerHTML=`<button class="btn" data-act="retry">Tentar novamente</button>${mode==='punch'?(senhaOk()?`<button class="btn" data-act="use-pw">Registrar com ${ME.temPin?'PIN':'senha'}</button>`:(!enrolling?'<button class="btn ghost" data-act="nobio">Registrar sem biometria</button>':'')):''}`;CAP.lastCanvas=canvas};
   const sg=signature(canvas);
   setS(0,'run');await sleep(600);
   if('FaceDetector' in window){try{const fd=new window.FaceDetector({fastMode:true,maxDetectedFaces:2});const faces=await fd.detect(canvas);if(!faces.length)return fail(0,'Nenhum rosto encontrado. Aproxime o rosto da câmera.');if(faces.length>1)return fail(0,'Mais de um rosto na imagem. Registre sozinho.')}catch(err){}}
@@ -1113,27 +1292,25 @@ async function processCapture(canvas){
     const th=thumb(canvas,120);
     const {error}=await sb.rpc('cadastrar_face',{p_sig:sg.sig,p_thumb:th});
     if(error)return fail(2,errMsg(error));
-    ME.face={sig:sg.sig,thumb:th};ME.bio='pendente';const me=S.emps.find(x=>x.id===ME.id);if(me){me.face=ME.face;me.bio='pendente'}
+    ME.face={thumb:th};ME.bio='pendente';const me=S.emps.find(x=>x.id===ME.id);if(me){me.face=ME.face;me.bio='pendente'}
     setS(2,'ok');$('#ring').className='ring ok';$('#scan').hidden=true;
     if(mode==='enroll'){$('#cap-msg').innerHTML='<b style="color:#fff">Referência enviada.</b><br>O RH vai validar sua foto.';$('#cap-actions').innerHTML='<button class="btn primary" data-act="close">Concluir</button>';return}
     $('#cap-msg').innerHTML='<b style="color:#fff">Referência cadastrada.</b> Registrando seu ponto…';
     stepsEl.insertAdjacentHTML('beforeend','<div class="step" id="st9"><i></i><span>Registrando no servidor</span></div>');
-    return finalizePunch({metodo:'cadastro',score:1,foto:thumb(canvas,96)},9);
+    return finalizePunch({metodo:'cadastro',sig:sg.sig,foto:thumb(canvas,96)},9,fail);
   }
-  setS(2,'run');await sleep(600);
-  let dot=0;for(let i=0;i<256;i++)dot+=sg.sig[i]*(e.face.sig[i]||0);const corr=dot/256;const score=Math.max(0,Math.min(1,(corr+1)/2));
-  if(score<S.config.limiar)return fail(2,`Rosto não confere com a referência (${Math.round(score*100)}%). Tente de frente, com a mesma iluminação do cadastro.`);
-  setS(2,'ok',`Similaridade ${Math.round(score*100)}%`);
-  return finalizePunch({metodo:'facial',score:+score.toFixed(2),foto:thumb(canvas,96)},3);
+  CAP.lastCanvas=canvas;
+  return finalizePunch({metodo:'facial',sig:sg.sig,foto:thumb(canvas,96)},2,fail);
 }
-async function finalizePunch(info,stepId){
+async function finalizePunch(info,stepId,onFail){
   const el=()=>$('#st'+stepId);
   if(el()){el().className='step run'}
   const geo=await getGeo();
-  const {data,error}=await sb.rpc('registrar_ponto',{p_metodo:info.metodo,p_score:info.score,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null,p_foto:info.foto||null,p_obs:info.obs||null});
+  const {data,error}=await sb.rpc('registrar_ponto',{p_metodo:info.metodo,p_sig:info.sig||null,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null,p_foto:info.foto||null,p_obs:info.obs||null});
+  if(error&&onFail&&/Rosto não confere/.test(errMsg(error)))return onFail(stepId,errMsg(error));
   if(error){if(el()){el().className='step fail';el().querySelector('i').textContent='!'}$('#ring').className='ring bad';$('#scan').hidden=true;$('#cap-msg').innerHTML=`<b style="color:#fff">${esc(errMsg(error))}</b>`;$('#cap-actions').innerHTML='<button class="btn" data-act="close">Fechar</button>';return}
   const p=mapPunch(data);S.punches.push(p);
-  if(el()){el().className='step ok';el().querySelector('i').textContent='✓';el().querySelector('span').textContent=geo?(p.foraCerca?'Registrado fora da cerca virtual':'Registrado com localização'):'Registrado sem localização'}
+  if(el()){el().className='step ok';el().querySelector('i').textContent='✓';el().querySelector('span').textContent=(p.score!=null&&info.metodo==='facial'?`Rosto conferido (${Math.round(p.score*100)}%) · `:'')+(geo?(p.foraCerca?'fora da cerca virtual':'com localização'):'sem localização')}
   $('#ring').className='ring ok';$('#scan').hidden=true;await sleep(400);
   $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}${p.revisao==='pendente'?'<div class="notice">Esta marcação foi enviada para revisão do RH.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
 }
@@ -1142,13 +1319,13 @@ async function finalizePunch(info,stepId){
 function pwForm(){
   stopCam();CAP=null;
   const n=marksOf(ME.id,today()).length;
-  openModal(`<form data-form="punch-pw"><div class="modal-h"><div><div class="eyebrow">Registro com senha</div><h3>${esc(tipoN(n))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div>
+  openModal(`<form data-form="punch-pw"><div class="modal-h"><div><div class="eyebrow">Registro com ${ME.temPin?'PIN':'senha'}</div><h3>${esc(tipoN(n))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div>
   <div class="modal-b">
     <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)} · ${esc(ME.login)}</div></div>
     <input type="text" name="usuario" value="${esc(ME.login)}" autocomplete="username" hidden>
-    <div class="field"><label for="pw-s">Sua senha de acesso</label><input class="input" id="pw-s" name="senha" type="password" autocomplete="current-password" required autofocus></div>
+    <div class="field"><label for="pw-s">${ME.temPin?'Seu PIN de ponto (6 números)':'Sua senha de acesso'}</label><input class="input ${ME.temPin?'mono pin-in':''}" id="pw-s" name="senha" type="password" ${ME.temPin?'inputmode="numeric" maxlength="6" autocomplete="off"':'autocomplete="current-password"'} required autofocus></div>
     <div class="err" id="pw-err"></div>
-    <div class="notice">Use a mesma senha do login. O horário oficial é definido pelo servidor${S.config.cerca.ativa?' e a sua localização é conferida com a cerca virtual':''}.${S.config.modoSenha==='revisao'?' Marcações por senha passam por revisão do RH.':''}</div>
+    <div class="notice">${ME.temPin?'Use o PIN que você criou no primeiro acesso.':'Use a mesma senha do login.'} O horário oficial é definido pelo servidor${S.config.cerca.ativa?' e a sua localização é conferida com a cerca virtual':''}.${S.config.modoSenha==='revisao'?' Marcações por senha passam por revisão do RH.':''}</div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Registrar ponto</button></div></form>`);
   setTimeout(()=>{const i=$('#pw-s');if(i)i.focus()},50);
 }
@@ -1174,7 +1351,7 @@ function empForm(id){
     <div class="field"><label for="f-j">Jornada</label><select class="input" id="f-j" name="jornadaId">${S.jornadas.map(j=>`<option value="${j.id}" ${j.id===e.jornadaId?'selected':''}>${esc(j.nome)}</option>`).join('')}</select></div>
     <div class="field"><label for="f-p">Perfil de acesso</label><select class="input" id="f-p" name="papel"><option value="colaborador" ${e.papel!=='rh'?'selected':''}>Colaborador</option><option value="rh" ${e.papel==='rh'?'selected':''}>RH (administrador)</option></select></div>
     <div class="field"><label for="f-at">Situação</label><select class="input" id="f-at" name="ativo"><option value="1" ${e.ativo?'selected':''}>Ativo</option><option value="0" ${!e.ativo?'selected':''}>Desligado (bloqueia o acesso)</option></select></div>
-    <div class="field"><label for="f-s">${id?(e.temAcesso?'Nova senha (deixe em branco para manter)':'Senha inicial para criar o acesso'):'Senha inicial (mínimo 6 caracteres)'}</label><input class="input" id="f-s" name="senha" type="text" minlength="6" autocomplete="off" ${id?'':'required'}></div></div>
+    <div class="field"><label for="f-s">${id?(e.temAcesso?'Nova senha (deixe em branco para manter)':'Senha inicial para criar o acesso'):'Senha inicial (mínimo 8 caracteres, com letras e números)'}</label><input class="input" id="f-s" name="senha" type="text" minlength="8" autocomplete="off" ${id?'':'required'}></div></div>
     <div class="notice">${id?'Ao mudar o login, a pessoa passa a entrar com o novo login e a mesma senha.':'A pessoa entra com o login e a senha provisória, e cria a própria senha no primeiro acesso.'}</div>
     ${id&&e.face?`<div class="notice">Biometria cadastrada · <button type="button" class="btn sm ghost" data-act="clear-face" data-id="${id}">Apagar referência facial</button></div>`:''}
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></form>`,true);
@@ -1214,27 +1391,83 @@ function csvReport(ym){const L=[['Login','Nome','Vínculo','Trabalhado','Previst
 function afd(ym){const cn=S.company.cnpj.replace(/\D/g,'');const L=[`000000000|1|1|${cn}|${S.company.razao}|${ym}|layout simplificado`];S.punches.filter(p=>p.ts.startsWith(ym)).sort((a,b)=>a.nsr-b.nsr).forEach(p=>{const e=emp(p.empId)||{};L.push([String(p.nsr).padStart(9,'0'),'7',p.ts,e.cpf||'',e.matricula||'',p.metodo,(p.hash||'').slice(0,16)].join('|'))});L.push(`999999999|${L.length-1} registros`);saveFile(`AFD_${cn}_${ym}.txt`,L.join('\n'))}
 
 /* ================= SESSÃO ================= */
+const getConvite=()=>ss.get('batida.convite');
+const temConsent=(tipo)=>ME&&(ME.consent||[]).some(c=>c.tipo===tipo&&!c.revogado_em&&(tipo!=='termos'||c.versao===S.config.termoVersao));
 async function afterLogin(){
   const perfil=UI.loginRole==='rh'?'rh':'emp';
   const {data:{user}}=await sb.auth.getUser();
   if(!user){MODE='login';return}
-  const {data,error}=await sb.from('colaboradores').select('*').eq('user_id',user.id).maybeSingle();
-  if(error||!data||!data.ativo){await sb.auth.signOut();BOOT.msg=error?errMsg(error):'Seu acesso não está ativo. Fale com o RH.';MODE='login';return}
-  ME=mapEmp(data);
+  const provs=(user.app_metadata&&user.app_metadata.providers)||[];
+  const {data,error}=await sb.from('colaboradores').select(CCOLS).eq('user_id',user.id).maybeSingle();
+  if(error){await sb.auth.signOut();BOOT.msg=errMsg(error);MODE='login';return}
+  if(!data){
+    // Conta Google sem convite: a conta é descartada no servidor
+    try{await invoke({acao:'descartar'})}catch(e){}
+    await sb.auth.signOut();BOOT.msg='Esta conta não está cadastrada no Registro de Ponto. Use o link de convite enviado pelo RH.';MODE='login';return;
+  }
+  if(!data.ativo){await sb.auth.signOut();BOOT.msg='Seu acesso não está ativo. Fale com o RH.';MODE='login';return}
+  ME=mapEmp(data);ME.google=provs.includes('google')&&!provs.includes('email');
   if(perfil==='rh'&&ME.papel!=='rh'){await sb.auth.signOut();ME=null;BOOT.msg='Seu usuário não tem acesso ao painel do RH. Escolha "Colaborador" para bater o ponto.';MODE='login';return}
-  await loadAll();
   safeStorage.setItem('batida.perfil',perfil);
-  MODE=ME.trocarSenha?'senha':perfil;BOOT.msg='';
-  subscribe();
+  if(perfil==='rh'){
+    const {data:a}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    AAL=(a&&a.currentLevel)||'aal1';
+    if(AAL!=='aal2'){MODE=a&&a.nextLevel==='aal2'?'mfa':'mfa-enroll';UI.mfa=null;BOOT.msg='';return}
+  }else AAL='aal1';
+  const cs=await sb.from('consentimentos').select('tipo,versao,revogado_em').eq('colaborador_id',ME.id);
+  ME.consent=cs.data||[];
+  await loadAll();
+  BOOT.msg='';
+  MODE=proximaTela(perfil);
+  subscribe();bumpIdle();
+}
+function proximaTela(perfil){
+  if(!temConsent('termos'))return 'termos';
+  if(ME.trocarSenha)return 'senha';
+  if(ME.google&&!ME.temPin)return 'pin';
+  return perfil==='rh'?'rh':'emp';
+}
+async function aceitarConvite(tok){
+  let ac={};try{ac=JSON.parse(ss.get('batida.aceite')||'{}')}catch(e){}
+  const {error}=await sb.rpc('aceitar_convite',{p_token:tok,p_termos:!!ac.termos,p_biometria:!!ac.biometria});
+  if(error){BOOT.conviteErro=errMsg(error);MODE='convite';try{const r=await sb.rpc('ver_convite',{p_token:tok});BOOT.convite=r.data||{valido:false}}catch(e){}return}
+  ss.del('batida.convite');ss.del('batida.aceite');UI.loginRole='emp';
+  await afterLogin();
+  toast('Conta vinculada com sucesso');
 }
 async function boot(){
   render();
+  const qs=new URLSearchParams(location.search);
+  const tk=qs.get('convite');if(tk&&/^[a-f0-9]{48}$/.test(tk))ss.set('batida.convite',tk);
+  const oerr=qs.get('error_description');if(oerr)BOOT.msg='O Google não concluiu o acesso: '+oerr;
   try{const t0=Date.now();const {data}=await sb.rpc('agora');if(data)OFF=new Date(data).getTime()-Math.round((t0+Date.now())/2)}catch(e){}
-  try{const {data}=await sb.auth.getSession();if(data.session)await afterLogin()}catch(e){BOOT.msg=errMsg(e);MODE='login'}
+  let sess=null;
+  try{const {data}=await sb.auth.getSession();sess=data.session}catch(e){BOOT.msg=errMsg(e)}
+  if(location.search)history.replaceState(null,'',location.pathname);
+  const pend=getConvite();
+  try{
+    if(pend&&sess)await aceitarConvite(pend);
+    else if(pend){const r=await sb.rpc('ver_convite',{p_token:pend});BOOT.convite=r.data||{valido:false};MODE='convite'}
+    else if(sess)await afterLogin();
+  }catch(e){BOOT.msg=errMsg(e);MODE='login'}
   if(MODE==='login'){try{const {data}=await sb.rpc('existe_rh');BOOT.existeRH=data!==false}catch(e){}}
   BOOT.loading=false;render();
 }
-async function logout(){LOADED_FROM=null;if(CH){sb.removeChannel(CH);CH=null}await sb.auth.signOut();ME=null;MODE='login';S.emps=[];S.punches=[];S.requests=[];UI.empTab='ponto';UI.rhTab='painel';render()}
+async function logout(msg){
+  LOADED_FROM=null;clearTimeout(idleT);if(CH){sb.removeChannel(CH);CH=null}
+  try{await sb.auth.signOut()}catch(e){}
+  ME=null;AAL='aal1';MODE='login';S.emps=[];S.punches=[];S.requests=[];S.aprov=[];S.convites=[];S.setores=[];UI.empTab='ponto';UI.rhTab='painel';UI.audit=null;UI.mfa=null;
+  BOOT.msg=typeof msg==='string'?msg:'';render();
+}
+// Encerra a sessão depois de um tempo sem uso
+let idleT=null;
+function bumpIdle(){
+  clearTimeout(idleT);
+  if(!ME||MODE==='login'||MODE==='convite')return;
+  const min=MODE==='rh'?15:30;
+  idleT=setTimeout(()=>{closeModal();logout(`Sessão encerrada após ${min} minutos sem uso.`)},min*60000);
+}
+['pointerdown','keydown','touchstart'].forEach(t=>document.addEventListener(t,()=>bumpIdle(),{passive:true}));
 
 /* ================= EVENTOS ================= */
 document.addEventListener('click',async ev=>{
@@ -1265,6 +1498,31 @@ document.addEventListener('click',async ev=>{
     case 'home':UI.navOpen=false;closeModal();if(MODE==='rh'){UI.rhTab='painel'}else{UI.empTab='ponto';UI.teamEmp=null}render();window.scrollTo(0,0);break;
     case 'nav-toggle':UI.navOpen=!UI.navOpen;render();break;
     case 'u-new':userForm();break;
+    case 'google':{safeStorage.setItem('batida.perfil',UI.loginRole);const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
+    case 'google-convite':{const f=t.closest('form');if(!f.termos.checked){$('#l-err').textContent='Para continuar, aceite o termo de uso e privacidade.';break}ss.set('batida.aceite',JSON.stringify({termos:true,biometria:f.biometria.checked}));safeStorage.setItem('batida.perfil','emp');UI.loginRole='emp';const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
+    case 'convite-trocar':{await sb.auth.signOut();BOOT.conviteErro='';render();break}
+    case 'convite-sair':{ss.del('batida.convite');ss.del('batida.aceite');BOOT.convite=null;BOOT.conviteErro='';MODE='login';try{const {data}=await sb.rpc('existe_rh');BOOT.existeRH=data!==false}catch(e){}render();break}
+    case 'privacidade':openModal(`<div class="modal-h"><h3>Termo de uso e privacidade</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${termoHTML()}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`,true);break;
+    case 'bio-ok':{t.disabled=true;const {error}=await sb.rpc('registrar_consentimento',{p_tipo:'biometria'});if(error)throw error;ME.consent=(ME.consent||[]).concat([{tipo:'biometria',versao:S.config.termoVersao,revogado_em:null}]);closeModal();startCapture(t.dataset.mode);break}
+    case 'bio-revogar':confirmar('Revogar biometria facial','Seus dados biométricos (referência do rosto e miniatura) serão apagados agora. Você continua registrando o ponto com '+(ME.temPin?'o PIN':'a senha')+'. Para voltar a usar o rosto, basta autorizar de novo.','bio-revogar-ok');break;
+    case 'bio-revogar-ok':{t.disabled=true;const {error}=await sb.rpc('revogar_biometria');if(error)throw error;(ME.consent||[]).forEach(c=>{if(c.tipo==='biometria')c.revogado_em=new Date().toISOString()});ME.face=null;ME.bio='nenhuma';await loadAll();closeModal();toast('Biometria revogada e apagada');break}
+    case 'pin-alterar':MODE='pin';render();break;
+    case 'pin-cancel':MODE='emp';render();break;
+    case 'u-invite':inviteForm(t.dataset.id);break;
+    case 'u-invite-cancel':{t.disabled=true;const {error}=await sb.rpc('cancelar_convite',{p_colab:t.dataset.id});if(error)throw error;await loadAll();render();toast('Convite cancelado');break}
+    case 'audit-reload':UI.audit=null;render();break;
+    case 'dom-add':domForm();break;
+    case 'dom-del':confirmar('Excluir domínio','Novos convites deixam de aceitar e-mails @'+esc(t.dataset.v)+'. Quem já tem acesso não é afetado.','dom-del-ok','',t.dataset.v);break;
+    case 'dom-del-ok':{t.disabled=true;const nv=(S.config.dominios||[]).filter(d=>d!==t.dataset.v);const {error}=await sb.from('empresa').update({dominios_google:nv}).eq('id',1);if(error)throw error;await loadAll();closeModal();toast('Domínio excluído');break}
+    case 'local-form':localForm(t.dataset.id);break;
+    case 'lo-geo':{toast('Buscando sua localização…');const g=await getGeo();if(!g){toast('Não foi possível obter a localização. Permita o acesso no navegador.');break}$('#lo-lat').value=g.lat.toFixed(6);$('#lo-lng').value=g.lng.toFixed(6);toast('Localização preenchida');break}
+    case 'local-del':{const l=S.locais.find(x=>x.id===t.dataset.id);confirmar('Excluir local',`O local <b>${esc(l.nome)}</b> deixa de valer para a cerca virtual.${S.locais.length===1&&S.config.cerca.ativa?' Como é o único local, a cerca virtual deixa de bloquear ou revisar marcações até você cadastrar outro.':''}`,'local-del-ok',l.id);break}
+    case 'local-del-ok':{t.disabled=true;const {error}=await sb.from('locais').delete().eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Local excluído');break}
+    case 'jor-del':{const j=jor(t.dataset.id);const uso=S.emps.filter(e=>e.jornadaId===j.id).length;if(uso){toast(`Essa jornada está em uso por ${uso} colaborador(es). Troque a jornada deles antes de excluir.`);break}confirmar('Excluir jornada',`A jornada <b>${esc(j.nome)}</b> será excluída.`,'jor-del-ok',j.id);break}
+    case 'jor-del-ok':{t.disabled=true;const {error}=await sb.from('jornadas').delete().eq('id',t.dataset.id);if(error)throw new Error(/foreign|violat/i.test(error.message)?'Essa jornada está em uso. Troque a jornada dos colaboradores antes de excluir.':error.message);await loadAll();closeModal();toast('Jornada excluída');break}
+    case 'fer-form':ferForm();break;
+    case 'fer-del':{const f=S.feriados.find(x=>x.id===t.dataset.id);confirmar('Excluir feriado',`${fmtDate(f.data)} · ${esc(f.nome)} passa a ser um dia normal de trabalho no cálculo do ponto.`,'fer-del-ok',f.id);break}
+    case 'fer-del-ok':{t.disabled=true;const {error}=await sb.from('feriados').delete().eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Feriado excluído');break}
     case 'team-open':UI.teamEmp=t.dataset.id;render();window.scrollTo(0,0);break;
     case 'team-back':UI.teamEmp=null;render();break;
     case 'ap-ok':apForm(t.dataset.id,t.dataset.ym,'aprovado');break;
@@ -1289,7 +1547,7 @@ document.addEventListener('click',async ev=>{
     case 'u-block-ok':{t.disabled=true;await invoke({acao:'acesso',colaborador_id:t.dataset.id,ativo:false});await loadAll();closeModal();toast('Acesso bloqueado');break}
     case 'bulk-access':{const n=S.emps.filter(e=>e.ativo&&!e.temAcesso).length;openModal(`<form data-form="bulk"><div class="modal-h"><h3>Criar acessos</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
       <p>Cria o login de ${n} colaborador(es) ativo(s) que ainda não têm acesso. Cada um entra com o próprio <b>login</b> (nome.sobrenome) e esta senha inicial, e cria uma senha pessoal no primeiro acesso.</p>
-      <div class="field"><label for="bk-s">Senha inicial (mínimo 6 caracteres)</label><input class="input" id="bk-s" name="senha" type="text" minlength="6" autocomplete="off" required></div>
+      <div class="field"><label for="bk-s">Senha inicial (mínimo 8 caracteres, com letras e números)</label><input class="input" id="bk-s" name="senha" type="text" minlength="8" autocomplete="off" required></div>
       <div class="notice">Pode levar alguns segundos. Prestadores PJ também recebem acesso. Se não devem bater ponto, marque-os como desligados antes.</div>
       </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Criar ${n} acesso(s)</button></div></form>`);break}
     case 'add-punch':addPunchForm(t.dataset.id);break;
@@ -1298,7 +1556,6 @@ document.addEventListener('click',async ev=>{
     case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll({punches:true});render();toast(t.dataset.v==='aceita'?'Marcação aceita':'Marcação desconsiderada e arquivada');break}
     case 'bio-dec':{t.disabled=true;const patch={bio_status:t.dataset.v};if(t.dataset.v==='rejeitada'){patch.face_sig=null;patch.face_thumb=null}const {error}=await sb.from('colaboradores').update(patch).eq('id',t.dataset.id);if(error)throw error;await loadAll();render();toast(t.dataset.v==='validada'?'Biometria validada':'Cadastro facial recusado');break}
     case 'clear-face':{const {error}=await sb.from('colaboradores').update({face_sig:null,face_thumb:null,bio_status:'nenhuma'}).eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Referência facial apagada');break}
-    case 'use-geo':{toast('Buscando sua localização…');const g=await getGeo();if(!g){toast('Não foi possível obter a localização. Permita o acesso no navegador.');break}$('#c-lat').value=g.lat.toFixed(6);$('#c-lng').value=g.lng.toFixed(6);$('#c-at').value='1';toast('Localização preenchida. Salve para aplicar.');break}
   }}catch(err){toast(errMsg(err));t.disabled=false}
 });
 document.addEventListener('change',ev=>{
@@ -1308,14 +1565,15 @@ document.addEventListener('change',ev=>{
   if(c==='month'){UI.mirrorMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
   if(c==='memp'){UI.mirrorEmp=t.value;render()}
   if(c==='reqtipo')reqForm(t.value);
+  if(c==='u-modo'){const s=$('#u-senha-f'),em=$('#u-email'),sp=$('#u-senha');if(s)s.hidden=t.value!=='senha';if(em)em.required=t.value!=='senha';if(sp)sp.required=t.value==='senha'}
   if(c==='team-month'){UI.teamMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
 });
-document.addEventListener('input',ev=>{const t=ev.target;const k=t.dataset.input;if(k==='s-filter'){const q=t.value.toLowerCase();document.querySelectorAll('#s-list [data-filtro]').forEach(el=>{el.hidden=!!q&&!el.dataset.filtro.includes(q)});return}if(k==='sug-login'){const o=$('#'+t.dataset.target);if(o&&!o.dataset.manual)o.value=sugereLogin(t.value);return}if(t.id==='u-login'||t.id==='f-login'){t.dataset.manual='1';return}if(k==='q'||k==='uq'){UI[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);if(n){n.focus();n.setSelectionRange(pos,pos)}}});
+document.addEventListener('input',ev=>{const t=ev.target;const k=t.dataset.input;if(k==='aq'){UI.aq=t.value;const pos=t.selectionStart;render();const n=$('#aq');if(n){n.focus();n.setSelectionRange(pos,pos)}return}if(t.classList.contains('pin-in'))t.value=t.value.replace(/\D/g,'').slice(0,6);if(k==='s-filter'){const q=t.value.toLowerCase();document.querySelectorAll('#s-list [data-filtro]').forEach(el=>{el.hidden=!!q&&!el.dataset.filtro.includes(q)});return}if(k==='sug-login'){const o=$('#'+t.dataset.target);if(o&&!o.dataset.manual)o.value=sugereLogin(t.value);return}if(t.id==='u-login'||t.id==='f-login'){t.dataset.manual='1';return}if(k==='q'||k==='uq'){UI[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);if(n){n.focus();n.setSelectionRange(pos,pos)}}});
 async function invoke(body){const {data,error}=await sb.functions.invoke('gerenciar-acesso',{body});if(error){let m=error.message;try{const j=await error.context.json();if(j&&j.erro)m=j.erro}catch(e){}throw new Error(m)}if(data&&data.erro)throw new Error(data.erro);return data}
 document.addEventListener('submit',async ev=>{
   const f=ev.target;const k=f.dataset.form;if(!k)return;ev.preventDefault();
   const fd=Object.fromEntries(new FormData(f));const btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
-  const showErr=m=>{const el=$('#l-err');if(el)el.textContent=m;else toast(m)};
+  const showErr=m=>{const el=f.querySelector('.err')||$('#l-err');if(el)el.textContent=m;else toast(m)};
   try{
   if(k==='login'){
     const login=fd.login.trim().toLowerCase();
@@ -1340,7 +1598,56 @@ document.addEventListener('submit',async ev=>{
     $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}${p.revisao==='pendente'?'<div class="notice">Esta marcação foi enviada para revisão do RH.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
     return;
   }
+  if(k==='termos'){
+    const {error}=await sb.rpc('registrar_consentimento',{p_tipo:'termos'});if(error)throw error;
+    ME.consent=(ME.consent||[]).concat([{tipo:'termos',versao:S.config.termoVersao,revogado_em:null}]);
+    MODE=proximaTela(UI.loginRole==='rh'?'rh':'emp');render();return;
+  }
+  if(k==='pin'){
+    if(fd.pin!==fd.pin2){showErr('Os PINs não conferem.');if(btn)btn.disabled=false;return}
+    const {error}=await sb.rpc('definir_pin',{p_pin:fd.pin});if(error)throw error;
+    ME.temPin=true;MODE=proximaTela(UI.loginRole==='rh'?'rh':'emp');render();toast('PIN salvo');return;
+  }
+  if(k==='mfa'){
+    const {data:l,error:e1}=await sb.auth.mfa.listFactors();if(e1)throw e1;
+    const f=(l.totp||[])[0];if(!f)throw new Error('Nenhum autenticador encontrado. Saia e entre de novo.');
+    const {error}=await sb.auth.mfa.challengeAndVerify({factorId:f.id,code:fd.code.trim()});
+    if(error){showErr('Código inválido ou expirado. Confira o horário do celular e tente de novo.');if(btn)btn.disabled=false;return}
+    BOOT.loading=true;render();await afterLogin();BOOT.loading=false;render();return;
+  }
+  if(k==='mfa-enroll'){
+    const {error}=await sb.auth.mfa.challengeAndVerify({factorId:UI.mfa.id,code:fd.code.trim()});
+    if(error){showErr('Código inválido. Confira se escaneou o QR code certo e tente de novo.');if(btn)btn.disabled=false;return}
+    UI.mfa=null;BOOT.loading=true;render();await afterLogin();BOOT.loading=false;render();toast('Verificação em duas etapas ativada');return;
+  }
+  if(k==='u-invite'){
+    const e=emp(f.dataset.id);const email=fd.email.trim().toLowerCase();
+    const doms=S.config.dominios||[];if(doms.length&&!doms.includes(email.split('@')[1]||'')){showErr('Use um e-mail corporativo: '+doms.map(d=>'@'+d).join(', '));if(btn)btn.disabled=false;return}
+    const {data:tok,error}=await sb.rpc('gerar_convite',{p_colab:e.id,p_email:email});if(error)throw error;
+    await loadAll();closeModal();inviteLinkModal(e,email,tok);return;
+  }
+  if(k==='dom'){
+    const d=fd.dominio.trim().toLowerCase().replace(/^.*@/,'');
+    if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d))throw new Error('Domínio inválido. Exemplo: empresa.com.br');
+    const nv=[...new Set([...(S.config.dominios||[]),d])];
+    const {error}=await sb.from('empresa').update({dominios_google:nv}).eq('id',1);if(error)throw error;
+    await loadAll();closeModal();toast('Domínio adicionado');return;
+  }
+  if(k==='local'){
+    const lat=parseFloat(String(fd.lat).replace(',','.')),lng=parseFloat(String(fd.lng).replace(',','.')),raio=Math.round(+fd.raio);
+    if(isNaN(lat)||isNaN(lng)||Math.abs(lat)>90||Math.abs(lng)>180)throw new Error('Latitude ou longitude inválida.');
+    if(!(raio>=30&&raio<=5000))throw new Error('O raio precisa ficar entre 30 e 5000 metros.');
+    const row={nome:fd.nome.trim(),lat,lng,raio};
+    const {error}=f.dataset.id?await sb.from('locais').update(row).eq('id',f.dataset.id):await sb.from('locais').insert(row);
+    if(error)throw error;await loadAll();closeModal();toast('Local salvo');return;
+  }
+  if(k==='fer'){
+    if(S.feriados.some(x=>x.data===fd.data))throw new Error('Já existe um feriado nessa data.');
+    const {error}=await sb.from('feriados').insert({data:fd.data,nome:fd.nome.trim(),tipo:fd.tipo});if(error)throw error;
+    await loadAll();closeModal();toast('Feriado adicionado');return;
+  }
   if(k==='nova-senha'){
+    if(!senhaForte(fd.senha)){showErr(MSG_SENHA);if(btn)btn.disabled=false;return}
     if(fd.senha!==fd.senha2){showErr('As senhas não conferem.');if(btn)btn.disabled=false;return}
     const {error}=await sb.auth.updateUser({password:fd.senha});if(error)throw error;
     const r2=await sb.rpc('senha_trocada');if(r2.error)throw r2.error;
@@ -1371,15 +1678,23 @@ document.addEventListener('submit',async ev=>{
     if(!loginOk(login)){errEl.textContent='Login inválido. Use letras minúsculas, números, ponto, hífen ou sublinhado (3 a 40 caracteres), sem espaços nem acentos.';if(btn)btn.disabled=false;return}
     if(S.emps.some(x=>x.login.toLowerCase()===login)){errEl.textContent='Esse login já está em uso.';if(btn)btn.disabled=false;return}
     const dados={nome:fd.nome.trim(),login,cargo:fd.cargo.trim(),vinculo:fd.vinculo.trim(),depto:'',email:fd.email.trim().toLowerCase(),cpf:fd.cpf.trim(),admissao:fd.admissao||null,jornada_id:fd.jornadaId,papel:fd.papel};
-    await invoke({acao:'criar',senha:fd.senha,dados});
-    await loadAll();closeModal();credModal(dados.nome,login,fd.senha);return;
+    if(fd.modo==='senha'){
+      if(!senhaForte(fd.senha)){errEl.textContent=MSG_SENHA;if(btn)btn.disabled=false;return}
+      await invoke({acao:'criar',senha:fd.senha,dados});
+      await loadAll();closeModal();credModal(dados.nome,login,fd.senha);return;
+    }
+    const r=await invoke({acao:'criar',convite:true,dados});
+    const {data:tok,error}=await sb.rpc('gerar_convite',{p_colab:r.id,p_email:dados.email});if(error)throw error;
+    await loadAll();closeModal();inviteLinkModal(emp(r.id)||dados,dados.email,tok);return;
   }
   if(k==='u-pass'){
+    if(!senhaForte(fd.senha)){showErr(MSG_SENHA);if(btn)btn.disabled=false;return}
     const e=emp(f.dataset.id);const tinha=e.temAcesso;
     await invoke({acao:'senha',colaborador_id:e.id,senha:fd.senha});
     await loadAll();closeModal();credModal(e.nome,e.login,fd.senha);toast(tinha?'Senha redefinida':'Acesso criado');return;
   }
   if(k==='bulk'){
+    if(!senhaForte(fd.senha)){showErr(MSG_SENHA);if(btn)btn.disabled=false;return}
     const r=await invoke({acao:'criar-acessos',senha:fd.senha});await loadAll();closeModal();
     toast(`${r.criados} acesso(s) criado(s)${r.falhas&&r.falhas.length?`, ${r.falhas.length} com erro`:''}`);
     if(r.falhas&&r.falhas.length)openModal(`<div class="modal-h"><h3>Acessos com erro</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${r.falhas.map(x=>`<div class="notice">${esc(x)}</div>`).join('')}</div>`);
@@ -1393,6 +1708,7 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='emp'){
     const id=f.dataset.id;
+    if(fd.senha&&!senhaForte(fd.senha))throw new Error(MSG_SENHA);
     const login=fd.login.trim().toLowerCase();
     if(!loginOk(login))throw new Error('Login inválido. Use letras minúsculas, números, ponto, hífen ou sublinhado (3 a 40 caracteres), sem espaços nem acentos.');
     if(S.emps.some(x=>x.id!==id&&x.login.toLowerCase()===login))throw new Error('Esse login já está em uso.');
@@ -1421,9 +1737,8 @@ document.addEventListener('submit',async ev=>{
   if(k==='addp'){const {error}=await sb.rpc('incluir_marcacao',{p_colab:f.dataset.id,p_ts:brIso(fd.data,fd.hora),p_obs:fd.obs});if(error)throw error;await loadAll({punches:true});closeModal();toast('Marcação incluída');return}
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
-    const lat=fd.lat===''?null:+fd.lat,lng=fd.lng===''?null:+fd.lng;
-    if(fd.ativa==='1'&&(lat==null||lng==null||isNaN(lat)||isNaN(lng)))throw new Error('Para ativar a cerca virtual, informe latitude e longitude.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_lat:lat,cerca_lng:lng,cerca_raio:Math.max(30,+fd.raio||200),cerca_bloquear:fd.bloquear==='1',limiar:Math.min(.95,Math.max(.5,+fd.limiar||.78)),revisar_sem_bio:fd.exigir==='1',modo_senha:fd.facial==='0'&&fd.modoSenha==='bloqueada'?'permitida':fd.modoSenha,facial_ativo:fd.facial==='1',atualizado_em:new Date().toISOString()}).eq('id',1);
+    if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',limiar:Math.min(.95,Math.max(.5,+fd.limiar||.78)),revisar_sem_bio:fd.exigir==='1',modo_senha:fd.facial==='0'&&fd.modoSenha==='bloqueada'?'permitida':fd.modoSenha,facial_ativo:fd.facial==='1',atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
