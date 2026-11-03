@@ -362,7 +362,7 @@ td.wrap{white-space:normal}
 .lg-app .mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--glow),#2C7BE5);color:#04201D}
 .lg-app .mark svg{width:16px;height:16px}
 .lg-card{width:100%;display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);border-radius:22px;overflow:hidden;border:1px solid color-mix(in srgb,var(--deep-line) 80%,#fff 8%);box-shadow:0 30px 80px -20px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.02) inset}
-.lg-aside{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:32px;padding:36px 34px;background:linear-gradient(160deg,var(--deep-2) 0%,var(--deep) 100%);border-right:1px solid var(--deep-line)}
+.lg-aside{position:relative;display:flex;flex-direction:column;justify-content:center;gap:28px;padding:36px 34px;background:linear-gradient(160deg,var(--deep-2) 0%,var(--deep) 100%);border-right:1px solid var(--deep-line)}
 .lg-aside::before{content:"";position:absolute;inset:auto -30% -40% auto;width:320px;height:320px;background:radial-gradient(circle,color-mix(in srgb,var(--glow) 18%,transparent),transparent 65%);pointer-events:none}
 .lg-aside>*{position:relative}
 .lg-live{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:600;color:var(--deep-ink);background:color-mix(in srgb,var(--glow) 10%,transparent);border:1px solid color-mix(in srgb,var(--glow) 30%,transparent);padding:5px 11px;border-radius:999px}
@@ -750,11 +750,6 @@ function viewLogin(){
           <div class="lg-date">${esc(fmtLong(d))}</div>
           ${hol?`<span class="lg-hol">Feriado · ${esc(hol)}</span>`:''}
         </div>
-        <ul class="lg-trust">
-          <li>${IC.face}<div><b>Reconhecimento facial</b><span>Rosto validado a cada marcação</span></div></li>
-          <li>${IC.pin}<div><b>Cerca virtual</b><span>Local conferido pelo servidor</span></div></li>
-          <li>${ico.rec}<div><b>Comprovante digital</b><span>NSR e código de verificação</span></div></li>
-        </ul>
       </aside>
       <section class="lg-main">
         <div class="lg-head"><div class="eyebrow">${esc(org)}</div><h1>Acesse sua conta</h1><p>${!BOOT.existeRH?'Configure o primeiro acesso do sistema.':rh?'Área do RH e dos gestores, com verificação em duas etapas.':'Entre para registrar o ponto e acompanhar suas horas.'}</p></div>
