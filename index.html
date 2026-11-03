@@ -351,7 +351,66 @@ td.wrap{white-space:normal}
 .qr{display:grid;place-items:center;background:#fff;border-radius:10px;padding:10px;min-height:200px}
 .steps-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.88rem;text-align:left}
 @media (max-width:900px){.auth-card{text-align:center}.auth-card .field label{text-align:center}}
+/* ===== Tela de acesso (v2): composição centralizada em cartão único ===== */
+.lg{min-height:100vh;min-height:100dvh;background:var(--deep);color:var(--deep-ink);position:relative;overflow:hidden;display:grid;place-items:center;padding-block:calc(28px + env(safe-area-inset-top,0px)) calc(28px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.lg::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--deep-line) 1px,transparent 1px),linear-gradient(90deg,var(--deep-line) 1px,transparent 1px);background-size:48px 48px;opacity:.35;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 45%,#000 0%,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 50% 45%,#000 0%,transparent 75%);pointer-events:none}
+.lg::after{content:"";position:absolute;width:780px;height:780px;max-width:140vw;left:50%;top:42%;transform:translate(-50%,-50%);background:radial-gradient(circle,color-mix(in srgb,var(--glow) 16%,transparent) 0%,transparent 62%);pointer-events:none}
+.lg-stage{position:relative;z-index:1;width:100%;max-width:980px;display:flex;flex-direction:column;align-items:center;gap:22px}
+.lg-top{display:flex;align-items:center;justify-content:center;gap:14px}
+.lg-sep{width:1px;height:28px;background:var(--deep-line)}
+.lg-app{display:inline-flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:600;font-size:1rem;color:#fff;letter-spacing:-.01em}
+.lg-app .mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--glow),#2C7BE5);color:#04201D}
+.lg-app .mark svg{width:16px;height:16px}
+.lg-card{width:100%;display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);border-radius:22px;overflow:hidden;border:1px solid color-mix(in srgb,var(--deep-line) 80%,#fff 8%);box-shadow:0 30px 80px -20px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.02) inset}
+.lg-aside{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:32px;padding:36px 34px;background:linear-gradient(160deg,var(--deep-2) 0%,var(--deep) 100%);border-right:1px solid var(--deep-line)}
+.lg-aside::before{content:"";position:absolute;inset:auto -30% -40% auto;width:320px;height:320px;background:radial-gradient(circle,color-mix(in srgb,var(--glow) 18%,transparent),transparent 65%);pointer-events:none}
+.lg-aside>*{position:relative}
+.lg-live{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:600;color:var(--deep-ink);background:color-mix(in srgb,var(--glow) 10%,transparent);border:1px solid color-mix(in srgb,var(--glow) 30%,transparent);padding:5px 11px;border-radius:999px}
+.lg-live i{width:7px;height:7px;border-radius:50%;background:var(--glow);box-shadow:0 0 0 0 color-mix(in srgb,var(--glow) 60%,transparent);animation:lgPulse 2.2s infinite}
+@keyframes lgPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--glow) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.lg-time .eyebrow{color:var(--deep-muted)}
+.lg-clock{font-family:var(--f-mono);font-size:clamp(3rem,6.2vw,4.6rem);font-weight:500;letter-spacing:-.045em;line-height:1;color:#fff;margin-top:10px;font-variant-numeric:tabular-nums}
+.lg-clock .sec{color:var(--glow)}
+.lg-date{margin-top:10px;color:var(--deep-muted);font-size:.98rem;text-transform:lowercase}.lg-date::first-letter{text-transform:uppercase}
+.lg-hol{display:inline-block;margin-top:12px;font-size:.78rem;font-weight:600;color:#F4C76B;background:rgba(244,199,107,.1);border:1px solid rgba(244,199,107,.3);padding:4px 10px;border-radius:999px}
+.lg-trust{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.lg-trust li{display:flex;gap:12px;align-items:flex-start}
+.lg-trust svg{flex:none;width:34px;height:34px;padding:8px;border-radius:10px;background:color-mix(in srgb,var(--glow) 9%,transparent);color:var(--glow);border:1px solid color-mix(in srgb,var(--glow) 20%,transparent)}
+.lg-trust b{display:block;font-family:var(--f-display);font-size:.9rem;color:#fff;font-weight:600}
+.lg-trust span{display:block;font-size:.8rem;color:var(--deep-muted);margin-top:1px}
+.lg-main{background:var(--surface);color:var(--ink);padding:38px 40px;display:flex;flex-direction:column;gap:18px}
+.lg-head h1{margin:6px 0 0;font-family:var(--f-display);font-size:1.7rem;letter-spacing:-.025em;line-height:1.15;text-wrap:balance}
+.lg-head p{margin:6px 0 0;color:var(--muted);font-size:.92rem}
+.lg-head .eyebrow{color:var(--accent)}
+.lg-seg button{display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,color .15s}
+.lg-seg button svg{width:16px;height:16px}
+.lg-fields{display:flex;flex-direction:column;gap:14px}
+.lg-fields .input{height:46px;border-radius:10px;transition:border-color .15s,box-shadow .15s}
+.lg-fields .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.lg-fields .err:empty{display:none}
+.lg-submit{height:48px;border-radius:12px;font-weight:600;font-size:.98rem;box-shadow:0 8px 20px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
+.lg-main .gbtn{height:48px;border-radius:12px}
+.lg-help{display:flex;flex-direction:column;gap:2px;font-size:.82rem;color:var(--muted);padding-top:14px;border-top:1px solid var(--line)}
+.lg-foot{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;font-size:.82rem;color:var(--deep-muted);text-align:center}
+.lg-foot svg{width:16px;height:16px;color:var(--glow)}
+.lg-foot .link-btn{color:var(--glow);font-size:.82rem}
+@media (max-width:860px){
+  .lg{place-items:start center;padding-block:calc(20px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-bottom,0px))}
+  .lg-stage{max-width:460px;gap:18px}
+  .lg-card{grid-template-columns:1fr;border-radius:20px}
+  .lg-aside{padding:22px 20px;gap:14px;border-right:0;border-bottom:1px solid var(--deep-line);align-items:center;text-align:center}
+  .lg-live{align-self:center}
+  .lg-trust{display:none}
+  .lg-clock{font-size:clamp(2.6rem,14vw,3.4rem);margin-top:6px}
+  .lg-date{margin-top:6px;font-size:.9rem}
+  .lg-main{padding:24px 20px 26px;text-align:center}
+  .lg-main .field label{text-align:left}
+  .lg-help{text-align:center}
+}
+@media (max-width:380px){.lg-top .logo-pill img{height:32px!important}.lg-app{font-size:.9rem}.lg-seg button svg{display:none}}
+@media (prefers-reduced-motion:reduce){.lg-live i{animation:none}}
 </style>
+
 </head><body>
 <div id="app"></div>
 <div id="modal-root"></div>
@@ -653,46 +712,58 @@ async function startMfaEnroll(){
   render();
 }
 function viewLogin(){
-  const d=NOW();
+  const d=NOW(),hol=holOf(dstr(d)),rh=UI.loginRole==='rh';
+  const org=S.company.razao&&S.company.razao!=='Minha Empresa Ltda'?'FTVTEC · TV Tec Jundiaí':'Ponto eletrônico';
+  const ico={
+    shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5 5 6.2v5.3c0 4.3 2.9 7.9 7 9 4.1-1.1 7-4.7 7-9V6.2z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>',
+    rec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-2.75-1.8L12 20.5l-2.75-1.8L6.5 20.5z"/><path d="M9.5 8h5M9.5 11.5h5M9.5 15h3"/></svg>'};
   let form;
-  if(BOOT.existeRH)form=`<div class="seg" role="radiogroup" aria-label="Entrar como"><button type="button" role="radio" aria-checked="${UI.loginRole!=='rh'}" data-act="lrole" data-v="emp" class="${UI.loginRole!=='rh'?'on':''}">Colaborador</button><button type="button" role="radio" aria-checked="${UI.loginRole==='rh'}" data-act="lrole" data-v="rh" class="${UI.loginRole==='rh'?'on':''}">RH · Gestão</button></div>
-    <form data-form="login" style="display:flex;flex-direction:column;gap:14px">
+  if(BOOT.existeRH)form=`
+    <div class="seg lg-seg" role="radiogroup" aria-label="Entrar como"><button type="button" role="radio" aria-checked="${!rh}" data-act="lrole" data-v="emp" class="${!rh?'on':''}">${IC.user}Colaborador</button><button type="button" role="radio" aria-checked="${rh}" data-act="lrole" data-v="rh" class="${rh?'on':''}">${IC.grid}RH · Gestão</button></div>
+    ${googleBtn(rh?'Entrar no RH com o Google':'Entrar com o Google corporativo')}
+    <div class="ou"><span>ou use login e senha</span></div>
+    <form data-form="login" class="lg-fields">
       <div class="field"><label for="l-user">Login</label><input class="input" id="l-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
       <div class="field"><label for="l-pw">Senha</label><input class="input" id="l-pw" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required></div>
-      <div class="err" id="l-err">${esc(BOOT.msg)}</div>
-      <button class="btn primary" type="submit">${UI.loginRole==='rh'?'Entrar no painel do RH':'Entrar para bater o ponto'}</button>
+      <div class="err" id="l-err" role="alert" aria-live="polite">${esc(BOOT.msg)}</div>
+      <button class="btn primary lg-submit" type="submit">${rh?'Entrar no painel do RH':'Entrar para bater o ponto'}</button>
     </form>
-    <div class="ou"><span>ou</span></div>
-    ${googleBtn('Fazer login com o Google')}
-    <p class="muted" style="font-size:.85rem">Primeiro acesso? Use o link de convite enviado pelo RH. Esqueceu o login ou a senha? Fale com o RH.</p>
-    <button type="button" class="link-btn" data-act="privacidade">Como seus dados são protegidos</button>`;
-  else form=`<form data-form="bootstrap" style="display:flex;flex-direction:column;gap:14px">
+    <div class="lg-help"><span>Primeiro acesso? Use o link de convite enviado pelo RH.</span><span>Esqueceu o login ou a senha? Fale com o RH.</span></div>`;
+  else form=`<form data-form="bootstrap" class="lg-fields">
       <div class="notice">Primeiro acesso: crie a conta de administrador do RH. Depois disso, este formulário deixa de aparecer.</div>
       <div class="field"><label for="b-n">Seu nome</label><input class="input" id="b-n" name="nome" required></div>
       <div class="field"><label for="b-l">Login</label><input class="input" id="b-l" name="login" autocomplete="username" autocapitalize="none" required></div>
       <div class="field"><label for="b-s">Senha (mínimo 8 caracteres, com letras e números)</label><input class="input" id="b-s" name="senha" type="password" minlength="8" autocomplete="new-password" required></div>
       <div class="field"><label for="b-s2">Confirme a senha</label><input class="input" id="b-s2" name="senha2" type="password" minlength="8" autocomplete="new-password" required></div>
-      <div class="err" id="l-err">${esc(BOOT.msg)}</div>
-      <button class="btn primary" type="submit">Criar acesso do RH</button>
+      <div class="err" id="l-err" role="alert">${esc(BOOT.msg)}</div>
+      <button class="btn primary lg-submit" type="submit">Criar acesso do RH</button>
     </form>`;
-  return `<div class="login">
-  <section class="login-hero">
-    <div class="row hero-brand" style="gap:14px">${logoPill(46)}<div class="brand" style="color:var(--deep-muted);font-size:.95rem"><div class="mark">${IC.logo}</div>Registro de Ponto</div></div>
-    <div>
-      <div class="eyebrow" style="color:var(--deep-muted)">Horário oficial de Brasília</div>
-      <div class="hero-clock">${clockHTML()}</div>
-      <div class="hero-date">${esc(fmtLong(d))}${holOf(dstr(d))?' · Feriado: '+esc(holOf(dstr(d))):''}</div>
+  return `<main class="lg">
+  <div class="lg-stage">
+    <header class="lg-top">${logoPill(40)}<span class="lg-sep" aria-hidden="true"></span><span class="lg-app"><span class="mark">${IC.logo}</span>Registro de Ponto</span></header>
+    <div class="lg-card">
+      <aside class="lg-aside" aria-label="Horário oficial">
+        <span class="lg-live"><i aria-hidden="true"></i>Sistema online</span>
+        <div class="lg-time">
+          <div class="eyebrow">Horário oficial de Brasília</div>
+          <div class="lg-clock" aria-live="off">${clockHTML()}</div>
+          <div class="lg-date">${esc(fmtLong(d))}</div>
+          ${hol?`<span class="lg-hol">Feriado · ${esc(hol)}</span>`:''}
+        </div>
+        <ul class="lg-trust">
+          <li>${IC.face}<div><b>Reconhecimento facial</b><span>Rosto validado a cada marcação</span></div></li>
+          <li>${IC.pin}<div><b>Cerca virtual</b><span>Local conferido pelo servidor</span></div></li>
+          <li>${ico.rec}<div><b>Comprovante digital</b><span>NSR e código de verificação</span></div></li>
+        </ul>
+      </aside>
+      <section class="lg-main">
+        <div class="lg-head"><div class="eyebrow">${esc(org)}</div><h1>Acesse sua conta</h1><p>${!BOOT.existeRH?'Configure o primeiro acesso do sistema.':rh?'Área do RH e dos gestores, com verificação em duas etapas.':'Entre para registrar o ponto e acompanhar suas horas.'}</p></div>
+        ${form}
+      </section>
     </div>
-    <div class="hero-feats">
-      <div class="hero-feat"><b>Reconhecimento facial</b><span>Validação do rosto e da imagem a cada marcação</span></div>
-      <div class="hero-feat"><b>Cerca virtual</b><span>Localização conferida pelo servidor no momento do registro</span></div>
-      <div class="hero-feat"><b>Comprovante digital</b><span>Cada marcação gera comprovante com NSR e código de verificação</span></div>
-    </div>
-  </section>
-  <section class="login-form"><div class="login-box">
-    <div><div class="eyebrow">${esc(S.company.razao&&S.company.razao!=='Minha Empresa Ltda'?S.company.razao:'Ponto eletrônico')}</div><h1 style="margin-top:6px">Acesse sua conta</h1></div>
-    ${form}
-  </div></section></div>`;
+    <footer class="lg-foot">${ico.shield}<span>Dados protegidos conforme a LGPD.</span><button type="button" class="link-btn" data-act="privacidade">Como seus dados são protegidos</button></footer>
+  </div>
+</main>`;
 }
 
 /* ================= COLABORADOR ================= */
