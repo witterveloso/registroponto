@@ -455,6 +455,11 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 @media (max-width:560px){.folha-acts .btn{flex:1}}
 .inapp{display:flex;flex-direction:column;gap:10px;border-color:var(--warn);background:var(--warn-bg);color:var(--ink);text-align:left}
 .inapp .btn{width:100%;justify-content:center;text-decoration:none}
+.dia.hoje{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.dia.fut{opacity:.6}
+.dia.wk .dia-b{color:var(--muted)}
+@media (min-width:901px){.emp{max-width:860px}.emp table th,.emp table td{padding:9px 8px}}
+.cap1{text-transform:lowercase}.cap1::first-letter{text-transform:uppercase}
 </style>
 </head><body>
 <div id="app"></div>
@@ -547,7 +552,7 @@ let UI={empTab:'ponto',rhTab:'painel',loginRole:(safeStorage.getItem('batida.per
 const emp=id=>S.emps.find(e=>e.id===id)||(ME&&ME.id===id?ME:null);
 const jor=id=>S.jornadas.find(j=>j.id===id)||S.jornadas[0]||{id:'',nome:'Sem jornada',ini:'08:00',intIni:'12:00',intFim:'13:00',fim:'17:00',dias:[1,2,3,4,5],tol:10};
 const expMin=j=>(toMin(j.intIni)-toMin(j.ini))+(toMin(j.fim)-toMin(j.intFim));
-const marksOf=(eid,ds)=>S.punches.filter(p=>p.empId===eid&&p.ts.startsWith(ds)).sort((a,b)=>a.ts<b.ts?-1:1);
+const marksOf=(eid,ds)=>S.punches.filter(p=>p.empId===eid&&p.ts.startsWith(ds)&&p.revisao!=='desconsiderada').sort((a,b)=>a.ts<b.ts?-1:1);
 const TIPOS=['Entrada','Saída intervalo','Retorno intervalo','Saída'];
 const tipoN=i=>i<4?TIPOS[i]:(i%2===0?'Entrada extra':'Saída extra');
 const isRH=()=>ME&&ME.papel==='rh';
@@ -670,11 +675,11 @@ function dayInfo(e,ds){
   const final=ds<td||(marks.length>=4&&!open);
   return{ds,dow,hol,marks,sched,exp,worked,credit,saldo:final&&status!=='falta'?saldo:(status==='falta'?-exp:null),atraso,status,open,just,j};
 }
-const ST={ok:['Regular','ok'],atraso:['Atraso','warn'],falta:['Falta','bad'],incompleto:['Incompleto','warn'],abonado:['Abonado','info'],ferias:['Férias','info'],feriado:['Feriado','plain'],folga:['Folga','plain'],extra:['Hora extra','acc'],ausente:['Ausente','bad'],aguardando:['Aguardando','plain'],futuro:['·','plain']};
+const ST={ok:['Regular','ok'],atraso:['Atraso','warn'],falta:['Falta','bad'],incompleto:['Incompleto','warn'],abonado:['Abonado','info'],ferias:['Férias','info'],feriado:['Feriado','plain'],folga:['Folga','plain'],extra:['Hora extra','acc'],ausente:['Ausente','bad'],aguardando:['Aguardando','plain'],futuro:['·','plain'],pre:['Fora do período','plain']};
 const stChip=s=>`<span class="chip ${ST[s][1]}">${ST[s][0]}</span>`;
 /* Ocorrências: dias que o colaborador precisa relatar antes do fechamento do mês */
 const ANOM={falta:'Falta',atraso:'Atraso na entrada',incompleto:'Marcação incompleta',saida:'Saída antecipada'};
-function anomDe(di){if(di.ds>=today()||di.status==='futuro'||di.ds<(S.config.inicioPonto||'0000'))return null;if(['falta','atraso','incompleto'].includes(di.status))return di.status;if(di.sched&&di.marks.length&&di.saldo!=null&&di.saldo<0&&di.status==='ok')return 'saida';return null}
+function anomDe(di){if(di.ds>=today()||di.status==='futuro'||di.status==='pre'||di.ds<(S.config.inicioPonto||'0000'))return null;if(['falta','atraso','incompleto'].includes(di.status))return di.status;if(di.sched&&di.marks.length&&di.saldo!=null&&di.saldo<0&&di.status==='ok')return 'saida';return null}
 const relatoDe=(e,ds)=>S.requests.find(r=>r.empId===e.id&&r.status!=='recusado'&&ds>=r.data&&ds<=(r.ate||r.data));
 function fechamentoDe(ym){const[y,m]=ym.split('-').map(Number);const dia=Math.min(28,Math.max(1,S.config.diaFech||5));return `${m===12?y+1:y}-${pad(m===12?1:m+1)}-${pad(dia)}`}
 const mesFechado=(e,ym)=>{const a=aprovDe(e.id,ym);return today()>fechamentoDe(ym)||!!(a&&a.status==='aprovado')};
@@ -693,7 +698,7 @@ function monthDays(ym){const[y,m]=ym.split('-').map(Number);const n=new Date(y,m
 function monthSummary(e,ym){
   const td=today();let worked=0,exp=0,saldo=0,extra=0,atrasos=0,faltas=0,days=[];
   const ini=S.config.inicioPonto||'0000';const adm=(e.admissao||'0000')>ini?(e.admissao||'0000'):ini;
-  monthDays(ym).forEach(ds=>{const di=dayInfo(e,ds);if(ds<adm){di.status='futuro';di.saldo=null;di.credit=0;di.exp=0}days.push(di);if(ds>td||ds<adm)return;worked+=di.credit;if(ds<td||di.saldo!=null)exp+=di.exp;if(di.saldo!=null){saldo+=di.saldo;if(di.saldo>0)extra+=di.saldo}if(di.atraso)atrasos++;if(di.status==='falta')faltas++});
+  monthDays(ym).forEach(ds=>{const di=dayInfo(e,ds);if(ds<adm){di.pre=true;di.status=ds>td?'futuro':(di.hol?'feriado':!di.j.dias.includes(di.dow)?'folga':'pre');di.saldo=null;di.credit=0;di.exp=0;di.atraso=0}days.push(di);if(ds>td||ds<adm)return;worked+=di.credit;if(ds<td||di.saldo!=null)exp+=di.exp;if(di.saldo!=null){saldo+=di.saldo;if(di.saldo>0)extra+=di.saldo}if(di.atraso&&!['abonado','ferias'].includes(di.status))atrasos++;if(di.status==='falta')faltas++});
   return{days,worked,exp,saldo,extra,atrasos,faltas};
 }
 function nowState(e){
@@ -843,7 +848,7 @@ function empPonto(e){
   const extras=di.marks.slice(4);
   return `
   <section class="clockcard">
-    <div class="row" style="justify-content:space-between"><div><div class="eyebrow" style="color:var(--deep-muted)">Olá, ${esc(first(e.nome))}</div><div style="color:var(--deep-muted);font-size:.9rem;text-transform:capitalize">${esc(fmtLong(NOW()))}</div></div>
+    <div class="row" style="justify-content:space-between"><div><div class="eyebrow" style="color:var(--deep-muted)">Olá, ${esc(first(e.nome))}</div><div style="color:var(--deep-muted);font-size:.9rem" class="cap1">${esc(fmtLong(NOW()))}</div></div>
     ${di.hol?`<span class="chip warn">Feriado · ${esc(di.hol)}</span>`:''}</div>
     <div class="big-clock">${clockHTML()}</div>
     <div class="cc-meta"><span class="chip plain">${esc(j.nome)}</span><span class="chip plain">${j.ini} às ${j.fim}</span><span class="chip plain">Intervalo ${j.intIni} às ${j.intFim}</span></div>
@@ -871,13 +876,16 @@ function mirrorTable(e,ym,opt){
   const tag=di=>{if(!own)return '';const a=anomDe(di);if(!a)return '';const r=relatoDe(e,di.ds);if(r)return ` <span class="chip ${r.status==='aprovado'?'ok':'info'} plain">${r.status==='aprovado'?'Justificado':r.tipo==='ajuste'?'Aguardando gestor':'Relatado'}</span>`;return fech?' <span class="chip bad plain">Sem justificativa</span>':` <button class="btn sm ghost tag-just" data-act="new-req" data-tipo="${tipoRelato(a)}" data-data="${di.ds}">${a==='incompleto'?'Corrigir':'Justificar'}</button>`};
   const rows=ms.days.map(di=>{
     const m=di.marks.map(x=>x.ts.slice(11,16));const cell=i=>m[i]?`<span class="mono${['ajuste-rh','sem-biometria'].includes(di.marks[i].metodo)?' neg':''}" title="${esc({pin:'Assinatura com PIN',facial:'Reconhecimento facial',cadastro:'Cadastro facial',senha:'Senha pessoal','ajuste-rh':'Ajuste do RH','sem-biometria':'Sem biometria'}[di.marks[i].metodo]||'')}">${m[i]}${di.marks[i].metodo==='senha'?'<sup class="muted" style="font-size:.65em"> S</sup>':''}</span>`:'<span class="muted">·</span>';
-    const wk=!di.j.dias.includes(di.dow)||di.hol;const fut=di.ds>td||di.status==='futuro';
+    const wk=!di.j.dias.includes(di.dow)||di.hol;const fut=di.ds>td||di.status==='futuro';const pre=!!di.pre;
     return `<tr class="${wk?'weekend':''}"><td class="mono">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted">${DOW[di.dow]}</span></td><td>${cell(0)}</td><td>${cell(1)}</td><td>${cell(2)}</td><td>${cell(3)}</td><td class="mono">${m.length>4?'+'+(m.length-4):''}</td>
-    <td class="num mono">${fut?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut?'':saldoTxt(di.saldo)}</td><td>${fut?'':stChip(di.status)}${tag(di)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}</td></tr>`}).join('');
-  const lista=ms.days.filter(di=>di.ds<=td&&di.status!=='futuro'&&(di.marks.length||!['folga','feriado'].includes(di.status))).reverse().map(di=>{
+    <td class="num mono">${fut||pre?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut||pre?'':saldoTxt(di.saldo)}</td><td>${fut?(di.hol?'<span class="chip plain">Feriado</span>':wk?'<span class="chip plain">Folga</span>':'<span class="muted" style="font-size:.78rem">Previsto</span>'):stChip(di.status)}${tag(di)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}</td></tr>`}).join('');
+  const lista=ms.days.map(di=>{
+    const fut=di.ds>td,pre=!!di.pre,wk=!di.j.dias.includes(di.dow)||di.hol;
     const m=di.marks.map(x=>`<span class="${['ajuste-rh','sem-biometria'].includes(x.metodo)?'neg':''}">${x.ts.slice(11,16)}${x.metodo==='senha'?'<sup> S</sup>':''}</span>`);
-    return `<div class="dia"><div class="dia-h"><span class="mono" style="font-weight:600">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted" style="font-weight:400">${DOW[di.dow]}</span></span><span>${stChip(di.status)}${tag(di)}</span></div>
-      <div class="dia-b"><span class="mono">${m.length?m.join(' · '):(di.hol?esc(di.hol):'sem marcações')}</span><span class="mono">${dur(di.credit)} <b class="${saldoCls(di.saldo)}">${saldoTxt(di.saldo)}</b></span></div></div>`}).join('')||'<div class="empty">Nenhum dia registrado neste mês.</div>';
+    const st=fut?(di.hol?'<span class="chip plain">Feriado</span>':wk?'<span class="chip plain">Folga</span>':''):stChip(di.status);
+    const desc=m.length?m.join(' · '):(di.hol?esc(di.hol):fut?(wk?'':'Previsto '+di.j.ini+' às '+di.j.fim):pre?'antes do início do controle':wk?'sem expediente':'sem marcações');
+    return `<div class="dia${di.ds===td?' hoje':''}${fut?' fut':''}${wk?' wk':''}"><div class="dia-h"><span class="mono" style="font-weight:600">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted" style="font-weight:400">${DOW[di.dow]}</span>${di.ds===td?' <span class="chip acc plain">Hoje</span>':''}</span><span>${st}${tag(di)}</span></div>
+      <div class="dia-b"><span class="mono">${desc}</span><span class="mono">${fut||pre?'':`${dur(di.credit)} <b class="${saldoCls(di.saldo)}">${saldoTxt(di.saldo)}</b>`}</span></div></div>`}).join('');
   return {ms,html:`<div class="only-mob mlist">${lista}</div><div class="tablewrap only-desk no-resp"><table><thead><tr><th>Dia</th><th>Entrada</th><th>Saída int.</th><th>Retorno</th><th>Saída</th><th>Extra</th><th class="num">Trabalhado</th><th class="num">Saldo</th><th>Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`};
 }
 function monthOpts(sel){const d=NOW();let o='';for(let i=0;i<6;i++){const x=new Date(d.getFullYear(),d.getMonth()-i,1);const v=`${x.getFullYear()}-${pad(x.getMonth()+1)}`;o+=`<option value="${v}" ${v===sel?'selected':''}>${MES[x.getMonth()]} de ${x.getFullYear()}</option>`}return o}
@@ -894,11 +902,12 @@ function aprovBlock(e,ym,ms){
   const pode=podeAprovar(e),corrente=ym===today().slice(0,7),futuro=ym>today().slice(0,7);
   const setor=setorDe(e),gestor=setor&&setor.gestor_id?emp(setor.gestor_id):null;
   let corpo;
-  if(!a)corpo=`<div><div style="font-weight:600">Aguardando aprovação do gestor</div><div class="muted" style="font-size:.85rem">${gestor?'Gestor: '+esc(gestor.nome)+(setor?' · '+esc(setor.nome):''):(setor?'Setor '+esc(setor.nome)+' sem gestor definido':'Colaborador sem setor definido pelo RH')}</div></div>`;
+  if(!a&&(corrente||futuro))corpo=`<div><div style="font-weight:600">Mês em andamento</div><div class="muted" style="font-size:.85rem">A folha vai para aprovação ${gestor?'de '+esc(gestor.nome):'do gestor'} depois do último dia do mês. Fechamento em ${fmtDate(fechamentoDe(ym))}.</div></div>`;
+  else if(!a)corpo=`<div><div style="font-weight:600">Aguardando aprovação do gestor</div><div class="muted" style="font-size:.85rem">${gestor?'Gestor: '+esc(gestor.nome)+(setor?' · '+esc(setor.nome):''):(setor?'Setor '+esc(setor.nome)+' sem gestor definido':'Colaborador sem setor definido pelo RH')}</div></div>`;
   else if(a.status==='aprovado')corpo=`<div><div style="font-weight:600;color:${alt?'var(--warn)':'var(--ok)'}">${alt?'Aprovado, mas as marcações mudaram depois':'Ponto aprovado'}</div><div class="muted" style="font-size:.85rem">Por ${esc(quem)} em ${fmtDate(quando.slice(0,10))} às ${quando.slice(11,16)}${a.resumo?` · ${dur(a.resumo.trabalhado)} trabalhadas, saldo ${saldoTxt(a.resumo.saldo)}`:''}</div>${a.observacao?`<div style="font-size:.85rem;margin-top:2px">${esc(a.observacao)}</div>`:''}${alt?'<div style="font-size:.85rem;margin-top:2px">Alguma marcação foi incluída ou revisada após a aprovação. O gestor precisa aprovar de novo.</div>':''}</div>`;
   else corpo=`<div><div style="font-weight:600;color:var(--bad)">Devolvido para ajuste</div><div class="muted" style="font-size:.85rem">Por ${esc(quem)} em ${fmtDate(quando.slice(0,10))} às ${quando.slice(11,16)}</div><div style="font-size:.85rem;margin-top:2px">${esc(a.observacao||'')}</div></div>`;
   let acoes='';
-  if(pode&&!futuro){
+  if(pode&&!futuro&&!corrente){
     if(!a||alt)acoes=`<button class="btn sm danger" data-act="ap-dev" data-id="${e.id}" data-ym="${ym}">Devolver</button><button class="btn sm primary" data-act="ap-ok" data-id="${e.id}" data-ym="${ym}">Aprovar ponto do mês</button>`;
     else acoes=`<button class="btn sm ghost" data-act="ap-reabrir" data-id="${e.id}" data-ym="${ym}">Desfazer ${a.status==='aprovado'?'aprovação':'devolução'}</button>${a.status==='devolvido'?`<button class="btn sm primary" data-act="ap-ok" data-id="${e.id}" data-ym="${ym}">Aprovar</button>`:''}`;
   }
@@ -949,7 +958,7 @@ function empEquipe(){
   ${(()=>{const nl=rows.filter(r=>!r.a&&!r.ms.faltas&&!r.ms.days.some(d=>d.status==='incompleto')).length;return nl&&ym<today().slice(0,7)})()?`<div class="row"><button class="btn primary" data-act="ap-lote" data-ym="${ym}">Aprovar todos sem pendências (${rows.filter(r=>!r.a&&!r.ms.faltas&&!r.ms.days.some(d=>d.status==='incompleto')).length})</button><span class="muted" style="font-size:.82rem">Quem tem falta ou marcação incompleta fica para você revisar um por um.</span></div>`:''}
   <section class="card"><div class="list">${rows.map(({e,ms,a})=>{const s=nowState(e);const pend=ms.faltas||ms.days.some(d=>d.status==='incompleto');return `<button class="li" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);cursor:pointer;font:inherit;color:inherit" data-act="team-open" data-id="${e.id}"><div class="avatar">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div class="grow"><div class="ttl" style="white-space:normal">${esc(e.nome)}</div><div class="sub">Hoje: ${s[0]} · Saldo ${saldoTxt(ms.saldo)} · ${ms.atrasos} atraso(s) · ${ms.faltas} falta(s)${pend?' · <span style="color:var(--warn)">revisar</span>':''}</div><div style="margin-top:4px">${aprovChip(e,ym)}</div></div><span class="muted" aria-hidden="true">›</span></button>`}).join('')||'<div class="empty">O RH ainda não incluiu colaboradores no seu setor.</div>'}</div></section>`;
 }
-function prevMonth(){const d=NOW();if(d.getDate()>5)return today().slice(0,7);const x=new Date(d.getFullYear(),d.getMonth()-1,1);return `${x.getFullYear()}-${pad(x.getMonth()+1)}`}
+function prevMonth(){const d=NOW();if(d.getDate()>(S.config.diaFech||5))return today().slice(0,7);const x=new Date(d.getFullYear(),d.getMonth()-1,1);return `${x.getFullYear()}-${pad(x.getMonth()+1)}`}
 
 /* ---------- RH: setores e gestores ---------- */
 function rhSetores(){
@@ -1443,7 +1452,7 @@ function saveFile(name,text){
   const blob=new Blob(['﻿'+text],{type:name.endsWith('.csv')?'text/csv':'text/plain'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Arquivo gerado: '+name);
 }
-function csvMirror(eid,ym){const e=emp(eid),ms=monthSummary(e,ym),td=today();const L=[['Data','Dia','Entrada','Saída intervalo','Retorno','Saída','Trabalhado','Saldo','Situação'].join(';')];ms.days.filter(d=>d.ds<=td&&d.status!=='futuro').forEach(di=>{const m=di.marks.map(x=>x.ts.slice(11,16));L.push([fmtDate(di.ds),DOW[di.dow],m[0]||'',m[1]||'',m[2]||'',m[3]||'',dur(di.credit),saldoTxt(di.saldo),ST[di.status][0]].join(';'))});L.push(['Total','','','','','',dur(ms.worked),saldoTxt(ms.saldo),''].join(';'));saveFile(`espelho_${e.login.split('@')[0]}_${ym}.csv`,L.join('\n'))}
+function csvMirror(eid,ym){const e=emp(eid),ms=monthSummary(e,ym),td=today();const L=[['Data','Dia','Entrada','Saída intervalo','Retorno','Saída','Trabalhado','Saldo','Situação'].join(';')];ms.days.filter(d=>d.ds<=td&&d.status!=='futuro'&&d.status!=='pre').forEach(di=>{const m=di.marks.map(x=>x.ts.slice(11,16));L.push([fmtDate(di.ds),DOW[di.dow],m[0]||'',m[1]||'',m[2]||'',m[3]||'',dur(di.credit),saldoTxt(di.saldo),ST[di.status][0]].join(';'))});L.push(['Total','','','','','',dur(ms.worked),saldoTxt(ms.saldo),''].join(';'));saveFile(`espelho_${e.login.split('@')[0]}_${ym}.csv`,L.join('\n'))}
 function csvReport(ym){const L=[['Login','Nome','Vínculo','Trabalhado','Previsto','Horas extras','Saldo','Atrasos','Faltas'].join(';')];S.emps.filter(e=>e.ativo).forEach(e=>{const m=monthSummary(e,ym);L.push([e.login,e.nome,e.vinculo||e.depto,dur(m.worked),dur(m.exp),dur(m.extra),saldoTxt(m.saldo),m.atrasos,m.faltas].join(';'))});saveFile(`fechamento_ponto_${ym}.csv`,L.join('\n'))}
 function afd(ym){const cn=S.company.cnpj.replace(/\D/g,'');const L=[`000000000|1|1|${cn}|${S.company.razao}|${ym}|layout simplificado`];S.punches.filter(p=>p.ts.startsWith(ym)).sort((a,b)=>a.nsr-b.nsr).forEach(p=>{const e=emp(p.empId)||{};L.push([String(p.nsr).padStart(9,'0'),'7',p.ts,e.cpf||'',e.matricula||'',p.metodo,(p.hash||'').slice(0,16)].join('|'))});L.push(`999999999|${L.length-1} registros`);saveFile(`AFD_${cn}_${ym}.txt`,L.join('\n'))}
 
