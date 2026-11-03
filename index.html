@@ -309,7 +309,7 @@ const IC={
 /* ================= ESTADO ================= */
 let S={company:{razao:'',cnpj:'',local:''},config:{cerca:{}},jornadas:[],emps:[],punches:[],requests:[],setores:[],aprov:[]};
 let ME=null,MODE='login',BOOT={loading:true,existeRH:true,msg:''},CH=null,DIRTY=false;
-let UI={empTab:'ponto',rhTab:'painel',loginRole:'emp',mirrorMonth:null,mirrorEmp:null,q:''};
+let UI={empTab:'ponto',rhTab:'painel',loginRole:(safeStorage.getItem('batida.perfil')==='rh'?'rh':'emp'),mirrorMonth:null,mirrorEmp:null,q:''};
 const emp=id=>S.emps.find(e=>e.id===id)||(ME&&ME.id===id?ME:null);
 const jor=id=>S.jornadas.find(j=>j.id===id)||S.jornadas[0]||{id:'',nome:'Sem jornada',ini:'08:00',intIni:'12:00',intFim:'13:00',fim:'17:00',dias:[1,2,3,4,5],tol:10};
 const expMin=j=>(toMin(j.intIni)-toMin(j.ini))+(toMin(j.fim)-toMin(j.intFim));
@@ -433,11 +433,12 @@ setInterval(()=>{if(MODE!=='login'&&!$('#modal-root').innerHTML&&!document.activ
 function viewLogin(){
   const d=NOW();
   let form;
-  if(BOOT.existeRH)form=`<form data-form="login" style="display:flex;flex-direction:column;gap:14px">
+  if(BOOT.existeRH)form=`<div class="seg" role="radiogroup" aria-label="Entrar como"><button type="button" role="radio" aria-checked="${UI.loginRole!=='rh'}" data-act="lrole" data-v="emp" class="${UI.loginRole!=='rh'?'on':''}">Colaborador</button><button type="button" role="radio" aria-checked="${UI.loginRole==='rh'}" data-act="lrole" data-v="rh" class="${UI.loginRole==='rh'?'on':''}">RH · Gestão</button></div>
+    <form data-form="login" style="display:flex;flex-direction:column;gap:14px">
       <div class="field"><label for="l-user">Login</label><input class="input" id="l-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
       <div class="field"><label for="l-pw">Senha</label><input class="input" id="l-pw" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required></div>
       <div class="err" id="l-err">${esc(BOOT.msg)}</div>
-      <button class="btn primary" type="submit">Entrar</button>
+      <button class="btn primary" type="submit">${UI.loginRole==='rh'?'Entrar no painel do RH':'Entrar para bater o ponto'}</button>
     </form><p class="muted" style="font-size:.85rem">Esqueceu o login ou a senha? Fale com o RH.</p>`;
   else form=`<form data-form="bootstrap" style="display:flex;flex-direction:column;gap:14px">
       <div class="notice">Primeiro acesso: crie a conta de administrador do RH. Depois disso, este formulário deixa de aparecer.</div>
@@ -475,7 +476,6 @@ function viewEmp(e){
   const tabs=[['ponto','Ponto',IC.clock],...(isGestor()?[['equipe','Equipe',IC.team]]:[]),['espelho','Espelho',IC.table],['solic','Solicitações',IC.inbox],['perfil','Perfil',IC.user]];
   return `<div class="emp">
     <div class="topbar">${logoPill(30)}<div class="spacer"></div>
-      ${isRH()?'<button class="btn sm" data-act="mode" data-v="rh">Painel do RH</button>':''}
       <div style="text-align:right;line-height:1.2"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">${esc(e.login)}</div></div>
       <div class="avatar">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div></div>
     ${body}
@@ -667,7 +667,7 @@ function viewRH(){
   const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,config:rhConfig}[t]();
   return `<div class="rh"><aside class="side"><div class="side-logo">${logoPill(38)}<span class="eyebrow" style="color:var(--deep-muted)">Gestão de ponto</span></div>
     <nav class="nav">${nav.map(n=>`<button data-act="rtab" data-v="${n[0]}" class="${t===n[0]?'on':''}">${n[2]}${n[1]}${n[3]?`<span class="badge">${n[3]}</span>`:''}</button>`).join('')}</nav>
-    <div class="side-foot"><div class="who"><div style="color:#fff;font-weight:600">${esc(ME.nome)}</div><div>${esc(S.company.razao)}</div></div><button class="btn sm" data-act="mode" data-v="emp">Bater meu ponto</button><button class="btn sm" data-act="logout">Sair</button></div></aside>
+    <div class="side-foot"><div class="who"><div style="color:#fff;font-weight:600">${esc(ME.nome)}</div><div>${esc(S.company.razao)}</div></div><button class="btn sm" data-act="logout">Sair</button></div></aside>
     <main class="main">${body}</main></div>`;
 }
 function rhPainel(){
@@ -1078,13 +1078,16 @@ function afd(ym){const cn=S.company.cnpj.replace(/\D/g,'');const L=[`000000000|1
 
 /* ================= SESSÃO ================= */
 async function afterLogin(){
+  const perfil=UI.loginRole==='rh'?'rh':'emp';
   const {data:{user}}=await sb.auth.getUser();
   if(!user){MODE='login';return}
   const {data,error}=await sb.from('colaboradores').select('*').eq('user_id',user.id).maybeSingle();
   if(error||!data||!data.ativo){await sb.auth.signOut();BOOT.msg=error?errMsg(error):'Seu acesso não está ativo. Fale com o RH.';MODE='login';return}
   ME=mapEmp(data);
+  if(perfil==='rh'&&ME.papel!=='rh'){await sb.auth.signOut();ME=null;BOOT.msg='Seu usuário não tem acesso ao painel do RH. Escolha "Colaborador" para bater o ponto.';MODE='login';return}
   await loadAll();
-  MODE=ME.trocarSenha?'senha':(ME.papel==='rh'?'rh':'emp');BOOT.msg='';
+  safeStorage.setItem('batida.perfil',perfil);
+  MODE=ME.trocarSenha?'senha':perfil;BOOT.msg='';
   subscribe();
 }
 async function boot(){
@@ -1121,6 +1124,7 @@ document.addEventListener('click',async ev=>{
     case 'emp-form':empForm(t.dataset.id);break;
     case 'see-mirror':UI.mirrorEmp=t.dataset.id;UI.rhTab='espelho';render();break;
     case 'jor-form':jorForm(t.dataset.id);break;
+    case 'lrole':{const u=$('#l-user')?$('#l-user').value:'';UI.loginRole=t.dataset.v;BOOT.msg='';render();const n=$('#l-user');if(n){n.value=u;(u?$('#l-pw'):n).focus()}break}
     case 'u-new':userForm();break;
     case 'team-open':UI.teamEmp=t.dataset.id;render();window.scrollTo(0,0);break;
     case 'team-back':UI.teamEmp=null;render();break;
@@ -1201,7 +1205,7 @@ document.addEventListener('submit',async ev=>{
     if(fd.senha!==fd.senha2){showErr('As senhas não conferem.');if(btn)btn.disabled=false;return}
     const {error}=await sb.auth.updateUser({password:fd.senha});if(error)throw error;
     const r2=await sb.rpc('senha_trocada');if(r2.error)throw r2.error;
-    ME.trocarSenha=false;MODE=ME.papel==='rh'?'rh':'emp';render();toast('Senha criada');return;
+    ME.trocarSenha=false;MODE=UI.loginRole==='rh'&&ME.papel==='rh'?'rh':'emp';render();toast('Senha criada');return;
   }
   if(k==='ap'){
     const e=emp(f.dataset.id),ym=f.dataset.ym,ms=monthSummary(e,ym);
