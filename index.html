@@ -435,6 +435,16 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .just-card .muted{font-size:.85rem}
 .just-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:560px){.just-card{text-align:center;justify-content:center}.just-acts{width:100%}.just-acts .btn{flex:1}}
+.pend-box{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));overflow:hidden}
+.pend-h{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--warn-bg)}
+.pend-h .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pend-h span{font-size:.85rem;color:var(--ink)}
+.pend-ico{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--warn);color:#fff;font-weight:700}
+.pend-list{display:flex;flex-direction:column}
+.pend-i{display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line);font-size:.9rem}
+.pend-i .grow{flex:1;min-width:0}
+.pend-box>.btn{margin:8px 16px 12px}
+.tag-just{padding:2px 8px;font-size:.75rem;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 </style>
 </head><body>
 <div id="app"></div>
@@ -590,7 +600,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',exigirMfa:co.exigir_mfa!==false};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,exigirMfa:co.exigir_mfa!==false};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -652,6 +662,23 @@ function dayInfo(e,ds){
 }
 const ST={ok:['Regular','ok'],atraso:['Atraso','warn'],falta:['Falta','bad'],incompleto:['Incompleto','warn'],abonado:['Abonado','info'],ferias:['Férias','info'],feriado:['Feriado','plain'],folga:['Folga','plain'],extra:['Hora extra','acc'],ausente:['Ausente','bad'],aguardando:['Aguardando','plain'],futuro:['·','plain']};
 const stChip=s=>`<span class="chip ${ST[s][1]}">${ST[s][0]}</span>`;
+/* Ocorrências: dias que o colaborador precisa relatar antes do fechamento do mês */
+const ANOM={falta:'Falta',atraso:'Atraso na entrada',incompleto:'Marcação incompleta',saida:'Saída antecipada'};
+function anomDe(di){if(di.ds>=today()||di.status==='futuro')return null;if(['falta','atraso','incompleto'].includes(di.status))return di.status;if(di.sched&&di.marks.length&&di.saldo!=null&&di.saldo<0&&di.status==='ok')return 'saida';return null}
+const relatoDe=(e,ds)=>S.requests.find(r=>r.empId===e.id&&r.status!=='recusado'&&ds>=r.data&&ds<=(r.ate||r.data));
+function fechamentoDe(ym){const[y,m]=ym.split('-').map(Number);const dia=Math.min(28,Math.max(1,S.config.diaFech||5));return `${m===12?y+1:y}-${pad(m===12?1:m+1)}-${pad(dia)}`}
+const mesFechado=(e,ym)=>{const a=aprovDe(e.id,ym);return today()>fechamentoDe(ym)||!!(a&&a.status==='aprovado')};
+function mesesAbertos(){const d=NOW();const p=new Date(d.getFullYear(),d.getMonth()-1,1);return [`${p.getFullYear()}-${pad(p.getMonth()+1)}`,today().slice(0,7)]}
+function pendencias(e,ym){const ms=(ym?[ym]:mesesAbertos()).filter(m=>!mesFechado(e,m));const out=[];for(const m of ms)monthSummary(e,m).days.forEach(di=>{const a=anomDe(di);if(a&&!relatoDe(e,di.ds))out.push({di,a,ym:m})});return out}
+function tipoRelato(a){return a==='incompleto'?'ajuste':'justificativa'}
+function pendBox(e,ym,compacto){
+  const pend=pendencias(e,ym);
+  if(!pend.length)return ym&&mesFechado(e,ym)?`<div class="notice">Mês fechado em ${fmtDate(fechamentoDe(ym))}. Para corrigir algo, fale com o RH.</div>`:'';
+  const prazo=fmtDate(fechamentoDe(pend[0].ym));
+  const itens=pend.slice(0,compacto?3:31).map(({di,a})=>`<div class="pend-i"><div class="grow"><b class="mono">${di.ds.slice(8)}/${di.ds.slice(5,7)}</b> <span class="muted">${DOW[di.dow]}</span> · ${ANOM[a]}${a==='atraso'?` (${di.atraso} min)`:''}</div><button class="btn sm primary" data-act="new-req" data-tipo="${tipoRelato(a)}" data-data="${di.ds}">${a==='incompleto'?'Corrigir':'Justificar'}</button></div>`).join('');
+  return `<section class="card pend-box"><div class="pend-h"><span class="pend-ico">!</span><div class="grow"><b>${pend.length} ${pend.length>1?'ocorrências precisam':'ocorrência precisa'} de justificativa</b><span>Relate até <b>${prazo}</b>, quando a folha do mês é fechada. Depois disso, só o RH pode corrigir.</span></div></div>
+    <div class="pend-list">${itens}</div>${compacto&&pend.length>3?`<button class="btn sm ghost" data-act="etab" data-v="espelho">Ver as ${pend.length} na folha de ponto</button>`:''}</section>`;
+}
 function monthDays(ym){const[y,m]=ym.split('-').map(Number);const n=new Date(y,m,0).getDate();return Array.from({length:n},(_,i)=>`${ym}-${pad(i+1)}`)}
 function monthSummary(e,ym){
   const td=today();let worked=0,exp=0,saldo=0,extra=0,atrasos=0,faltas=0,days=[];
@@ -788,7 +815,7 @@ function viewLogin(){
 function viewEmp(e){
   const t=UI.empTab;let body='';
   if(t==='ponto')body=empPonto(e);else if(t==='equipe'&&isGestor())body=empEquipe();else if(t==='espelho')body=empEspelho(e);else if(t==='solic')body=empSolic(e);else body=empPerfil(e);
-  const tabs=[['ponto','Ponto',IC.clock],...(isGestor()?[['equipe','Equipe',IC.team]]:[]),['espelho','Espelho',IC.table],['solic','Solicitações',IC.inbox],['perfil','Perfil',IC.user]];
+  const tabs=[['ponto','Ponto',IC.clock],...(isGestor()?[['equipe','Equipe',IC.team]]:[]),['espelho','Folha',IC.table],['solic','Solicitações',IC.inbox],['perfil','Perfil',IC.user]];
   return `<div class="emp">
     <div class="topbar"><button class="logo-btn" data-act="home" aria-label="Voltar ao início">${logoPill(30)}</button><div class="spacer"></div>${UI.empTab!=='ponto'||UI.teamEmp?`<button class="btn sm ghost top-act" data-act="home"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-6h-6v6H4.5a.5.5 0 0 1-.5-.5z"/></svg><span>Início</span></button>`:''}<button class="btn sm ghost top-act" data-act="logout">${IC.out.replace('<svg','<svg width="16" height="16"')}<span>Sair</span></button>
       <div class="top-who" style="text-align:right;line-height:1.2;min-width:0"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">${esc(e.login)}</div></div>
@@ -817,6 +844,7 @@ function empPonto(e){
     <div class="timeline">${slots}</div>
     ${extras.length?`<div class="notice">Marcações extras: ${extras.map(m=>`<b class="mono">${m.ts.slice(11,16)}</b>`).join(', ')}</div>`:''}
   </section>
+  ${pendBox(e,null,true)}
   <section class="card just-card"><div class="grow"><b>Precisa justificar uma ausência?</b><span class="muted">Falta, atraso, saída antecipada, atestado ou licença. Anexe os documentos e o RH analisa.</span></div>
     <div class="just-acts"><button class="btn primary sm" data-act="new-req" data-tipo="justificativa">Justificar</button><button class="btn sm" data-act="new-req" data-tipo="atestado">Enviar atestado ou licença</button></div></section>
   <section class="kpis">
@@ -826,16 +854,17 @@ function empPonto(e){
     <div class="card kpi"><span class="l">Solicitações em análise</span><span class="v">${pend}</span><span class="muted" style="font-size:.78rem"><button class="btn sm ghost" style="padding:0;border:0;color:var(--accent)" data-act="etab" data-v="solic">Ver solicitações</button></span></div>
   </section>`;
 }
-function mirrorTable(e,ym){
-  const ms=monthSummary(e,ym),td=today();
+function mirrorTable(e,ym,opt){
+  const ms=monthSummary(e,ym),td=today(),own=opt&&opt.own,fech=own&&mesFechado(e,ym);
+  const tag=di=>{if(!own)return '';const a=anomDe(di);if(!a)return '';const r=relatoDe(e,di.ds);if(r)return ` <span class="chip ${r.status==='aprovado'?'ok':'info'} plain">${r.status==='aprovado'?'Justificado':'Relatado'}</span>`;return fech?' <span class="chip bad plain">Sem justificativa</span>':` <button class="btn sm ghost tag-just" data-act="new-req" data-tipo="${tipoRelato(a)}" data-data="${di.ds}">${a==='incompleto'?'Corrigir':'Justificar'}</button>`};
   const rows=ms.days.map(di=>{
     const m=di.marks.map(x=>x.ts.slice(11,16));const cell=i=>m[i]?`<span class="mono${['ajuste-rh','sem-biometria'].includes(di.marks[i].metodo)?' neg':''}" title="${esc({pin:'Assinatura com PIN',facial:'Reconhecimento facial',cadastro:'Cadastro facial',senha:'Senha pessoal','ajuste-rh':'Ajuste do RH','sem-biometria':'Sem biometria'}[di.marks[i].metodo]||'')}">${m[i]}${di.marks[i].metodo==='senha'?'<sup class="muted" style="font-size:.65em"> S</sup>':''}</span>`:'<span class="muted">·</span>';
     const wk=!di.j.dias.includes(di.dow)||di.hol;const fut=di.ds>td||di.status==='futuro';
     return `<tr class="${wk?'weekend':''}"><td class="mono">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted">${DOW[di.dow]}</span></td><td>${cell(0)}</td><td>${cell(1)}</td><td>${cell(2)}</td><td>${cell(3)}</td><td class="mono">${m.length>4?'+'+(m.length-4):''}</td>
-    <td class="num mono">${fut?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut?'':saldoTxt(di.saldo)}</td><td>${fut?'':stChip(di.status)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}</td></tr>`}).join('');
+    <td class="num mono">${fut?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut?'':saldoTxt(di.saldo)}</td><td>${fut?'':stChip(di.status)}${tag(di)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}</td></tr>`}).join('');
   const lista=ms.days.filter(di=>di.ds<=td&&di.status!=='futuro'&&(di.marks.length||!['folga','feriado'].includes(di.status))).reverse().map(di=>{
     const m=di.marks.map(x=>`<span class="${['ajuste-rh','sem-biometria'].includes(x.metodo)?'neg':''}">${x.ts.slice(11,16)}${x.metodo==='senha'?'<sup> S</sup>':''}</span>`);
-    return `<div class="dia"><div class="dia-h"><span class="mono" style="font-weight:600">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted" style="font-weight:400">${DOW[di.dow]}</span></span>${stChip(di.status)}</div>
+    return `<div class="dia"><div class="dia-h"><span class="mono" style="font-weight:600">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted" style="font-weight:400">${DOW[di.dow]}</span></span><span>${stChip(di.status)}${tag(di)}</span></div>
       <div class="dia-b"><span class="mono">${m.length?m.join(' · '):(di.hol?esc(di.hol):'sem marcações')}</span><span class="mono">${dur(di.credit)} <b class="${saldoCls(di.saldo)}">${saldoTxt(di.saldo)}</b></span></div></div>`}).join('')||'<div class="empty">Nenhum dia registrado neste mês.</div>';
   return {ms,html:`<div class="only-mob mlist">${lista}</div><div class="tablewrap only-desk no-resp"><table><thead><tr><th>Dia</th><th>Entrada</th><th>Saída int.</th><th>Retorno</th><th>Saída</th><th>Extra</th><th class="num">Trabalhado</th><th class="num">Saldo</th><th>Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`};
 }
@@ -937,8 +966,10 @@ function setorForm(id){
 }
 
 function empEspelho(e){
-  const ym=UI.mirrorMonth||today().slice(0,7);const{ms,html}=mirrorTable(e,ym);
-  return `<div class="row"><h2>Espelho de ponto</h2><div class="spacer"></div><select class="input" style="width:auto" id="mm" data-change="month">${monthOpts(ym)}</select></div>
+  const ym=UI.mirrorMonth||today().slice(0,7);const{ms,html}=mirrorTable(e,ym,{own:true});
+  return `<div class="row"><h2>Folha de ponto</h2><div class="spacer"></div><select class="input" style="width:auto" id="mm" data-change="month">${monthOpts(ym)}</select></div>
+  <div class="muted" style="font-size:.85rem;margin-top:-6px">Fechamento de ${MES[+ym.slice(5,7)-1].toLowerCase()}: ${fmtDate(fechamentoDe(ym))}${mesFechado(e,ym)?' · <b>mês fechado</b>':''}</div>
+  ${pendBox(e,ym,false)}
   <section class="kpis">
     <div class="card kpi"><span class="l">Trabalhado</span><span class="v">${dur(ms.worked)}</span></div>
     <div class="card kpi"><span class="l">Previsto até hoje</span><span class="v">${dur(ms.exp)}</span></div>
@@ -946,7 +977,7 @@ function empEspelho(e){
   </section>
   ${aprovBlock(e,ym,ms)}
   <section class="card">${html}</section>
-  <div class="row"><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar espelho (CSV)</button><button class="btn ghost" data-act="new-req" data-tipo="ajuste">Solicitar ajuste de marcação</button></div>
+  <div class="row"><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar folha (CSV)</button>${mesFechado(e,ym)?'':'<button class="btn ghost" data-act="new-req" data-tipo="justificativa">Relatar outra situação</button>'}</div>
   <p class="notice">Em vermelho, as marcações incluídas por ajuste do RH. A tolerância diária segue o art. 58, §1º da CLT: até 10 minutos por dia não geram saldo.</p>`;
 }
 const REQT={ajuste:'Ajuste de marcação',justificativa:'Justificativa de ausência',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
@@ -1243,6 +1274,7 @@ function rhConfig(){
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
       <div class="field"><label>Forma de registro</label><span>Assinatura com PIN de 6 números e localização obrigatória</span></div>
       <div class="field"><label for="c-mfa">Verificação em duas etapas no painel do RH</label><select class="input" id="c-mfa" name="mfa"><option value="0" ${!c.exigirMfa?'selected':''}>Dispensada (fase de testes)</option><option value="1" ${c.exigirMfa?'selected':''}>Exigida (recomendado em produção)</option></select></div>
+      <div class="field"><label for="c-fe">Fechamento da folha</label><select class="input" id="c-fe" name="diaFech">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${(c.diaFech||5)===n?'selected':''}>Dia ${n} do mês seguinte</option>`).join('')}</select></div>
       <div class="field"><label for="c-pw">Marcações com PIN</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha!=='revisao'?'selected':''}>Valem direto</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Passam por revisão do RH</option></select></div></div></div>
     <div class="row"><button class="btn primary" type="submit">Salvar configurações</button></div></div></form>
 
@@ -1486,7 +1518,7 @@ document.addEventListener('click',async ev=>{
     case 'punch-pw':case 'use-pw':pwForm();break;
     case 'close':closeModal();break;
     case 'receipt':showReceipt(t.dataset.id);break;
-    case 'new-req':reqForm(t.dataset.tipo||'ajuste');break;
+    case 'new-req':reqForm(t.dataset.tipo||'ajuste',t.dataset.data?{data:t.dataset.data,ate:t.dataset.data}:null);break;
     case 'csv-mirror':csvMirror(t.dataset.emp,t.dataset.ym);break;
     case 'csv-report':csvReport(t.dataset.ym);break;
     case 'afd':afd(t.dataset.ym);break;
@@ -1744,7 +1776,7 @@ document.addEventListener('submit',async ev=>{
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
