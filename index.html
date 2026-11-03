@@ -445,6 +445,12 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .pend-i .grow{flex:1;min-width:0}
 .pend-box>.btn{margin:8px 16px 12px}
 .tag-just{padding:2px 8px;font-size:.75rem;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.folha-cta{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-align:left;font:inherit;transition:border-color .15s,box-shadow .15s}
+.folha-cta:hover,.folha-cta:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent);outline:none}
+.folha-cta>svg:first-child{flex:none;width:36px;height:36px;padding:8px;border-radius:10px;background:var(--accent-soft);color:var(--accent)}
+.folha-cta .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.folha-cta .grow span{font-size:.82rem;color:var(--muted)}
+.folha-cta>svg:last-child{flex:none;color:var(--muted)}
 </style>
 </head><body>
 <div id="app"></div>
@@ -842,6 +848,7 @@ function empPonto(e){
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2>Marcações de hoje</h2><div class="spacer"></div>${n?`<button class="btn sm ghost" data-act="receipt" data-id="${di.marks[n-1].id}">Último comprovante</button>`:''}</div>
     <div class="timeline">${slots}</div>
+    <button class="folha-cta" data-act="etab" data-v="espelho">${IC.table}<span class="grow"><b>Ver marcações e folha de ponto</b><span>Todos os dias do mês, horas trabalhadas, saldo e ocorrências</span></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
     ${extras.length?`<div class="notice">Marcações extras: ${extras.map(m=>`<b class="mono">${m.ts.slice(11,16)}</b>`).join(', ')}</div>`:''}
   </section>
   ${pendBox(e,null,true)}
