@@ -453,6 +453,8 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .folha-cta>svg:last-child{flex:none;color:var(--muted)}
 .folha-acts{gap:8px;flex-wrap:wrap}
 @media (max-width:560px){.folha-acts .btn{flex:1}}
+.inapp{display:flex;flex-direction:column;gap:10px;border-color:var(--warn);background:var(--warn-bg);color:var(--ink);text-align:left}
+.inapp .btn{width:100%;justify-content:center;text-decoration:none}
 </style>
 </head><body>
 <div id="app"></div>
@@ -738,6 +740,7 @@ function viewConvite(){
   const c=BOOT.convite||{valido:false,motivo:'Convite não encontrado.'};
   if(!c.valido&&!BOOT.conviteErro)return authShell(`<div class="auth-form"><h2>Convite indisponível</h2><p class="muted">${esc(c.motivo||'Convite inválido.')}</p><button class="btn primary" data-act="convite-sair">Ir para a tela de login</button></div>`);
   return authShell(`<form data-form="convite" class="auth-form"><div><div class="eyebrow">Convite do RH</div><h2 style="margin-top:6px">${c.nome?'Olá, '+esc(c.nome)+'!':'Bem-vindo(a)!'}</h2><p class="muted" style="margin-top:6px">Você foi convidado(a) para usar o Registro de Ponto. Entre com a sua conta Google corporativa <b class="mono">${esc(c.email||'')}</b>.</p></div>
+    ${avisoInApp()}
     ${BOOT.conviteErro?`<div class="notice" style="border-color:var(--bad);color:var(--bad)">${esc(BOOT.conviteErro)}</div>`:''}
     <details class="termo-box" open><summary>Termo de uso e privacidade</summary>${termoHTML()}</details>
     <label class="check"><input type="checkbox" name="termos" required> Li e concordo com o termo de uso e privacidade.</label>
@@ -1446,6 +1449,16 @@ function afd(ym){const cn=S.company.cnpj.replace(/\D/g,'');const L=[`000000000|1
 
 /* ================= SESSÃO ================= */
 const getConvite=()=>ss.get('batida.convite');
+const inApp=()=>/WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|LinkedInApp|Snapchat|TikTok|; wv\)/i.test(navigator.userAgent||'');
+const isAndroid=()=>/Android/i.test(navigator.userAgent||'');
+function linkConvite(){const t=getConvite();return SITE+(t?'?convite='+t:'')}
+function avisoInApp(){
+  if(!inApp())return '';
+  const url=linkConvite();const intent=isAndroid()?'intent://'+url.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end':'';
+  return `<div class="notice inapp"><b>Abra este link no navegador do celular.</b> O Google não permite entrar pelo navegador interno do WhatsApp ou de outros aplicativos.
+    ${isAndroid()?`<a class="btn primary" href="${esc(intent)}">Abrir no Chrome</a>`:'<span>No iPhone, toque em <b>⋯</b> ou no ícone de compartilhar e escolha <b>Abrir no Safari</b>.</span>'}
+    <button type="button" class="btn" data-act="copiar-link">Copiar link</button></div>`;
+}
 const temConsent=(tipo)=>ME&&(ME.consent||[]).some(c=>c.tipo===tipo&&!c.revogado_em&&(tipo!=='termos'||c.versao===S.config.termoVersao));
 async function afterLogin(){
   const perfil=UI.loginRole==='rh'?'rh':'emp';
@@ -1485,7 +1498,10 @@ function proximaTela(perfil){
 async function aceitarConvite(tok){
   let ac={};try{ac=JSON.parse(ss.get('batida.aceite')||'{}')}catch(e){}
   const {error}=await sb.rpc('aceitar_convite',{p_token:tok,p_termos:!!ac.termos,p_biometria:false});
-  if(error){BOOT.conviteErro=errMsg(error);MODE='convite';try{const r=await sb.rpc('ver_convite',{p_token:tok});BOOT.convite=r.data||{valido:false}}catch(e){}return}
+  if(error){
+    // Quem já está vinculado e abriu o link de novo entra direto, sem erro
+    try{const {data:me}=await sb.rpc('meu_colab');if(me){ss.del('batida.convite');ss.del('batida.aceite');UI.loginRole='emp';await afterLogin();return}}catch(e){}
+    BOOT.conviteErro=errMsg(error);MODE='convite';try{const r=await sb.rpc('ver_convite',{p_token:tok});BOOT.convite=r.data||{valido:false}}catch(e){}return}
   ss.del('batida.convite');ss.del('batida.aceite');UI.loginRole='emp';
   await afterLogin();
   toast('Conta vinculada com sucesso');
@@ -1548,8 +1564,9 @@ document.addEventListener('click',async ev=>{
     case 'nav-toggle':UI.navOpen=!UI.navOpen;render();break;
     case 'u-new':userForm();break;
     case 'google':{safeStorage.setItem('batida.perfil',UI.loginRole);const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
-    case 'google-convite':{const f=t.closest('form');if(!f.termos.checked){$('#l-err').textContent='Para continuar, aceite o termo de uso e privacidade.';break}ss.set('batida.aceite',JSON.stringify({termos:true,biometria:f.biometria.checked}));safeStorage.setItem('batida.perfil','emp');UI.loginRole='emp';const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
-    case 'convite-trocar':{await sb.auth.signOut();BOOT.conviteErro='';render();break}
+    case 'google-convite':{const f=t.closest('form');if(inApp()){$('#l-err').textContent='Abra o link no Chrome ou no Safari para entrar com o Google.';break}if(!f.termos.checked){$('#l-err').textContent='Para continuar, aceite o termo de uso e privacidade.';break}ss.set('batida.aceite',JSON.stringify({termos:true}));safeStorage.setItem('batida.perfil','emp');UI.loginRole='emp';const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
+    case 'copiar-link':{const u=linkConvite();try{await navigator.clipboard.writeText(u);toast('Link copiado. Cole no Chrome ou no Safari.')}catch(e){prompt('Copie o link:',u)}break}
+    case 'convite-trocar':{try{await invoke({acao:'descartar'})}catch(e){}await sb.auth.signOut();BOOT.conviteErro='';render();break}
     case 'convite-sair':{ss.del('batida.convite');ss.del('batida.aceite');BOOT.convite=null;BOOT.conviteErro='';MODE='login';try{const {data}=await sb.rpc('existe_rh');BOOT.existeRH=data!==false}catch(e){}render();break}
     case 'privacidade':openModal(`<div class="modal-h"><h3>Termo de uso e privacidade</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${termoHTML()}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`,true);break;
     case 'pin-alterar':MODE='pin';render();break;
@@ -1643,6 +1660,7 @@ document.addEventListener('submit',async ev=>{
     $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}${p.revisao==='pendente'?'<div class="notice">Esta marcação foi enviada para revisão do RH.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
     return;
   }
+  if(k==='convite'){const g=f.querySelector('[data-act="google-convite"]');if(g)g.click();if(btn)btn.disabled=false;return}
   if(k==='termos'){
     const {error}=await sb.rpc('registrar_consentimento',{p_tipo:'termos'});if(error)throw error;
     ME.consent=(ME.consent||[]).concat([{tipo:'termos',versao:S.config.termoVersao,revogado_em:null}]);
