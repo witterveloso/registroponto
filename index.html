@@ -865,7 +865,7 @@ function empPonto(e){
 }
 function mirrorTable(e,ym,opt){
   const ms=monthSummary(e,ym),td=today(),own=opt&&opt.own,fech=own&&mesFechado(e,ym);
-  const tag=di=>{if(!own)return '';const a=anomDe(di);if(!a)return '';const r=relatoDe(e,di.ds);if(r)return ` <span class="chip ${r.status==='aprovado'?'ok':'info'} plain">${r.status==='aprovado'?'Justificado':'Relatado'}</span>`;return fech?' <span class="chip bad plain">Sem justificativa</span>':` <button class="btn sm ghost tag-just" data-act="new-req" data-tipo="${tipoRelato(a)}" data-data="${di.ds}">${a==='incompleto'?'Corrigir':'Justificar'}</button>`};
+  const tag=di=>{if(!own)return '';const a=anomDe(di);if(!a)return '';const r=relatoDe(e,di.ds);if(r)return ` <span class="chip ${r.status==='aprovado'?'ok':'info'} plain">${r.status==='aprovado'?'Justificado':r.tipo==='ajuste'?'Aguardando gestor':'Relatado'}</span>`;return fech?' <span class="chip bad plain">Sem justificativa</span>':` <button class="btn sm ghost tag-just" data-act="new-req" data-tipo="${tipoRelato(a)}" data-data="${di.ds}">${a==='incompleto'?'Corrigir':'Justificar'}</button>`};
   const rows=ms.days.map(di=>{
     const m=di.marks.map(x=>x.ts.slice(11,16));const cell=i=>m[i]?`<span class="mono${['ajuste-rh','sem-biometria'].includes(di.marks[i].metodo)?' neg':''}" title="${esc({pin:'Assinatura com PIN',facial:'Reconhecimento facial',cadastro:'Cadastro facial',senha:'Senha pessoal','ajuste-rh':'Ajuste do RH','sem-biometria':'Sem biometria'}[di.marks[i].metodo]||'')}">${m[i]}${di.marks[i].metodo==='senha'?'<sup class="muted" style="font-size:.65em"> S</sup>':''}</span>`:'<span class="muted">·</span>';
     const wk=!di.j.dias.includes(di.dow)||di.hol;const fut=di.ds>td||di.status==='futuro';
@@ -929,8 +929,14 @@ function empEquipe(){
     <section class="card">${html}</section>`;
   }
   const rows=team.map(e=>({e,ms:monthSummary(e,ym),a:aprovDe(e.id,ym)}));
+  const ids=new Set(minhaEquipe().map(x=>x.id));
+  const manuais=S.requests.filter(r=>r.tipo==='ajuste'&&r.status==='pendente'&&ids.has(r.empId)).sort((a,b)=>a.criado<b.criado?-1:1);
+  const boxMan=manuais.length?`<section class="card"><div class="card-h"><h3>Marcações manuais aguardando sua aprovação</h3><span class="chip warn">${manuais.length}</span></div>
+    ${manuais.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)} · horário informado <b class="mono">${esc(r.hora||'')}</b></div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}</div>
+    <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join('')}</section>`:'';
   const cnt={ok:rows.filter(r=>r.a&&r.a.status==='aprovado').length,dev:rows.filter(r=>r.a&&r.a.status==='devolvido').length};cnt.pend=rows.length-cnt.ok-cnt.dev;
   return `<div class="row"><div><div class="eyebrow">${meusSetores().map(s=>esc(s.nome)).join(' · ')}</div><h2>Minha equipe</h2></div><div class="spacer"></div><select class="input" style="width:auto" id="tm" data-change="team-month">${monthOpts(ym)}</select></div>
+  ${boxMan}
   <section class="kpis">
     <div class="card kpi"><span class="l">Colaboradores</span><span class="v">${rows.length}</span></div>
     <div class="card kpi"><span class="l">Aguardando aprovação</span><span class="v" style="color:${cnt.pend?'var(--warn)':'inherit'}">${cnt.pend}</span></div>
@@ -1374,12 +1380,13 @@ function pwForm(){
 function reqForm(tipo,keep){
   const td=today(),k=keep||{};tipo=REQT[tipo]?tipo:'justificativa';
   const precisa=tipo==='atestado'||tipo==='licenca';
-  openModal(`<form data-form="req"><div class="modal-h"><div><div class="eyebrow">Enviar ao RH</div><h3>Nova solicitação</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+  openModal(`<form data-form="req"><div class="modal-h"><div><div class="eyebrow">${tipo==='ajuste'?'Aprovação do gestor':'Enviar ao RH'}</div><h3>${tipo==='ajuste'?'Marcação manual':'Nova solicitação'}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="field"><label for="r-t">Tipo</label><select class="input" id="r-t" name="tipo" data-change="reqtipo">${Object.entries(REQT).map(([x,v])=>`<option value="${x}" ${x===tipo?'selected':''}>${v}</option>`).join('')}</select><span class="muted" style="font-size:.8rem">${REQD[tipo]}</span></div>
     ${tipo==='licenca'?`<div class="field"><label for="r-s">Tipo de licença</label><select class="input" id="r-s" name="subtipo" required>${LICT.map(x=>`<option ${x===k.subtipo?'selected':''}>${x}</option>`).join('')}</select></div>`:''}
     <div class="grid2"><div class="field"><label for="r-d">${tipo==='ajuste'?'Data':'Início'}</label><input class="input" type="date" id="r-d" name="data" value="${esc(k.data||td)}" required></div>
     ${tipo==='ajuste'?`<div class="field"><label for="r-h">Horário correto</label><input class="input" type="time" id="r-h" name="hora" value="${esc(k.hora||'')}" required></div>`:`<div class="field"><label for="r-a">Fim</label><input class="input" type="date" id="r-a" name="ate" value="${esc(k.ate||td)}" required></div>`}</div>
-    <div class="field"><label for="r-m">Justificativa</label><textarea class="input" id="r-m" name="motivo" rows="4" maxlength="1500" required placeholder="${tipo==='ajuste'?'Ex.: esqueci de registrar a saída do intervalo':tipo==='justificativa'?'Explique o que aconteceu. Ex.: consulta médica do meu filho das 8h às 10h':'Descreva o motivo'}">${esc(k.motivo||'')}</textarea></div>
+    ${tipo==='ajuste'?'<div class="notice">A marcação manual só entra na folha depois que o seu <b>gestor aprovar</b>. Explique o que aconteceu.</div>':''}
+    <div class="field"><label for="r-m">Justificativa${tipo==='ajuste'?' (obrigatória)':''}</label><textarea class="input" id="r-m" name="motivo" rows="4" maxlength="1500" ${tipo==='ajuste'?'minlength="10"':''} required placeholder="${tipo==='ajuste'?'Ex.: esqueci de registrar a saída do intervalo':tipo==='justificativa'?'Explique o que aconteceu. Ex.: consulta médica do meu filho das 8h às 10h':'Descreva o motivo'}">${esc(k.motivo||'')}</textarea></div>
     ${tipo!=='ferias'?`<div class="field"><label for="r-f">Documentos ${precisa?'(obrigatório)':'(opcional)'}</label>
       <label class="drop" for="r-f"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><b>Anexar atestado, declaração ou comprovante</b><span>Foto ou PDF · até 5 arquivos de 10 MB</span></label>
       <input class="sr-only" type="file" id="r-f" name="anexo" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" multiple data-change="anexos">
@@ -1422,7 +1429,8 @@ function decideForm(id,v){
   const r=S.requests.find(x=>x.id===id);const e=emp(r.empId)||{nome:'Colaborador'};
   openModal(`<form data-form="dec" data-id="${id}" data-v="${v}"><div class="modal-h"><h3>${v==='aprovado'?'Aprovar':'Recusar'} solicitação</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div>${esc(e.nome)} · ${esc(reqTit(r))} · ${fmtDate(r.data)}${r.hora?' às '+r.hora:''}</div>
-    ${r.tipo==='ajuste'&&v==='aprovado'?`<div class="notice">Uma marcação às <b class="mono">${r.hora}</b> será incluída em ${fmtDate(r.data)}, identificada como ajuste do RH.</div>`:''}
+    ${r.tipo==='ajuste'?`<div class="notice"><b>Justificativa:</b> ${esc(r.motivo)}</div>`:''}
+    ${r.tipo==='ajuste'&&v==='aprovado'?`<div class="notice">Uma marcação às <b class="mono">${r.hora}</b> será incluída em ${fmtDate(r.data)}, identificada como marcação manual aprovada.</div>`:''}
     <div class="field"><label for="d-r">Mensagem ao colaborador</label><input class="input" id="d-r" name="resposta" ${v==='recusado'?'required':''} placeholder="${v==='aprovado'?'Opcional':'Explique o motivo da recusa'}"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='aprovado'?'primary':'danger'}" type="submit">${v==='aprovado'?'Aprovar':'Recusar'}</button></div></form>`);
 }
@@ -1744,6 +1752,8 @@ document.addEventListener('submit',async ev=>{
     for(const fl of fls){if(fl.size>10485760)throw new Error(`O arquivo ${fl.name} passa de 10 MB.`);if(!okT.test(fl.type||''))throw new Error(`O arquivo ${fl.name} não é foto nem PDF.`)}
     if((fd.tipo==='atestado'||fd.tipo==='licenca')&&!fls.length)throw new Error('Anexe o documento para este tipo de solicitação.');
     if(fd.ate&&fd.ate<fd.data)throw new Error('A data final não pode ser antes da inicial.');
+    if(fd.tipo==='ajuste'&&fd.motivo.trim().length<10)throw new Error('Explique por que a marcação precisa ser manual (pelo menos 10 caracteres).');
+    if(fd.tipo==='ajuste'&&fd.data>today())throw new Error('Não é possível fazer marcação manual em data futura.');
     const anexos=[];
     for(const fl of fls){if(btn)btn.textContent=`Enviando ${anexos.length+1} de ${fls.length}…`;const path=`${ME.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}-${fl.name.replace(/[^\w.\-]+/g,'_').slice(-80)}`;const up=await sb.storage.from('anexos').upload(path,fl,{contentType:fl.type});if(up.error)throw up.error;anexos.push({path,nome:fl.name.slice(0,120)})}
     const base={colaborador_id:ME.id,data:fd.data,ate:fd.ate||null,hora:fd.hora||null,anexo_path:anexos[0]?anexos[0].path:null,anexo_nome:anexos[0]?anexos[0].nome:null};
@@ -1752,7 +1762,7 @@ document.addEventListener('submit',async ev=>{
       const extra=anexos.length>1?' [Outros anexos: '+anexos.slice(1).map(x=>x.nome).join(', ')+']':'';
       ({error}=await sb.from('solicitacoes').insert({...base,tipo:['justificativa','licenca'].includes(fd.tipo)?'abono':fd.tipo,motivo:((fd.tipo==='licenca'?(fd.subtipo||'Licença')+': ':fd.tipo==='justificativa'?'Justificativa: ':'')+fd.motivo.trim()+extra).slice(0,1500)}));
     }
-    if(error)throw error;await loadAll();closeModal();UI.empTab='solic';render();toast('Solicitação enviada ao RH');return;
+    if(error)throw error;await loadAll();closeModal();UI.empTab='solic';render();toast(fd.tipo==='ajuste'?'Marcação manual enviada para aprovação do gestor':'Solicitação enviada ao RH');return;
   }
   if(k==='emp'){
     const id=f.dataset.id;
