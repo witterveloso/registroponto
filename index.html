@@ -320,7 +320,7 @@ const isRH=()=>ME&&ME.papel==='rh';
 const senhaOk=()=>S.config.modoSenha!=='bloqueada';
 
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
-const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:c.face_sig?{sig:c.face_sig,thumb:c.face_thumb}:null});
+const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:c.face_sig?{sig:c.face_sig,thumb:c.face_thumb}:null});
 const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
 
@@ -420,25 +420,18 @@ setInterval(()=>{if(MODE!=='login'&&!$('#modal-root').innerHTML&&!document.activ
 
 /* ================= LOGIN ================= */
 function viewLogin(){
-  const r=UI.loginRole,d=NOW();
+  const d=NOW();
   let form;
-  if(r==='emp')form=`<form data-form="login-emp" style="display:flex;flex-direction:column;gap:14px">
-      <div class="field"><label for="l-mat">Matrícula</label><input class="input mono" id="l-mat" name="mat" autocomplete="username" placeholder="000101" required></div>
-      <div class="field"><label for="l-pin">Senha</label><input class="input" id="l-pin" name="pin" type="password" autocomplete="current-password" placeholder="Sua senha" required></div>
+  if(BOOT.existeRH)form=`<form data-form="login" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="l-user">Login</label><input class="input" id="l-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
+      <div class="field"><label for="l-pw">Senha</label><input class="input" id="l-pw" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required></div>
       <div class="err" id="l-err">${esc(BOOT.msg)}</div>
       <button class="btn primary" type="submit">Entrar</button>
-    </form><p class="muted" style="font-size:.85rem">Esqueceu a senha? Peça ao RH para cadastrar uma nova.</p>`;
-  else if(BOOT.existeRH)form=`<form data-form="login-rh" style="display:flex;flex-direction:column;gap:14px">
-      <div class="field"><label for="l-em">E-mail ou matrícula</label><input class="input" id="l-em" name="email" type="text" autocomplete="username" required></div>
-      <div class="field"><label for="l-pw">Senha</label><input class="input" id="l-pw" name="senha" type="password" autocomplete="current-password" placeholder="Senha" required></div>
-      <div class="err" id="l-err">${esc(BOOT.msg)}</div>
-      <button class="btn primary" type="submit">Entrar no painel do RH</button>
-    </form>`;
+    </form><p class="muted" style="font-size:.85rem">Esqueceu o login ou a senha? Fale com o RH.</p>`;
   else form=`<form data-form="bootstrap" style="display:flex;flex-direction:column;gap:14px">
       <div class="notice">Primeiro acesso: crie a conta de administrador do RH. Depois disso, este formulário deixa de aparecer.</div>
-      <div class="field"><label for="b-m">Sua matrícula, se você está na lista de funcionários</label><input class="input mono" id="b-m" name="matricula" placeholder="Ex.: 000139"></div>
-      <div class="field"><label for="b-n">Seu nome (se não informou a matrícula)</label><input class="input" id="b-n" name="nome"></div>
-      <div class="field"><label for="b-e">E-mail</label><input class="input" id="b-e" name="email" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="b-n">Seu nome</label><input class="input" id="b-n" name="nome" required></div>
+      <div class="field"><label for="b-l">Login</label><input class="input" id="b-l" name="login" autocomplete="username" autocapitalize="none" required></div>
       <div class="field"><label for="b-s">Senha (mínimo 6 caracteres)</label><input class="input" id="b-s" name="senha" type="password" minlength="6" autocomplete="new-password" required></div>
       <div class="field"><label for="b-s2">Confirme a senha</label><input class="input" id="b-s2" name="senha2" type="password" minlength="6" autocomplete="new-password" required></div>
       <div class="err" id="l-err">${esc(BOOT.msg)}</div>
@@ -460,7 +453,6 @@ function viewLogin(){
   </section>
   <section class="login-form"><div class="login-box">
     <div><div class="eyebrow">${esc(S.company.razao&&S.company.razao!=='Minha Empresa Ltda'?S.company.razao:'Ponto eletrônico')}</div><h1 style="margin-top:6px">Acesse sua conta</h1></div>
-    <div class="seg" role="tablist"><button data-act="lrole" data-v="emp" class="${r==='emp'?'on':''}">Colaborador</button><button data-act="lrole" data-v="rh" class="${r==='rh'?'on':''}">RH · Gestão</button></div>
     ${form}
   </div></section></div>`;
 }
@@ -473,7 +465,7 @@ function viewEmp(e){
   return `<div class="emp">
     <div class="topbar">${logoPill(30)}<div class="spacer"></div>
       ${isRH()?'<button class="btn sm" data-act="mode" data-v="rh">Painel do RH</button>':''}
-      <div style="text-align:right;line-height:1.2"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">Mat. ${esc(e.matricula)}</div></div>
+      <div style="text-align:right;line-height:1.2"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">${esc(e.login)}</div></div>
       <div class="avatar">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div></div>
     ${body}
   </div>
@@ -552,7 +544,7 @@ function empPerfil(e){
     <div style="flex:1;min-width:180px"><h2>${esc(e.nome)}</h2><div class="muted">${esc(e.cargo)} · ${esc(e.depto)}</div></div>
     <button class="btn" data-act="logout">${IC.out.replace('<svg','<svg width="16" height="16"')}Sair</button></section>
   <section class="card"><div class="card-h"><h3>Dados funcionais</h3></div><div class="card-b grid2">
-    ${[['Matrícula',e.matricula],['CPF',e.cpf||'Não informado'],['Admissão',e.admissao?fmtDate(e.admissao):'Não informada'],['E-mail',e.email||'Não informado'],['Jornada',j.nome],['Horário',`${j.ini} às ${j.fim}, intervalo ${j.intIni} às ${j.intFim}`]].map(x=>`<div class="field"><label>${x[0]}</label><span class="${x[0]==='Matrícula'||x[0]==='CPF'?'mono':''}">${esc(x[1])}</span></div>`).join('')}
+    ${[['Login',e.login],['CPF',e.cpf||'Não informado'],['Admissão',e.admissao?fmtDate(e.admissao):'Não informada'],['E-mail',e.email||'Não informado'],['Jornada',j.nome],['Horário',`${j.ini} às ${j.fim}, intervalo ${j.intIni} às ${j.intFim}`]].map(x=>`<div class="field"><label>${x[0]}</label><span class="${x[0]==='Login'||x[0]==='CPF'?'mono':''}">${esc(x[1])}</span></div>`).join('')}
   </div></section>
   <section class="card"><div class="card-h"><h3>Biometria facial</h3><span class="chip ${bio[1]}">${bio[0]}</span><div class="spacer"></div><button class="btn sm" data-act="enroll">Recadastrar rosto</button></div>
     <div class="card-b muted" style="font-size:.88rem">A referência facial fica vinculada ao seu cadastro. Ao recadastrar, o RH precisa validar a nova foto.</div></section>
@@ -573,7 +565,7 @@ function viewRH(){
 function rhPainel(){
   const act=S.emps.filter(e=>e.ativo),td=today(),d=NOW();
   if(act.length<=1&&!S.punches.length)return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div></div>
-    <section class="card card-b" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start"><h2>Comece cadastrando a equipe</h2><p class="muted">Inclua cada colaborador com matrícula e senha inicial. Depois, ele entra pelo celular, cadastra o rosto no primeiro registro e o painel passa a mostrar a presença ao vivo.</p><div class="row"><button class="btn primary" data-act="emp-form">Cadastrar colaborador</button><button class="btn" data-act="rtab" data-v="config">Configurar empresa e cerca virtual</button></div></section>`;
+    <section class="card card-b" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start"><h2>Comece cadastrando a equipe</h2><p class="muted">Inclua cada colaborador com login e senha provisória. Depois, ele entra pelo celular, cadastra o rosto no primeiro registro e o painel passa a mostrar a presença ao vivo.</p><div class="row"><button class="btn primary" data-act="emp-form">Cadastrar colaborador</button><button class="btn" data-act="rtab" data-v="config">Configurar empresa e cerca virtual</button></div></section>`;
   const states=act.map(e=>({e,s:nowState(e),di:dayInfo(e,td)}));
   const cnt=k=>states.filter(x=>x.s[0]===k).length;
   const late=states.filter(x=>x.di.atraso).length;
@@ -615,16 +607,16 @@ function rhPainel(){
 }
 function rhEquipe(){
   const q=UI.q.toLowerCase();
-  const list=S.emps.filter(e=>!q||(e.nome+e.matricula+e.depto+e.cargo+e.vinculo).toLowerCase().includes(q));
+  const list=S.emps.filter(e=>!q||(e.nome+e.login+e.depto+e.cargo+e.vinculo).toLowerCase().includes(q));
   const bio={validada:['Validada','ok'],pendente:['Pendente','warn'],nenhuma:['Sem cadastro','bad'],rejeitada:['Recusada','bad']};
   const ym=today().slice(0,7);const semAcesso=S.emps.filter(e=>e.ativo&&!e.temAcesso).length;
   return `<div class="page-h"><div><div class="eyebrow">${S.emps.filter(e=>e.ativo).length} ativos${semAcesso?` · ${semAcesso} sem acesso`:''}</div><h1>Colaboradores</h1></div><div class="spacer"></div>
-    <input class="input search" id="q" data-input="q" placeholder="Buscar por nome, matrícula, cargo, vínculo" value="${esc(UI.q)}">${semAcesso?`<button class="btn" data-act="bulk-access">Criar acessos (${semAcesso})</button>`:''}<button class="btn primary" data-act="emp-form">Novo colaborador</button></div>
-  <section class="card tablewrap"><table><thead><tr><th>Colaborador</th><th>Matrícula</th><th>Vínculo</th><th>Jornada</th><th>Acesso</th><th>Biometria</th><th class="num">Banco do mês</th><th>Situação</th><th></th></tr></thead><tbody>
-  ${list.map(e=>{const ms=monthSummary(e,ym);return `<tr><td><div class="row" style="flex-wrap:nowrap"><div class="avatar" style="width:32px;height:32px;font-size:.75rem">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div style="min-width:0"><div style="font-weight:600">${esc(e.nome)}${e.papel==='rh'?' <span class="chip acc plain">RH</span>':''}</div><div class="muted" style="font-size:.78rem;max-width:280px;white-space:normal">${esc(e.cargo)}</div></div></div></td><td class="mono">${esc(e.matricula)}</td><td>${esc(e.vinculo||e.depto)}</td><td>${esc(jor(e.jornadaId).nome)}</td><td>${e.temAcesso?(e.trocarSenha?'<span class="chip warn">Senha inicial</span>':'<span class="chip ok">Ativo</span>'):'<span class="chip plain">Sem acesso</span>'}</td><td><span class="chip ${bio[e.bio][1]}">${bio[e.bio][0]}</span></td><td class="num mono ${saldoCls(ms.saldo)}">${saldoTxt(ms.saldo)}</td><td>${e.ativo?'<span class="chip ok">Ativo</span>':'<span class="chip plain">Desligado</span>'}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="emp-form" data-id="${e.id}">Editar</button><button class="btn sm ghost" data-act="see-mirror" data-id="${e.id}">Espelho</button></div></td></tr>`}).join('')||'<tr><td colspan="9" class="empty">Nenhum colaborador encontrado.</td></tr>'}
+    <input class="input search" id="q" data-input="q" placeholder="Buscar por nome, login, cargo, vínculo" value="${esc(UI.q)}">${semAcesso?`<button class="btn" data-act="bulk-access">Criar acessos (${semAcesso})</button>`:''}<button class="btn primary" data-act="emp-form">Novo colaborador</button></div>
+  <section class="card tablewrap"><table><thead><tr><th>Colaborador</th><th>Login</th><th>Vínculo</th><th>Jornada</th><th>Acesso</th><th>Biometria</th><th class="num">Banco do mês</th><th>Situação</th><th></th></tr></thead><tbody>
+  ${list.map(e=>{const ms=monthSummary(e,ym);return `<tr><td><div class="row" style="flex-wrap:nowrap"><div class="avatar" style="width:32px;height:32px;font-size:.75rem">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div style="min-width:0"><div style="font-weight:600">${esc(e.nome)}${e.papel==='rh'?' <span class="chip acc plain">RH</span>':''}</div><div class="muted" style="font-size:.78rem;max-width:280px;white-space:normal">${esc(e.cargo)}</div></div></div></td><td class="mono">${esc(e.login)}</td><td>${esc(e.vinculo||e.depto)}</td><td>${esc(jor(e.jornadaId).nome)}</td><td>${e.temAcesso?(e.trocarSenha?'<span class="chip warn">Senha inicial</span>':'<span class="chip ok">Ativo</span>'):'<span class="chip plain">Sem acesso</span>'}</td><td><span class="chip ${bio[e.bio][1]}">${bio[e.bio][0]}</span></td><td class="num mono ${saldoCls(ms.saldo)}">${saldoTxt(ms.saldo)}</td><td>${e.ativo?'<span class="chip ok">Ativo</span>':'<span class="chip plain">Desligado</span>'}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="emp-form" data-id="${e.id}">Editar</button><button class="btn sm ghost" data-act="see-mirror" data-id="${e.id}">Espelho</button></div></td></tr>`}).join('')||'<tr><td colspan="9" class="empty">Nenhum colaborador encontrado.</td></tr>'}
   </tbody></table></section>`;
 }
-function loginDe(e){return e.papel==='rh'&&e.email&&e.email.includes('@')&&e.temAcesso?e.email:'Matrícula '+e.matricula}
+function loginDe(e){return e.login}
 function rhUsuarios(){
   const f=UI.uf||'todos',q=(UI.uq||'').toLowerCase();
   const all=S.emps;
@@ -635,7 +627,7 @@ function rhUsuarios(){
     if(f==='ativos'&&!(e.ativo&&e.temAcesso&&!e.trocarSenha))return false;
     if(f==='bloq'&&e.ativo)return false;
     if(f==='rh'&&e.papel!=='rh')return false;
-    return !q||(e.nome+e.matricula+e.email+e.cargo).toLowerCase().includes(q)});
+    return !q||(e.nome+e.login+e.email+e.cargo).toLowerCase().includes(q)});
   const st=e=>!e.ativo?'<span class="chip bad">Bloqueado</span>':!e.temAcesso?'<span class="chip plain">Sem acesso</span>':e.trocarSenha?'<span class="chip warn">Aguardando 1º acesso</span>':'<span class="chip ok">Ativo</span>';
   const filt=[['todos','Todos'],['sem','Sem acesso'],['inicial','Aguardando 1º acesso'],['ativos','Ativos'],['bloq','Bloqueados'],['rh','Administradores']];
   return `<div class="page-h"><div><div class="eyebrow">Administração</div><h1>Usuários e acessos</h1></div><div class="spacer"></div>
@@ -648,10 +640,10 @@ function rhUsuarios(){
     <div class="card kpi"><span class="l">Administradores do RH</span><span class="v" style="color:var(--accent)">${cnt.rh}</span></div>
   </section>
   <div class="row"><div class="seg" style="display:flex;flex-wrap:wrap;gap:2px">${filt.map(x=>`<button data-act="u-filter" data-v="${x[0]}" class="${f===x[0]?'on':''}" style="padding:7px 12px">${x[1]}${x[0]!=='todos'?` <span class="muted">${cnt[x[0]]}</span>`:''}</button>`).join('')}</div><div class="spacer"></div>
-    <input class="input search" id="uq" data-input="uq" placeholder="Buscar por nome, matrícula, e-mail" value="${esc(UI.uq||'')}"></div>
+    <input class="input search" id="uq" data-input="uq" placeholder="Buscar por nome, login, e-mail" value="${esc(UI.uq||'')}"></div>
   <section class="card tablewrap"><table><thead><tr><th>Usuário</th><th>Login</th><th>Perfil</th><th>Situação</th><th>Ações</th></tr></thead><tbody>
   ${list.map(e=>`<tr><td><div class="row" style="flex-wrap:nowrap"><div class="avatar" style="width:32px;height:32px;font-size:.75rem">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div style="min-width:0"><div style="font-weight:600">${esc(e.nome)}</div><div class="muted" style="font-size:.78rem;white-space:normal;max-width:260px">${esc(e.cargo||'Sem cargo')}${e.vinculo?' · '+esc(e.vinculo):''}</div></div></div></td>
-    <td class="mono" style="font-size:.85rem">${e.temAcesso?esc(loginDe(e)):'<span class="muted">·</span>'}</td>
+    <td class="mono" style="font-size:.85rem">${esc(e.login)}${e.temAcesso?'':' <span class="muted" style="font-family:var(--f-body)">(sem acesso)</span>'}</td>
     <td>${e.papel==='rh'?'<span class="chip acc">Administrador RH</span>':'<span class="chip plain">Colaborador</span>'}</td>
     <td>${st(e)}</td>
     <td class="wrap"><div class="u-actions">
@@ -663,14 +655,13 @@ function rhUsuarios(){
       <button class="btn sm ghost" data-act="emp-form" data-id="${e.id}">Editar dados</button>
     </div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nenhum usuário neste filtro.</td></tr>'}
   </tbody></table></section>
-  <p class="notice">Colaboradores entram com a <b>matrícula</b>. Administradores do RH entram com o e-mail ou a matrícula. Toda senha criada ou redefinida pelo RH é provisória: no primeiro acesso a pessoa cria a própria senha.</p>`;
+  <p class="notice">Todos entram com <b>login e senha</b>. Toda senha criada ou redefinida pelo RH é provisória: no primeiro acesso a pessoa cria a própria senha.</p>`;
 }
 function userForm(){
-  const nextMat=String(Math.max(100,...S.emps.map(x=>+x.matricula||0))+1).padStart(6,'0');
   openModal(`<form data-form="u-new"><div class="modal-h"><div><div class="eyebrow">Administração</div><h3>Cadastrar usuário</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="eyebrow">Dados da pessoa</div>
     <div class="grid2">
-      <div class="field" style="grid-column:1/-1"><label for="u-nome">Nome completo</label><input class="input" id="u-nome" name="nome" required></div>
+      <div class="field" style="grid-column:1/-1"><label for="u-nome">Nome completo</label><input class="input" id="u-nome" name="nome" data-input="sug-login" data-target="u-login" required></div>
       <div class="field"><label for="u-cargo">Cargo</label><input class="input" id="u-cargo" name="cargo"></div>
       <div class="field"><label for="u-vinc">Vínculo</label><input class="input" id="u-vinc" name="vinculo" list="u-vinc-l" placeholder="Ex.: DAC5 TVTEC"><datalist id="u-vinc-l">${[...new Set(S.emps.map(e=>e.vinculo).filter(Boolean))].map(v=>`<option value="${esc(v)}"></option>`).join('')}</datalist></div>
       <div class="field"><label for="u-cpf">CPF</label><input class="input mono" id="u-cpf" name="cpf" inputmode="numeric"></div>
@@ -679,9 +670,9 @@ function userForm(){
     </div>
     <div class="eyebrow" style="margin-top:4px">Acesso ao sistema</div>
     <div class="grid2">
-      <div class="field"><label for="u-mat">Matrícula (login)</label><input class="input mono" id="u-mat" name="matricula" value="${nextMat}" required></div>
-      <div class="field"><label for="u-papel">Perfil</label><select class="input" id="u-papel" name="papel" data-change="u-papel"><option value="colaborador">Colaborador</option><option value="rh">Administrador do RH</option></select></div>
-      <div class="field" style="grid-column:1/-1"><label for="u-email">E-mail <span class="muted" id="u-email-h">(opcional)</span></label><input class="input" type="email" id="u-email" name="email" autocomplete="off"></div>
+      <div class="field"><label for="u-login">Login</label><input class="input mono" id="u-login" name="login" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
+      <div class="field"><label for="u-papel">Perfil</label><select class="input" id="u-papel" name="papel"><option value="colaborador">Colaborador</option><option value="rh">Administrador do RH</option></select></div>
+      <div class="field" style="grid-column:1/-1"><label for="u-email">E-mail <span class="muted">(opcional)</span></label><input class="input" type="email" id="u-email" name="email" autocomplete="off"></div>
       <div class="field" style="grid-column:1/-1"><label for="u-senha">Senha provisória (mínimo 6 caracteres)</label><div class="row" style="flex-wrap:nowrap"><input class="input mono" id="u-senha" name="senha" type="text" minlength="6" autocomplete="off" required><button type="button" class="btn" data-act="u-gen" data-target="u-senha">Gerar</button></div></div>
     </div>
     <div class="err" id="u-err"></div>
@@ -690,7 +681,7 @@ function userForm(){
 function passForm(id){
   const e=emp(id);
   openModal(`<form data-form="u-pass" data-id="${id}"><div class="modal-h"><h3>${e.temAcesso?'Redefinir senha':'Criar acesso'}</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
-    <div><b>${esc(e.nome)}</b><div class="muted" style="font-size:.85rem">Login: ${esc(e.temAcesso?loginDe(e):'matrícula '+e.matricula)}</div></div>
+    <div><b>${esc(e.nome)}</b><div class="muted" style="font-size:.85rem">Login: <span class="mono">${esc(e.login)}</span></div></div>
     <div class="field"><label for="p-s">Senha provisória (mínimo 6 caracteres)</label><div class="row" style="flex-wrap:nowrap"><input class="input mono" id="p-s" name="senha" type="text" minlength="6" autocomplete="off" required><button type="button" class="btn" data-act="u-gen" data-target="p-s">Gerar</button></div></div>
     <div class="notice">A pessoa entra com essa senha e cria a própria senha no primeiro acesso.</div>
     <div class="err" id="u-err"></div>
@@ -705,6 +696,16 @@ function credModal(nome,login,senha){
   </div><div class="modal-f"><button class="btn" data-act="u-copy">Copiar dados</button><button class="btn primary" data-act="close">Concluir</button></div>`);
 }
 let CRED='';
+const loginOk=l=>/^[a-z0-9][a-z0-9._-]{2,39}$/.test(l)||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l);
+function sugereLogin(nome){
+  const t=nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z ]/g,'').split(' ').filter(Boolean);
+  if(!t.length)return '';
+  const skip=['junior','jr','filho','neto','sobrinho','de','da','do','dos','das','e'];
+  let ult='';for(let i=t.length-1;i>0;i--){if(!skip.includes(t[i])){ult=t[i];break}}
+  let base=t[0]+(ult?'.'+ult:''),c=base,n=1;
+  while(S.emps.some(x=>x.login.toLowerCase()===c)){n++;c=base+n}
+  return c;
+}
 function genPass(){const c='abcdefghjkmnpqrstuvwxyz23456789';const a=new Uint32Array(8);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join('')}
 
 function rhAprov(){
@@ -720,7 +721,7 @@ function rhAprov(){
   ${pun.length?pun.map(p=>{const e=emp(p.empId)||{nome:'Colaborador'};return `<div class="req">${p.foto?`<img class="thumb" src="${p.foto}" alt="Foto da marcação">`:`<div class="avatar" style="width:64px;height:64px">${initials(e.nome)}</div>`}<div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${p.foraCerca?'Fora da cerca virtual':'Sem validação biométrica'}</div><div class="muted mono" style="font-size:.85rem">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,19)} · NSR ${String(p.nsr).padStart(9,'0')}</div><div style="font-size:.85rem">${esc(p.local)}${p.geo?` · <span class="mono">${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)}</span>`:''}${p.obs?' · '+esc(p.obs):''}</div></div>
   <div class="row"><button class="btn sm danger" data-act="pun-dec" data-id="${p.id}" data-v="desconsiderada">Desconsiderar</button><button class="btn sm primary" data-act="pun-dec" data-id="${p.id}" data-v="aceita">Aceitar</button></div></div>`}).join(''):'<div class="empty">Nenhuma marcação aguardando revisão.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Cadastros faciais</h3><span class="chip warn">${bios.length}</span></div>
-  ${bios.length?bios.map(e=>`<div class="req">${e.face?`<img class="thumb" src="${e.face.thumb}" alt="Referência facial">`:'<div class="thumb"></div>'}<div class="grow"><div style="font-weight:600">${esc(e.nome)}</div><div class="muted" style="font-size:.85rem">${esc(e.cargo)} · Mat. ${esc(e.matricula)}</div><div style="font-size:.85rem">Confira se a foto é nítida, frontal e corresponde ao colaborador.</div></div><div class="row"><button class="btn sm danger" data-act="bio-dec" data-id="${e.id}" data-v="rejeitada">Recusar</button><button class="btn sm primary" data-act="bio-dec" data-id="${e.id}" data-v="validada">Validar</button></div></div>`).join(''):'<div class="empty">Nenhum cadastro facial aguardando validação.</div>'}</section>
+  ${bios.length?bios.map(e=>`<div class="req">${e.face?`<img class="thumb" src="${e.face.thumb}" alt="Referência facial">`:'<div class="thumb"></div>'}<div class="grow"><div style="font-weight:600">${esc(e.nome)}</div><div class="muted" style="font-size:.85rem">${esc(e.cargo)} · ${esc(e.login)}</div><div style="font-size:.85rem">Confira se a foto é nítida, frontal e corresponde ao colaborador.</div></div><div class="row"><button class="btn sm danger" data-act="bio-dec" data-id="${e.id}" data-v="rejeitada">Recusar</button><button class="btn sm primary" data-act="bio-dec" data-id="${e.id}" data-v="validada">Validar</button></div></div>`).join(''):'<div class="empty">Nenhum cadastro facial aguardando validação.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Decisões recentes</h3></div><div class="list">${hist.map(r=>reqLine(r,true)).join('')||'<div class="empty">Sem histórico.</div>'}</div></section>`;
 }
 function rhEspelho(){
@@ -736,7 +737,7 @@ function rhEspelho(){
     <div class="card kpi"><span class="l">Horas extras</span><span class="v">${dur(ms.extra)}</span></div>
     <div class="card kpi"><span class="l">Atrasos · faltas</span><span class="v">${ms.atrasos} · ${ms.faltas}</span></div>
   </section>
-  <section class="card"><div class="card-h"><div><h3>${esc(e.nome)}</h3><div class="muted" style="font-size:.82rem">${esc(e.cargo)} · Mat. ${esc(e.matricula)} · CPF ${esc(e.cpf||'não informado')} · ${esc(jor(e.jornadaId).nome)}</div></div><div class="spacer"></div>
+  <section class="card"><div class="card-h"><div><h3>${esc(e.nome)}</h3><div class="muted" style="font-size:.82rem">${esc(e.cargo)} · ${esc(e.login)} · CPF ${esc(e.cpf||'não informado')} · ${esc(jor(e.jornadaId).nome)}</div></div><div class="spacer"></div>
     <button class="btn sm" data-act="add-punch" data-id="${e.id}">Incluir marcação</button><button class="btn sm" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">CSV</button><button class="btn sm" data-act="afd" data-ym="${ym}">Gerar AFD</button></div>${html}</section>`;
 }
 function rhRelat(){
@@ -897,8 +898,8 @@ function pwForm(){
   const n=marksOf(ME.id,today()).length;
   openModal(`<form data-form="punch-pw"><div class="modal-h"><div><div class="eyebrow">Registro com senha</div><h3>${esc(tipoN(n))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div>
   <div class="modal-b">
-    <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)} · Mat. ${esc(ME.matricula)}</div></div>
-    <input type="text" name="usuario" value="${esc(ME.matricula)}" autocomplete="username" hidden>
+    <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)} · ${esc(ME.login)}</div></div>
+    <input type="text" name="usuario" value="${esc(ME.login)}" autocomplete="username" hidden>
     <div class="field"><label for="pw-s">Sua senha de acesso</label><input class="input" id="pw-s" name="senha" type="password" autocomplete="current-password" required autofocus></div>
     <div class="err" id="pw-err"></div>
     <div class="notice">Use a mesma senha do login. O horário oficial é definido pelo servidor${S.config.cerca.ativa?' e a sua localização é conferida com a cerca virtual':''}.${S.config.modoSenha==='revisao'?' Marcações por senha passam por revisão do RH.':''}</div>
@@ -918,18 +919,17 @@ function reqForm(tipo){
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Enviar ao RH</button></div></form>`);
 }
 function empForm(id){
-  const e=id?emp(id):{nome:'',cargo:'',depto:'',jornadaId:(S.jornadas[0]||{}).id,cpf:'',matricula:'',email:'',admissao:today(),ativo:true,papel:'colaborador'};
-  const nextMat=String(Math.max(100,...S.emps.map(x=>+x.matricula||0))+1).padStart(6,'0');
+  const e=id?emp(id):{nome:'',cargo:'',depto:'',jornadaId:(S.jornadas[0]||{}).id,cpf:'',login:'',email:'',admissao:today(),ativo:true,papel:'colaborador'};
   openModal(`<form data-form="emp" data-id="${id||''}"><div class="modal-h"><h3>${id?'Editar colaborador':'Novo colaborador'}</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="grid2">
-    ${[['nome','Nome completo',e.nome],['cargo','Cargo',e.cargo],['vinculo','Vínculo',e.vinculo||''],['depto','Setor',e.depto],['email','E-mail',e.email],['cpf','CPF',e.cpf]].map(f=>`<div class="field"><label for="f-${f[0]}">${f[1]}</label><input class="input ${f[0]==='cpf'?'mono':''}" id="f-${f[0]}" name="${f[0]}" ${f[0]==='email'?'type="email"':''} value="${esc(f[2])}" ${f[0]==='nome'?'required':''}></div>`).join('')}
-    <div class="field"><label for="f-matricula">Matrícula (usada no login)</label><input class="input mono" id="f-matricula" name="matricula" value="${esc(id?e.matricula:nextMat)}" ${id?'readonly':'required'}></div>
+    ${[['nome','Nome completo',e.nome],['cargo','Cargo',e.cargo],['vinculo','Vínculo',e.vinculo||''],['depto','Setor',e.depto],['email','E-mail',e.email],['cpf','CPF',e.cpf]].map(f=>`<div class="field"><label for="f-${f[0]}">${f[1]}</label><input class="input ${f[0]==='cpf'?'mono':''}" id="f-${f[0]}" name="${f[0]}" ${f[0]==='email'?'type="email"':''} value="${esc(f[2])}" ${f[0]==='nome'?`required ${id?'':'data-input="sug-login" data-target="f-login"'}`:''}></div>`).join('')}
+    <div class="field"><label for="f-login">Login</label><input class="input mono" id="f-login" name="login" value="${esc(e.login)}" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome" required></div>
     <div class="field"><label for="f-admissao">Admissão</label><input class="input" type="date" id="f-admissao" name="admissao" value="${esc(e.admissao)}"></div>
     <div class="field"><label for="f-j">Jornada</label><select class="input" id="f-j" name="jornadaId">${S.jornadas.map(j=>`<option value="${j.id}" ${j.id===e.jornadaId?'selected':''}>${esc(j.nome)}</option>`).join('')}</select></div>
     <div class="field"><label for="f-p">Perfil de acesso</label><select class="input" id="f-p" name="papel"><option value="colaborador" ${e.papel!=='rh'?'selected':''}>Colaborador</option><option value="rh" ${e.papel==='rh'?'selected':''}>RH (administrador)</option></select></div>
     <div class="field"><label for="f-at">Situação</label><select class="input" id="f-at" name="ativo"><option value="1" ${e.ativo?'selected':''}>Ativo</option><option value="0" ${!e.ativo?'selected':''}>Desligado (bloqueia o acesso)</option></select></div>
     <div class="field"><label for="f-s">${id?(e.temAcesso?'Nova senha (deixe em branco para manter)':'Senha inicial para criar o acesso'):'Senha inicial (mínimo 6 caracteres)'}</label><input class="input" id="f-s" name="senha" type="text" minlength="6" autocomplete="off" ${id?'':'required'}></div></div>
-    <div class="notice">${id?(e.papel==='rh'?'Login deste usuário: e-mail cadastrado na criação do acesso.':'Login: matrícula '+esc(e.matricula)+' e a senha definida pelo RH.'):'Colaboradores entram com a matrícula e a senha. Usuários do RH entram com o e-mail, que passa a ser obrigatório.'}</div>
+    <div class="notice">${id?'Ao mudar o login, a pessoa passa a entrar com o novo login e a mesma senha.':'A pessoa entra com o login e a senha provisória, e cria a própria senha no primeiro acesso.'}</div>
     ${id&&e.face?`<div class="notice">Biometria cadastrada · <button type="button" class="btn sm ghost" data-act="clear-face" data-id="${id}">Apagar referência facial</button></div>`:''}
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></form>`,true);
 }
@@ -963,8 +963,8 @@ function saveFile(name,text){
   const blob=new Blob(['﻿'+text],{type:name.endsWith('.csv')?'text/csv':'text/plain'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Arquivo gerado: '+name);
 }
-function csvMirror(eid,ym){const e=emp(eid),ms=monthSummary(e,ym),td=today();const L=[['Data','Dia','Entrada','Saída intervalo','Retorno','Saída','Trabalhado','Saldo','Situação'].join(';')];ms.days.filter(d=>d.ds<=td&&d.status!=='futuro').forEach(di=>{const m=di.marks.map(x=>x.ts.slice(11,16));L.push([fmtDate(di.ds),DOW[di.dow],m[0]||'',m[1]||'',m[2]||'',m[3]||'',dur(di.credit),saldoTxt(di.saldo),ST[di.status][0]].join(';'))});L.push(['Total','','','','','',dur(ms.worked),saldoTxt(ms.saldo),''].join(';'));saveFile(`espelho_${e.matricula}_${ym}.csv`,L.join('\n'))}
-function csvReport(ym){const L=[['Matrícula','Nome','Setor','Trabalhado','Previsto','Horas extras','Saldo','Atrasos','Faltas'].join(';')];S.emps.filter(e=>e.ativo).forEach(e=>{const m=monthSummary(e,ym);L.push([e.matricula,e.nome,e.depto,dur(m.worked),dur(m.exp),dur(m.extra),saldoTxt(m.saldo),m.atrasos,m.faltas].join(';'))});saveFile(`fechamento_ponto_${ym}.csv`,L.join('\n'))}
+function csvMirror(eid,ym){const e=emp(eid),ms=monthSummary(e,ym),td=today();const L=[['Data','Dia','Entrada','Saída intervalo','Retorno','Saída','Trabalhado','Saldo','Situação'].join(';')];ms.days.filter(d=>d.ds<=td&&d.status!=='futuro').forEach(di=>{const m=di.marks.map(x=>x.ts.slice(11,16));L.push([fmtDate(di.ds),DOW[di.dow],m[0]||'',m[1]||'',m[2]||'',m[3]||'',dur(di.credit),saldoTxt(di.saldo),ST[di.status][0]].join(';'))});L.push(['Total','','','','','',dur(ms.worked),saldoTxt(ms.saldo),''].join(';'));saveFile(`espelho_${e.login.split('@')[0]}_${ym}.csv`,L.join('\n'))}
+function csvReport(ym){const L=[['Login','Nome','Vínculo','Trabalhado','Previsto','Horas extras','Saldo','Atrasos','Faltas'].join(';')];S.emps.filter(e=>e.ativo).forEach(e=>{const m=monthSummary(e,ym);L.push([e.login,e.nome,e.vinculo||e.depto,dur(m.worked),dur(m.exp),dur(m.extra),saldoTxt(m.saldo),m.atrasos,m.faltas].join(';'))});saveFile(`fechamento_ponto_${ym}.csv`,L.join('\n'))}
 function afd(ym){const cn=S.company.cnpj.replace(/\D/g,'');const L=[`000000000|1|1|${cn}|${S.company.razao}|${ym}|layout simplificado`];S.punches.filter(p=>p.ts.startsWith(ym)).sort((a,b)=>a.nsr-b.nsr).forEach(p=>{const e=emp(p.empId)||{};L.push([String(p.nsr).padStart(9,'0'),'7',p.ts,e.cpf||'',e.matricula||'',p.metodo,(p.hash||'').slice(0,16)].join('|'))});L.push(`999999999|${L.length-1} registros`);saveFile(`AFD_${cn}_${ym}.txt`,L.join('\n'))}
 
 /* ================= SESSÃO ================= */
@@ -992,7 +992,6 @@ document.addEventListener('click',async ev=>{
   const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
   if(a==='modal-bg'){if(ev.target===t)closeModal();return}
   try{switch(a){
-    case 'lrole':UI.loginRole=t.dataset.v;BOOT.msg='';render();break;
     case 'logout':await logout();break;
     case 'mode':MODE=t.dataset.v;render();window.scrollTo(0,0);break;
     case 'etab':UI.empTab=t.dataset.v;UI.mirrorMonth=null;render();window.scrollTo(0,0);break;
@@ -1024,7 +1023,7 @@ document.addEventListener('click',async ev=>{
       t.disabled=true;await invoke({acao:'acesso',colaborador_id:e.id,ativo:true});await loadAll();render();toast('Acesso desbloqueado');break}
     case 'u-block-ok':{t.disabled=true;await invoke({acao:'acesso',colaborador_id:t.dataset.id,ativo:false});await loadAll();closeModal();toast('Acesso bloqueado');break}
     case 'bulk-access':{const n=S.emps.filter(e=>e.ativo&&!e.temAcesso).length;openModal(`<form data-form="bulk"><div class="modal-h"><h3>Criar acessos</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
-      <p>Cria o login de ${n} colaborador(es) ativo(s) que ainda não têm acesso. Cada um entra com a própria <b>matrícula</b> e esta senha inicial, e cria uma senha pessoal no primeiro acesso.</p>
+      <p>Cria o login de ${n} colaborador(es) ativo(s) que ainda não têm acesso. Cada um entra com o próprio <b>login</b> (nome.sobrenome) e esta senha inicial, e cria uma senha pessoal no primeiro acesso.</p>
       <div class="field"><label for="bk-s">Senha inicial (mínimo 6 caracteres)</label><input class="input" id="bk-s" name="senha" type="text" minlength="6" autocomplete="off" required></div>
       <div class="notice">Pode levar alguns segundos. Prestadores PJ também recebem acesso. Se não devem bater ponto, marque-os como desligados antes.</div>
       </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Criar ${n} acesso(s)</button></div></form>`);break}
@@ -1044,27 +1043,26 @@ document.addEventListener('change',ev=>{
   if(c==='month'){UI.mirrorMonth=t.value;render()}
   if(c==='memp'){UI.mirrorEmp=t.value;render()}
   if(c==='reqtipo')reqForm(t.value);
-  if(c==='u-papel'){const h=$('#u-email-h'),i=$('#u-email');if(h)h.textContent=t.value==='rh'?'(obrigatório, usado no login)':'(opcional)';if(i)i.required=t.value==='rh'}
 });
-document.addEventListener('input',ev=>{const t=ev.target;const k=t.dataset.input;if(k==='q'||k==='uq'){UI[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);if(n){n.focus();n.setSelectionRange(pos,pos)}}});
+document.addEventListener('input',ev=>{const t=ev.target;const k=t.dataset.input;if(k==='sug-login'){const o=$('#'+t.dataset.target);if(o&&!o.dataset.manual)o.value=sugereLogin(t.value);return}if(t.id==='u-login'||t.id==='f-login'){t.dataset.manual='1';return}if(k==='q'||k==='uq'){UI[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);if(n){n.focus();n.setSelectionRange(pos,pos)}}});
 async function invoke(body){const {data,error}=await sb.functions.invoke('gerenciar-acesso',{body});if(error){let m=error.message;try{const j=await error.context.json();if(j&&j.erro)m=j.erro}catch(e){}throw new Error(m)}if(data&&data.erro)throw new Error(data.erro);return data}
 document.addEventListener('submit',async ev=>{
   const f=ev.target;const k=f.dataset.form;if(!k)return;ev.preventDefault();
   const fd=Object.fromEntries(new FormData(f));const btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
   const showErr=m=>{const el=$('#l-err');if(el)el.textContent=m;else toast(m)};
   try{
-  if(k==='login-emp'||k==='login-rh'){
-    let email=k==='login-rh'?fd.email.trim().toLowerCase():fd.mat.trim();
-    if(!email.includes('@'))email=`m${email.replace(/\D/g,'').padStart(6,'0')}@${LOGIN_DOM}`;
-    const {error}=await sb.auth.signInWithPassword({email,password:k==='login-rh'?fd.senha:fd.pin});
-    if(error){showErr(error.message.includes('Invalid')?(k==='login-rh'?'E-mail ou senha incorretos.':'Matrícula ou senha incorretas.'):errMsg(error));if(btn)btn.disabled=false;return}
+  if(k==='login'){
+    const login=fd.login.trim().toLowerCase();
+    const email=login.includes('@')?login:`${login}@${LOGIN_DOM}`;
+    const {error}=await sb.auth.signInWithPassword({email,password:fd.senha});
+    if(error){showErr(error.message.includes('Invalid')?'Login ou senha incorretos.':errMsg(error));if(btn)btn.disabled=false;return}
     BOOT.loading=true;render();await afterLogin();BOOT.loading=false;render();return;
   }
   if(k==='bootstrap'){
     if(fd.senha!==fd.senha2){showErr('As senhas não conferem.');if(btn)btn.disabled=false;return}
-    if(!fd.matricula.trim()&&!fd.nome.trim()){showErr('Informe sua matrícula ou seu nome.');if(btn)btn.disabled=false;return}
-    await invoke({acao:'bootstrap',matricula:fd.matricula.trim(),nome:fd.nome.trim(),email:fd.email.trim().toLowerCase(),senha:fd.senha});
-    const {error}=await sb.auth.signInWithPassword({email:fd.email.trim().toLowerCase(),password:fd.senha});if(error)throw error;
+    const login=fd.login.trim().toLowerCase();
+    await invoke({acao:'bootstrap',nome:fd.nome.trim(),login,senha:fd.senha});
+    const {error}=await sb.auth.signInWithPassword({email:login.includes('@')?login:`${login}@${LOGIN_DOM}`,password:fd.senha});if(error)throw error;
     BOOT.existeRH=true;BOOT.loading=true;render();await afterLogin();BOOT.loading=false;render();toast('Acesso do RH criado');return;
   }
   if(k==='punch-pw'){
@@ -1084,16 +1082,17 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='u-new'){
     const errEl=$('#u-err');
-    const dados={nome:fd.nome.trim(),cargo:fd.cargo.trim(),vinculo:fd.vinculo.trim(),depto:'',email:fd.email.trim().toLowerCase(),cpf:fd.cpf.trim(),admissao:fd.admissao||null,jornada_id:fd.jornadaId,papel:fd.papel,matricula:fd.matricula.trim()};
-    if(fd.papel==='rh'&&!dados.email.includes('@')){errEl.textContent='Administradores do RH precisam de e-mail, que é usado no login.';if(btn)btn.disabled=false;return}
-    if(S.emps.some(x=>x.matricula===dados.matricula.replace(/\D/g,'').padStart(6,'0'))){errEl.textContent='Essa matrícula já está em uso.';if(btn)btn.disabled=false;return}
-    const r=await invoke({acao:'criar',senha:fd.senha,dados});
-    await loadAll();closeModal();credModal(dados.nome,r.login&&r.login.endsWith('@batida-ponto.app')?'Matrícula '+dados.matricula.replace(/\D/g,'').padStart(6,'0'):r.login,fd.senha);return;
+    const login=fd.login.trim().toLowerCase();
+    if(!loginOk(login)){errEl.textContent='Login inválido. Use letras minúsculas, números, ponto, hífen ou sublinhado (3 a 40 caracteres), sem espaços nem acentos.';if(btn)btn.disabled=false;return}
+    if(S.emps.some(x=>x.login.toLowerCase()===login)){errEl.textContent='Esse login já está em uso.';if(btn)btn.disabled=false;return}
+    const dados={nome:fd.nome.trim(),login,cargo:fd.cargo.trim(),vinculo:fd.vinculo.trim(),depto:'',email:fd.email.trim().toLowerCase(),cpf:fd.cpf.trim(),admissao:fd.admissao||null,jornada_id:fd.jornadaId,papel:fd.papel};
+    await invoke({acao:'criar',senha:fd.senha,dados});
+    await loadAll();closeModal();credModal(dados.nome,login,fd.senha);return;
   }
   if(k==='u-pass'){
     const e=emp(f.dataset.id);const tinha=e.temAcesso;
     await invoke({acao:'senha',colaborador_id:e.id,senha:fd.senha});
-    await loadAll();closeModal();credModal(e.nome,tinha?loginDe(emp(e.id)):'Matrícula '+e.matricula,fd.senha);toast(tinha?'Senha redefinida':'Acesso criado');return;
+    await loadAll();closeModal();credModal(e.nome,e.login,fd.senha);toast(tinha?'Senha redefinida':'Acesso criado');return;
   }
   if(k==='bulk'){
     const r=await invoke({acao:'criar-acessos',senha:fd.senha});await loadAll();closeModal();
@@ -1109,20 +1108,23 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='emp'){
     const id=f.dataset.id;
+    const login=fd.login.trim().toLowerCase();
+    if(!loginOk(login))throw new Error('Login inválido. Use letras minúsculas, números, ponto, hífen ou sublinhado (3 a 40 caracteres), sem espaços nem acentos.');
+    if(S.emps.some(x=>x.id!==id&&x.login.toLowerCase()===login))throw new Error('Esse login já está em uso.');
     const dados={nome:fd.nome.trim(),cargo:fd.cargo.trim(),vinculo:fd.vinculo.trim(),depto:fd.depto.trim(),email:fd.email.trim().toLowerCase(),cpf:fd.cpf.trim(),admissao:fd.admissao||null,jornada_id:fd.jornadaId,papel:fd.papel};
     if(!id){
-      if(fd.papel==='rh'&&!dados.email.includes('@'))throw new Error('Informe o e-mail: usuários do RH entram com ele.');
-      await invoke({acao:'criar',senha:fd.senha,dados:Object.assign({matricula:fd.matricula},dados)});
-      toast(`Colaborador incluído. Login: ${fd.papel==='rh'?dados.email:'matrícula '+fd.matricula.padStart(6,'0')}`);
-    }else{
-      const old=emp(id);
-      if(id===ME.id&&dados.papel!=='rh')throw new Error('Você não pode remover o seu próprio perfil de RH.');
-      const {error}=await sb.from('colaboradores').update(dados).eq('id',id);if(error)throw error;
-      const ativo=fd.ativo==='1';if(ativo!==old.ativo)await invoke({acao:'acesso',colaborador_id:id,ativo});
-      if(fd.senha)await invoke({acao:'senha',colaborador_id:id,senha:fd.senha});
-      toast(fd.senha?(old.temAcesso?'Cadastro e senha atualizados':`Acesso criado. Login: matrícula ${old.matricula}`):'Cadastro atualizado');
+      await invoke({acao:'criar',senha:fd.senha,dados:Object.assign({login},dados)});
+      await loadAll();closeModal();credModal(dados.nome,login,fd.senha);return;
     }
-    await loadAll();closeModal();return;
+    const old=emp(id);
+    if(id===ME.id&&dados.papel!=='rh')throw new Error('Você não pode remover o seu próprio perfil de RH.');
+    const {error}=await sb.from('colaboradores').update(dados).eq('id',id);if(error)throw error;
+    if(login!==old.login.toLowerCase())await invoke({acao:'login',colaborador_id:id,login});
+    const ativo=fd.ativo==='1';if(ativo!==old.ativo)await invoke({acao:'acesso',colaborador_id:id,ativo});
+    if(fd.senha)await invoke({acao:'senha',colaborador_id:id,senha:fd.senha});
+    await loadAll();closeModal();
+    if(fd.senha)credModal(dados.nome,login,fd.senha);else toast(login!==old.login.toLowerCase()?`Cadastro atualizado. Novo login: ${login}`:'Cadastro atualizado');
+    return;
   }
   if(k==='jor'){
     const id=f.dataset.id;const dias=DOW.map((_,i)=>fd['d'+i]?i:-1).filter(i=>i>=0);
