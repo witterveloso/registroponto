@@ -416,8 +416,26 @@ td.wrap{white-space:normal}
 }
 @media (max-width:380px){.lg-top .logo-pill img{height:32px!important}.lg-app{font-size:.9rem}.lg-seg button svg{display:none}}
 @media (prefers-reduced-motion:reduce){.lg-live i{animation:none}}
+.geo-st{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;font-size:.85rem;border:1px solid var(--line);background:var(--surface-2);color:var(--muted)}
+.geo-st[data-st="ok"]{color:var(--ok);background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.geo-st[data-st="erro"]{color:var(--bad);background:var(--bad-bg);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.geo-st svg{flex:none}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 14px;border:1.5px dashed var(--line);border-radius:12px;background:var(--surface-2);color:var(--muted);text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop:focus-within{border-color:var(--accent);background:var(--accent-soft)}
+.drop svg{color:var(--accent)}.drop b{color:var(--ink);font-size:.9rem}.drop span{font-size:.78rem}
+input[type=file]:focus-visible+.anx-list,.drop:has(+input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.anx-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.anx-list:empty{display:none}
+.anx{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:.8rem;cursor:pointer}
+.anx span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+button.anx:hover{border-color:var(--accent);color:var(--accent)}
+.just-card{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px}
+.just-card .grow{flex:1;min-width:220px;display:flex;flex-direction:column;gap:2px}
+.just-card .muted{font-size:.85rem}
+.just-acts{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:560px){.just-card{text-align:center;justify-content:center}.just-acts{width:100%}.just-acts .btn{flex:1}}
 </style>
-
 </head><body>
 <div id="app"></div>
 <div id="modal-root"></div>
@@ -474,13 +492,13 @@ const MSG_SENHA='Use pelo menos 8 caracteres, com letras e números.';
 const maskCPF=c=>{const d=String(c||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.•••.•••-'+d.slice(9):(c||'não informado')};
 function termoHTML(){return `<div class="termo">
   <p><b>Quem trata os dados.</b> ${esc(S.company.razao||'A instituição')}, para controlar a jornada de trabalho, como exige a legislação trabalhista.</p>
-  <p><b>Quais dados.</b> Nome, cargo, vínculo, CPF, e-mail corporativo, horários de entrada e saída, a localização no momento de cada registro e as solicitações que você enviar. A foto da marcação só é guardada quando ela vai para revisão do RH, e é apagada depois da revisão.</p>
-  <p><b>Biometria facial.</b> É opcional e depende de autorização separada. O sistema guarda uma referência numérica do rosto e uma miniatura, usadas só para confirmar que é você no registro. Você pode revogar a qualquer momento no seu Perfil, e os dados biométricos são apagados na hora. Sem biometria, você registra o ponto com senha ou PIN.</p>
-  <p><b>Quem vê.</b> Você, o gestor do seu setor (só os seus horários e solicitações) e o RH. Nenhum dado é vendido ou compartilhado para outros fins.</p>
-  <p><b>Base legal.</b> Cumprimento de obrigação legal (LGPD, art. 7º, II) para o controle de jornada, e consentimento específico (art. 11, I) para a biometria.</p>
-  <p><b>Por quanto tempo.</b> Os registros de ponto ficam guardados pelo prazo exigido pela legislação trabalhista. A biometria fica até você revogar ou até o desligamento.</p>
+  <p><b>Quais dados.</b> Nome, cargo, vínculo, CPF, e-mail corporativo, horários de entrada e saída, a localização no momento de cada registro, as solicitações que você enviar e os documentos anexados a elas. O sistema não usa reconhecimento facial nem guarda fotos ou dados biométricos.</p>
+  <p><b>Assinatura com PIN.</b> Cada registro de ponto é assinado com o seu PIN de 6 números. O PIN fica guardado de forma criptografada e nem o RH consegue vê-lo.</p>
+  <p><b>Quem vê.</b> Você, o gestor do seu setor (só os seus horários e solicitações) e o RH. Atestados e documentos médicos ficam visíveis só para você e o RH. Nenhum dado é vendido ou compartilhado para outros fins.</p>
+  <p><b>Base legal.</b> Cumprimento de obrigação legal (LGPD, art. 7º, II) para o controle de jornada. Dados de saúde em atestados são tratados para cumprir obrigações trabalhistas (art. 11, II, a).</p>
+  <p><b>Por quanto tempo.</b> Os registros de ponto ficam guardados pelo prazo exigido pela legislação trabalhista.</p>
   <p><b>Segurança.</b> Conexão criptografada, dados armazenados com criptografia, acesso por perfil validado no servidor, verificação em duas etapas para o RH, registros de ponto que não podem ser apagados nem alterados e histórico de auditoria de todas as alterações.</p>
-  <p><b>Seus direitos.</b> Você pode consultar seus dados no próprio sistema, pedir correção ao RH e revogar a biometria. Dúvidas sobre privacidade: fale com o RH.</p>
+  <p><b>Seus direitos.</b> Você pode consultar seus dados no próprio sistema, e pedir correção ao RH. Dúvidas sobre privacidade: fale com o RH.</p>
   <p class="muted" style="font-size:.78rem">Versão ${esc(S.config.termoVersao||'v1')}</p></div>`}
 function authShell(inner){return `<div class="auth-wrap"><div class="card card-b auth-card">${logoPill(34,'align-self:center;border:1px solid var(--line)')}${inner}</div></div>`}
 const holOf=ds=>(S.hol||HOL)[ds];
@@ -514,7 +532,6 @@ const TIPOS=['Entrada','Saída intervalo','Retorno intervalo','Saída'];
 const tipoN=i=>i<4?TIPOS[i]:(i%2===0?'Entrada extra':'Saída extra');
 const isRH=()=>ME&&ME.papel==='rh';
 const senhaOk=()=>S.config.modoSenha!=='bloqueada'||!S.config.facial;
-const facialOn=()=>S.config.facial!==false;
 const meusSetores=()=>ME?S.setores.filter(s=>s.gestor_id===ME.id):[];
 const isGestor=()=>meusSetores().length>0;
 const minhaEquipe=(ym)=>{const ids=meusSetores().map(s=>s.id);return S.emps.filter(e=>e.setorId&&ids.includes(e.setorId)&&e.id!==ME.id&&(!ym||!e.admissao||e.admissao<=ym+'-31')).sort((a,b)=>a.nome.localeCompare(b.nome))};
@@ -527,7 +544,7 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
 const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin});
 const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
-const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
+const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
 
 let LOADED_FROM=null;
 const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash';
@@ -660,7 +677,7 @@ function render(){
   if(MODE==='termos'){app.innerHTML=authShell(`<form data-form="termos" class="auth-form"><div><h2>Termo de uso e privacidade</h2><p class="muted" style="margin-top:4px">Antes de continuar, leia como os seus dados são tratados.</p></div>${termoHTML()}
     <label class="check"><input type="checkbox" name="ok" required> Li e concordo com o termo de uso e privacidade.</label>
     <div class="err" id="l-err"></div><button class="btn primary" type="submit">Concordar e continuar</button><button type="button" class="btn ghost" data-act="logout">Sair</button></form>`);return}
-  if(MODE==='pin'){app.innerHTML=authShell(`<form data-form="pin" class="auth-form"><div><h2>Crie seu PIN de ponto</h2><p class="muted" style="margin-top:4px">O PIN tem 6 números e serve para registrar o ponto quando a câmera não estiver disponível. Não use datas ou sequências.</p></div>
+  if(MODE==='pin'){app.innerHTML=authShell(`<form data-form="pin" class="auth-form"><div><h2>Crie seu PIN de ponto</h2><p class="muted" style="margin-top:4px">O PIN tem 6 números e é a sua assinatura em cada registro de ponto. Não use datas ou sequências.</p></div>
     <div class="field"><label for="pin1">PIN de 6 números</label><input class="input mono pin-in" id="pin1" name="pin" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="new-password" required></div>
     <div class="field"><label for="pin2">Confirme o PIN</label><input class="input mono pin-in" id="pin2" name="pin2" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="new-password" required></div>
     <div class="err" id="l-err"></div><button class="btn primary" type="submit">Salvar PIN</button>${ME.temPin?'<button type="button" class="btn ghost" data-act="pin-cancel">Cancelar</button>':'<button type="button" class="btn ghost" data-act="logout">Sair</button>'}</form>`);return}
@@ -689,7 +706,6 @@ function viewConvite(){
     ${BOOT.conviteErro?`<div class="notice" style="border-color:var(--bad);color:var(--bad)">${esc(BOOT.conviteErro)}</div>`:''}
     <details class="termo-box" open><summary>Termo de uso e privacidade</summary>${termoHTML()}</details>
     <label class="check"><input type="checkbox" name="termos" required> Li e concordo com o termo de uso e privacidade.</label>
-    <label class="check"><input type="checkbox" name="biometria"> Autorizo o uso da minha biometria facial para registrar o ponto (opcional, posso revogar quando quiser).</label>
     <div class="err" id="l-err"></div>
     ${googleBtn('Continuar com o Google','google-convite')}
     ${BOOT.conviteErro?'<button type="button" class="btn ghost" data-act="convite-trocar">Usar outra conta Google</button>':''}
@@ -793,15 +809,16 @@ function empPonto(e){
     ${di.hol?`<span class="chip warn">Feriado · ${esc(di.hol)}</span>`:''}</div>
     <div class="big-clock">${clockHTML()}</div>
     <div class="cc-meta"><span class="chip plain">${esc(j.nome)}</span><span class="chip plain">${j.ini} às ${j.fim}</span><span class="chip plain">Intervalo ${j.intIni} às ${j.intFim}</span></div>
-    ${facialOn()?`<button class="punch-btn" data-act="punch">${IC.face}Registrar ${esc(next.toLowerCase())}</button>`:`<button class="punch-btn" data-act="punch-pw">${IC.clock}Registrar ${esc(next.toLowerCase())}</button>`}
-    ${facialOn()&&senhaOk()?`<button class="btn" style="background:transparent;color:var(--deep-ink);border-color:var(--deep-line);width:100%;padding:12px" data-act="punch-pw">Sem câmera? Registrar com ${ME.temPin?'PIN':'senha'}</button>`:''}
-    <div class="cc-loc" style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)}${facialOn()?` · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}`:` · registro com ${ME.temPin?'o seu PIN':'a sua senha de acesso'}`}</div>
+    <button class="punch-btn" data-act="punch-pw">${IC.clock}Registrar ${esc(next.toLowerCase())}</button>
+    <div class="cc-loc" style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)} · assinatura com PIN e localização</div>
   </section>
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2>Marcações de hoje</h2><div class="spacer"></div>${n?`<button class="btn sm ghost" data-act="receipt" data-id="${di.marks[n-1].id}">Último comprovante</button>`:''}</div>
     <div class="timeline">${slots}</div>
     ${extras.length?`<div class="notice">Marcações extras: ${extras.map(m=>`<b class="mono">${m.ts.slice(11,16)}</b>`).join(', ')}</div>`:''}
   </section>
+  <section class="card just-card"><div class="grow"><b>Precisa justificar uma ausência?</b><span class="muted">Falta, atraso, saída antecipada, atestado ou licença. Anexe os documentos e o RH analisa.</span></div>
+    <div class="just-acts"><button class="btn primary sm" data-act="new-req" data-tipo="justificativa">Justificar</button><button class="btn sm" data-act="new-req" data-tipo="atestado">Enviar atestado ou licença</button></div></section>
   <section class="kpis">
     <div class="card kpi"><span class="l">Trabalhado hoje</span><span class="v">${dur(di.worked)}</span><span class="muted" style="font-size:.78rem">${di.open?'Contando agora':'de '+dur(di.exp)+' previstas'}</span></div>
     <div class="card kpi"><span class="l">Banco de horas · ${MES[+td.slice(5,7)-1]}</span><span class="v ${saldoCls(ms.saldo)}">${saldoTxt(ms.saldo)}</span><span class="muted" style="font-size:.78rem">Dias fechados do mês</span></div>
@@ -812,7 +829,7 @@ function empPonto(e){
 function mirrorTable(e,ym){
   const ms=monthSummary(e,ym),td=today();
   const rows=ms.days.map(di=>{
-    const m=di.marks.map(x=>x.ts.slice(11,16));const cell=i=>m[i]?`<span class="mono${['ajuste-rh','sem-biometria'].includes(di.marks[i].metodo)?' neg':''}" title="${esc({facial:'Reconhecimento facial',cadastro:'Cadastro facial',senha:'Senha pessoal','ajuste-rh':'Ajuste do RH','sem-biometria':'Sem biometria'}[di.marks[i].metodo]||'')}">${m[i]}${di.marks[i].metodo==='senha'?'<sup class="muted" style="font-size:.65em"> S</sup>':''}</span>`:'<span class="muted">·</span>';
+    const m=di.marks.map(x=>x.ts.slice(11,16));const cell=i=>m[i]?`<span class="mono${['ajuste-rh','sem-biometria'].includes(di.marks[i].metodo)?' neg':''}" title="${esc({pin:'Assinatura com PIN',facial:'Reconhecimento facial',cadastro:'Cadastro facial',senha:'Senha pessoal','ajuste-rh':'Ajuste do RH','sem-biometria':'Sem biometria'}[di.marks[i].metodo]||'')}">${m[i]}${di.marks[i].metodo==='senha'?'<sup class="muted" style="font-size:.65em"> S</sup>':''}</span>`:'<span class="muted">·</span>';
     const wk=!di.j.dias.includes(di.dow)||di.hol;const fut=di.ds>td||di.status==='futuro';
     return `<tr class="${wk?'weekend':''}"><td class="mono">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted">${DOW[di.dow]}</span></td><td>${cell(0)}</td><td>${cell(1)}</td><td>${cell(2)}</td><td>${cell(3)}</td><td class="mono">${m.length>4?'+'+(m.length-4):''}</td>
     <td class="num mono">${fut?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut?'':saldoTxt(di.saldo)}</td><td>${fut?'':stChip(di.status)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}</td></tr>`}).join('');
@@ -930,26 +947,30 @@ function empEspelho(e){
   ${aprovBlock(e,ym,ms)}
   <section class="card">${html}</section>
   <div class="row"><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar espelho (CSV)</button><button class="btn ghost" data-act="new-req" data-tipo="ajuste">Solicitar ajuste de marcação</button></div>
-  <p class="notice">Marcações com <b>S</b> foram feitas com senha. Em vermelho, as incluídas por ajuste do RH ou registradas sem biometria. A tolerância diária segue o art. 58, §1º da CLT: até 10 minutos por dia não geram saldo.</p>`;
+  <p class="notice">Em vermelho, as marcações incluídas por ajuste do RH. A tolerância diária segue o art. 58, §1º da CLT: até 10 minutos por dia não geram saldo.</p>`;
 }
-const REQT={ajuste:'Ajuste de marcação',atestado:'Atestado médico',abono:'Abono de ausência',ferias:'Férias'};
+const REQT={ajuste:'Ajuste de marcação',justificativa:'Justificativa de ausência',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
+const REQD={ajuste:'Esqueceu ou registrou errado',justificativa:'Falta, atraso, saída antecipada ou outra situação',atestado:'Envie o atestado para abonar o dia',licenca:'Maternidade, paternidade, casamento, luto e outras',abono:'Cursos, compromissos e ausências legais',ferias:'Peça o período ao RH'};
+const LICT=['Licença médica','Licença-maternidade','Licença-paternidade','Casamento (gala)','Falecimento de familiar (nojo)','Doação de sangue','Serviço eleitoral ou júri','Outra'];
+const reqTit=r=>REQT[r.tipo]+(r.subtipo?' · '+r.subtipo:'');
+const anexosHTML=r=>(r.anexos||[]).map(a=>`<button type="button" class="anx" data-act="anexo" data-path="${esc(a.path)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>${esc(a.nome)}</span></button>`).join('');
 const REQS={pendente:['Em análise','warn'],aprovado:['Aprovada','ok'],recusado:['Recusada','bad']};
 function reqLine(r,showEmp){
   const e=emp(r.empId)||{nome:'Colaborador'};
-  return `<div class="li"><div class="grow"><div class="ttl">${showEmp?esc(e.nome)+' · ':''}${REQT[r.tipo]}</div>
-  <div class="sub">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · '+r.hora:''} · ${esc(r.motivo)}${r.anexo?' · Anexo: '+esc(r.anexo):''}</div>
+  return `<div class="li"><div class="grow"><div class="ttl">${showEmp?esc(e.nome)+' · ':''}${esc(reqTit(r))}</div>
+  <div class="sub">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · '+r.hora:''} · ${esc(r.motivo)}</div>
+  ${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}
   ${r.resposta?`<div class="sub">RH: ${esc(r.resposta)}</div>`:''}</div><span class="chip ${REQS[r.status][1]}">${REQS[r.status][0]}</span></div>`;
 }
 function empSolic(e){
   const mine=S.requests.filter(r=>r.empId===e.id).sort((a,b)=>a.criado<b.criado?1:-1);
   return `<div class="row"><h2>Solicitações</h2><div class="spacer"></div><button class="btn primary" data-act="new-req" data-tipo="ajuste">Nova solicitação</button></div>
-  <div class="grid2">${Object.entries(REQT).map(([k,v])=>`<button class="card kpi" style="text-align:left;cursor:pointer;border-color:var(--line)" data-act="new-req" data-tipo="${k}"><span style="font-weight:600">${v}</span><span class="muted" style="font-size:.8rem">${{ajuste:'Esqueceu ou registrou errado',atestado:'Envie o atestado para abonar o dia',abono:'Ausências legais, cursos, compromissos',ferias:'Peça o período ao RH'}[k]}</span></button>`).join('')}</div>
+  <div class="grid2">${Object.entries(REQT).map(([k,v])=>`<button class="card kpi" style="text-align:left;cursor:pointer;border-color:var(--line)" data-act="new-req" data-tipo="${k}"><span style="font-weight:600">${v}</span><span class="muted" style="font-size:.8rem">${REQD[k]}</span></button>`).join('')}</div>
   <section class="card"><div class="card-h"><h3>Histórico</h3></div><div class="list">${mine.length?mine.map(r=>reqLine(r)).join(''):'<div class="empty">Nenhuma solicitação enviada ainda.</div>'}</div></section>`;
 }
 function empPerfil(e){
   const j=jor(e.jornadaId);
   const last=S.punches.filter(p=>p.empId===e.id).sort((a,b)=>a.ts<b.ts?1:-1).slice(0,8);
-  const bio={validada:['Validada pelo RH','ok'],pendente:['Aguardando validação do RH','warn'],nenhuma:['Não cadastrada','bad'],rejeitada:['Recusada, cadastre novamente','bad']}[e.bio];
   return `<section class="card card-b" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
     <div class="avatar" style="width:64px;height:64px;font-size:1.2rem">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div>
     <div style="flex:1;min-width:180px"><h2>${esc(e.nome)}</h2><div class="muted">${esc(e.cargo)} · ${esc(e.depto)}</div></div>
@@ -957,19 +978,16 @@ function empPerfil(e){
   <section class="card"><div class="card-h"><h3>Dados funcionais</h3></div><div class="card-b grid2">
     ${[['Login',e.login],['CPF',e.cpf||'Não informado'],['Admissão',e.admissao?fmtDate(e.admissao):'Não informada'],['E-mail',e.email||'Não informado'],['Jornada',j.nome],['Horário',`${j.ini} às ${j.fim}, intervalo ${j.intIni} às ${j.intFim}`]].map(x=>`<div class="field"><label>${x[0]}</label><span class="${x[0]==='Login'||x[0]==='CPF'?'mono':''}">${esc(x[1])}</span></div>`).join('')}
   </div></section>
-  ${facialOn()?`<section class="card"><div class="card-h"><h3>Biometria facial</h3><span class="chip ${bio[1]}">${bio[0]}</span><div class="spacer"></div><button class="btn sm" data-act="enroll">Recadastrar rosto</button></div>
-    <div class="card-b muted" style="font-size:.88rem">A referência facial fica vinculada ao seu cadastro. Ao recadastrar, o RH precisa validar a nova foto.</div></section>`:''}
   <section class="card"><div class="card-h"><h3>Privacidade e segurança</h3></div><div class="list">
     <div class="li"><div class="grow"><div class="ttl">Termo de uso e privacidade</div><div class="sub">${temConsent('termos')?'Aceito':'Pendente'}</div></div><button class="btn sm" data-act="privacidade">Ler</button></div>
-    <div class="li"><div class="grow"><div class="ttl">Biometria facial</div><div class="sub">${temConsent('biometria')?'Autorizada. Revogar apaga seus dados biométricos na hora.':'Não autorizada'}</div></div>${temConsent('biometria')?'<button class="btn sm danger" data-act="bio-revogar">Revogar</button>':''}</div>
-    ${ME.google||ME.temPin?`<div class="li"><div class="grow"><div class="ttl">PIN de ponto</div><div class="sub">${ME.temPin?'Definido':'Não definido'}</div></div><button class="btn sm" data-act="pin-alterar">${ME.temPin?'Alterar':'Criar'}</button></div>`:''}
+    ${true?`<div class="li"><div class="grow"><div class="ttl">PIN de ponto</div><div class="sub">${ME.temPin?'Definido':'Não definido'}</div></div><button class="btn sm" data-act="pin-alterar">${ME.temPin?'Alterar':'Criar'}</button></div>`:''}
     <div class="li"><div class="grow"><div class="ttl">Forma de acesso</div><div class="sub">${ME.google?'Conta Google corporativa':'Login e senha'}${ME.email?' · '+esc(ME.email):''}</div></div></div>
   </div></section>
   <section class="card"><div class="card-h"><h3>Comprovantes recentes</h3></div><div class="list">${last.map(p=>`<div class="li"><div class="grow"><div class="ttl mono">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,16)}</div><div class="sub">NSR ${String(p.nsr).padStart(9,'0')} · ${esc(p.local)}</div></div><button class="btn sm" data-act="receipt" data-id="${p.id}">Ver</button></div>`).join('')||'<div class="empty">Sem marcações ainda.</div>'}</div></section>`;
 }
 
 /* ================= RH ================= */
-function pendingCount(){return S.requests.filter(r=>r.status==='pendente').length+S.punches.filter(p=>p.revisao==='pendente').length+S.emps.filter(e=>e.bio==='pendente').length}
+function pendingCount(){return S.requests.filter(r=>r.status==='pendente').length+S.punches.filter(p=>p.revisao==='pendente').length}
 function viewRH(){
   const t=UI.rhTab,pc=pendingCount();
   const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['auditoria','Auditoria',IC.check],['config','Configurações',IC.gear]];
@@ -1005,7 +1023,7 @@ function rhPainel(){
     if(ym.length&&tdi.marks.length){const gap=(parseD(tdi.marks[0].ts)-parseD(ym[ym.length-1].ts))/6e4;if(gap<660)al.push(['bad',`${e.nome}: interjornada de ${dur(gap)}`,'Mínimo de 11h entre jornadas (CLT art. 66)'])}
     for(let b=1;b<8;b++){const x=dstr(new Date(d.getFullYear(),d.getMonth(),d.getDate()-b));if(e.admissao&&x<e.admissao)break;const di=dayInfo(e,x);if(di.status==='incompleto'){al.push(['warn',`${e.nome} tem marcação incompleta em ${fmtDate(x)}`,'Falta registrar uma saída']);break}if(di.status==='falta'){al.push(['bad',`${e.nome} faltou em ${fmtDate(x)} sem justificativa`,'Nenhuma marcação no dia']);break}}
   });
-  S.punches.filter(p=>p.revisao==='pendente').forEach(p=>{const e=emp(p.empId);if(e)al.push(['info',`${e.nome}: marcação ${p.foraCerca?'fora da cerca virtual':'sem biometria'}`,`${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)} · ${p.local}`])});
+  S.punches.filter(p=>p.revisao==='pendente').forEach(p=>{const e=emp(p.empId);if(e)al.push(['info',`${e.nome}: marcação ${p.foraCerca?'fora da cerca virtual':'para revisão'}`,`${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)} · ${p.local}`])});
   const col={warn:'var(--warn)',bad:'var(--bad)',info:'var(--info)'};
   return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div><div class="spacer"></div>${holOf(td)?`<span class="chip warn">Feriado · ${esc(holOf(td))}</span>`:''}<span class="chip ok">Ao vivo · ${clockHTML()}</span></div>
   <section class="kpis">
@@ -1027,12 +1045,11 @@ function rhPainel(){
 function rhEquipe(){
   const q=UI.q.toLowerCase();
   const list=S.emps.filter(e=>!q||(e.nome+e.login+e.depto+e.cargo+e.vinculo).toLowerCase().includes(q));
-  const bio={validada:['Validada','ok'],pendente:['Pendente','warn'],nenhuma:['Sem cadastro','bad'],rejeitada:['Recusada','bad']};
   const ym=today().slice(0,7);const semAcesso=S.emps.filter(e=>e.ativo&&!e.temAcesso).length;
   return `<div class="page-h"><div><div class="eyebrow">${S.emps.filter(e=>e.ativo).length} ativos${semAcesso?` · ${semAcesso} sem acesso`:''}</div><h1>Colaboradores</h1></div><div class="spacer"></div>
     <input class="input search" id="q" data-input="q" placeholder="Buscar por nome, login, cargo, vínculo" value="${esc(UI.q)}">${semAcesso?`<button class="btn" data-act="bulk-access">Criar acessos (${semAcesso})</button>`:''}<button class="btn primary" data-act="emp-form">Novo colaborador</button></div>
-  <section class="card tablewrap"><table><thead><tr><th>Colaborador</th><th>Login</th><th>Vínculo</th><th>Jornada</th><th>Acesso</th><th>Biometria</th><th class="num">Banco do mês</th><th>Situação</th><th></th></tr></thead><tbody>
-  ${list.map(e=>{const ms=monthSummary(e,ym);return `<tr><td><div class="row" style="flex-wrap:nowrap"><div class="avatar" style="width:32px;height:32px;font-size:.75rem">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div style="min-width:0"><div style="font-weight:600">${esc(e.nome)}${e.papel==='rh'?' <span class="chip acc plain">RH</span>':''}</div><div class="muted" style="font-size:.78rem;max-width:280px;white-space:normal">${esc(e.cargo)}</div></div></div></td><td class="mono">${esc(e.login)}</td><td>${esc(e.vinculo||e.depto)}</td><td>${esc(jor(e.jornadaId).nome)}</td><td>${e.temAcesso?(e.trocarSenha?'<span class="chip warn">Senha inicial</span>':'<span class="chip ok">Ativo</span>'):'<span class="chip plain">Sem acesso</span>'}</td><td><span class="chip ${bio[e.bio][1]}">${bio[e.bio][0]}</span></td><td class="num mono ${saldoCls(ms.saldo)}">${saldoTxt(ms.saldo)}</td><td>${e.ativo?'<span class="chip ok">Ativo</span>':'<span class="chip plain">Desligado</span>'}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="emp-form" data-id="${e.id}">Editar</button><button class="btn sm ghost" data-act="see-mirror" data-id="${e.id}">Espelho</button></div></td></tr>`}).join('')||'<tr><td colspan="9" class="empty">Nenhum colaborador encontrado.</td></tr>'}
+  <section class="card tablewrap"><table><thead><tr><th>Colaborador</th><th>Login</th><th>Vínculo</th><th>Jornada</th><th>Acesso</th><th class="num">Banco do mês</th><th>Situação</th><th></th></tr></thead><tbody>
+  ${list.map(e=>{const ms=monthSummary(e,ym);return `<tr><td><div class="row" style="flex-wrap:nowrap"><div class="avatar" style="width:32px;height:32px;font-size:.75rem">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div style="min-width:0"><div style="font-weight:600">${esc(e.nome)}${e.papel==='rh'?' <span class="chip acc plain">RH</span>':''}</div><div class="muted" style="font-size:.78rem;max-width:280px;white-space:normal">${esc(e.cargo)}</div></div></div></td><td class="mono">${esc(e.login)}</td><td>${esc(e.vinculo||e.depto)}</td><td>${esc(jor(e.jornadaId).nome)}</td><td>${e.temAcesso?(e.trocarSenha?'<span class="chip warn">Senha inicial</span>':'<span class="chip ok">Ativo</span>'):'<span class="chip plain">Sem acesso</span>'}</td><td class="num mono ${saldoCls(ms.saldo)}">${saldoTxt(ms.saldo)}</td><td>${e.ativo?'<span class="chip ok">Ativo</span>':'<span class="chip plain">Desligado</span>'}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="emp-form" data-id="${e.id}">Editar</button><button class="btn sm ghost" data-act="see-mirror" data-id="${e.id}">Espelho</button></div></td></tr>`}).join('')||'<tr><td colspan="9" class="empty">Nenhum colaborador encontrado.</td></tr>'}
   </tbody></table></section>`;
 }
 function loginDe(e){return e.login}
@@ -1151,17 +1168,14 @@ function genPass(){const L='abcdefghjkmnpqrstuvwxyz',N='23456789',c=L+N;const a=
 function rhAprov(){
   const reqs=S.requests.filter(r=>r.status==='pendente').sort((a,b)=>a.criado<b.criado?-1:1);
   const pun=S.punches.filter(p=>p.revisao==='pendente');
-  const bios=S.emps.filter(e=>e.bio==='pendente');
   const hist=S.requests.filter(r=>r.status!=='pendente').sort((a,b)=>a.criado<b.criado?1:-1).slice(0,8);
   return `<div class="page-h"><div><div class="eyebrow">Fila de trabalho</div><h1>Aprovações</h1></div></div>
   <section class="card"><div class="card-h"><h3>Solicitações dos colaboradores</h3><span class="chip warn">${reqs.length}</span></div>
-  ${reqs.length?reqs.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${REQT[r.tipo]}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário solicitado <b class="mono">'+r.hora+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexoPath?`<button class="btn sm ghost" style="margin-top:6px" data-act="anexo" data-path="${esc(r.anexoPath)}">Abrir anexo: ${esc(r.anexo)}</button>`:''}<div class="muted" style="font-size:.75rem;margin-top:4px">Enviado em ${fmtDate(r.criado.slice(0,10))} às ${r.criado.slice(11,16)}</div></div>
+  ${reqs.length?reqs.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário solicitado <b class="mono">'+r.hora+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}<div class="muted" style="font-size:.75rem;margin-top:4px">Enviado em ${fmtDate(r.criado.slice(0,10))} às ${r.criado.slice(11,16)}</div></div>
   <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join(''):'<div class="empty">Nenhuma solicitação aguardando.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Marcações para revisão</h3><span class="chip info">${pun.length}</span></div>
-  ${pun.length?pun.map(p=>{const e=emp(p.empId)||{nome:'Colaborador'};return `<div class="req">${p.foto?`<img class="thumb" src="${p.foto}" alt="Foto da marcação">`:`<div class="avatar" style="width:64px;height:64px">${initials(e.nome)}</div>`}<div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${p.foraCerca?'Fora da cerca virtual':'Sem validação biométrica'}</div><div class="muted mono" style="font-size:.85rem">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,19)} · NSR ${String(p.nsr).padStart(9,'0')}</div><div style="font-size:.85rem">${esc(p.local)}${p.geo?` · <span class="mono">${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)}</span>`:''}${p.obs?' · '+esc(p.obs):''}</div></div>
+  ${pun.length?pun.map(p=>{const e=emp(p.empId)||{nome:'Colaborador'};return `<div class="req">${p.foto?`<img class="thumb" src="${p.foto}" alt="Foto da marcação">`:`<div class="avatar" style="width:64px;height:64px">${initials(e.nome)}</div>`}<div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${p.foraCerca?'Fora da cerca virtual':'Revisão do RH'}</div><div class="muted mono" style="font-size:.85rem">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,19)} · NSR ${String(p.nsr).padStart(9,'0')}</div><div style="font-size:.85rem">${esc(p.local)}${p.geo?` · <span class="mono">${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)}</span>`:''}${p.obs?' · '+esc(p.obs):''}</div></div>
   <div class="row"><button class="btn sm danger" data-act="pun-dec" data-id="${p.id}" data-v="desconsiderada">Desconsiderar</button><button class="btn sm primary" data-act="pun-dec" data-id="${p.id}" data-v="aceita">Aceitar</button></div></div>`}).join(''):'<div class="empty">Nenhuma marcação aguardando revisão.</div>'}</section>
-  <section class="card"><div class="card-h"><h3>Cadastros faciais</h3><span class="chip warn">${bios.length}</span></div>
-  ${bios.length?bios.map(e=>`<div class="req">${e.face?`<img class="thumb" src="${e.face.thumb}" alt="Referência facial">`:'<div class="thumb"></div>'}<div class="grow"><div style="font-weight:600">${esc(e.nome)}</div><div class="muted" style="font-size:.85rem">${esc(e.cargo)} · ${esc(e.login)}</div><div style="font-size:.85rem">Confira se a foto é nítida, frontal e corresponde ao colaborador.</div></div><div class="row"><button class="btn sm danger" data-act="bio-dec" data-id="${e.id}" data-v="rejeitada">Recusar</button><button class="btn sm primary" data-act="bio-dec" data-id="${e.id}" data-v="validada">Validar</button></div></div>`).join(''):'<div class="empty">Nenhum cadastro facial aguardando validação.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Decisões recentes</h3></div><div class="list">${hist.map(r=>reqLine(r,true)).join('')||'<div class="empty">Sem histórico.</div>'}</div></section>`;
 }
 function rhEspelho(){
@@ -1226,11 +1240,9 @@ function rhConfig(){
     <div><div class="eyebrow" style="margin-bottom:10px">Cerca virtual</div><div class="grid2">
       <div class="field"><label for="c-at">Cerca virtual</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada (usa os locais de trabalho abaixo)</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
       <div class="field"><label for="c-blq">Fora da cerca</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
-    <div><div class="eyebrow" style="margin-bottom:10px">Biometria e senha</div><div class="grid2">
-      <div class="field"><label for="c-fa">Reconhecimento facial</label><select class="input" id="c-fa" name="facial"><option value="1" ${c.facial!==false?'selected':''}>Ativado</option><option value="0" ${c.facial===false?'selected':''}>Desativado (ponto somente por senha ou PIN)</option></select></div>
-      <div class="field"><label for="c-pw">Marcação por senha ou PIN</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha==='permitida'?'selected':''}>Permitida</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Permitida com revisão do RH</option><option value="bloqueada" ${c.modoSenha==='bloqueada'?'selected':''}>Não permitida</option></select></div>
-      <div class="field"><label for="c-lim">Limiar de similaridade facial (0,50 a 0,95)</label><input class="input mono" id="c-lim" name="limiar" type="number" step="0.01" min="0.5" max="0.95" value="${c.limiar}"></div>
-      <div class="field"><label for="c-ex">Marcação sem biometria</label><select class="input" id="c-ex" name="exigir"><option value="1" ${c.exigirFace?'selected':''}>Permitir com revisão do RH</option><option value="0" ${!c.exigirFace?'selected':''}>Permitir sem revisão</option></select></div></div></div>
+    <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
+      <div class="field"><label>Forma de registro</label><span>Assinatura com PIN de 6 números e localização obrigatória</span></div>
+      <div class="field"><label for="c-pw">Marcações com PIN</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha!=='revisao'?'selected':''}>Valem direto</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Passam por revisão do RH</option></select></div></div></div>
     <div class="row"><button class="btn primary" type="submit">Salvar configurações</button></div></div></form>
 
   <section class="card"><div class="card-h"><div><h3>Domínios do Google corporativo</h3><div class="muted" style="font-size:.82rem">Convites só são aceitos para e-mails destes domínios.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="dom-add">Adicionar domínio</button></div>
@@ -1287,131 +1299,49 @@ function receiptHTML(p){
     <div class="rl"><span>CPF</span><span>${esc(e.cpf||'Não informado')}</span></div>
     <div class="rl"><span>NSR</span><span>${String(p.nsr).padStart(9,'0')}</span></div>
     <div class="rl"><span>Local</span><span>${esc(p.local)}</span></div>
-    <div class="rl"><span>Validação</span><span>${p.metodo==='facial'?`Facial · ${Math.round((p.score||0)*100)}%`:p.metodo==='cadastro'?'Cadastro facial inicial':p.metodo==='senha'?'Senha pessoal':p.metodo==='ajuste-rh'?'Inclusão pelo RH':'Sem biometria'}</span></div>
-    ${p.geo?`<div class="rl"><span>Coordenadas</span><span>${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)} ±${Math.round(p.geo.acc)}m</span></div>`:'<div class="rl"><span>Coordenadas</span><span>Não informadas</span></div>'}
+    <div class="rl"><span>Validação</span><span>${p.metodo==='facial'?`Facial · ${Math.round((p.score||0)*100)}%`:p.metodo==='cadastro'?'Cadastro facial inicial':p.metodo==='pin'?'Assinatura com PIN':p.metodo==='senha'?'Senha pessoal':p.metodo==='ajuste-rh'?'Inclusão pelo RH':'Sem biometria'}</span></div>
+    ${p.geo?`<div class="rl"><span>Coordenadas</span><span>${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)} ±${Math.round(p.geo.acc)}m</span></div><div class="rl"><span>Mapa</span><span><a href="https://www.google.com/maps?q=${p.geo.lat},${p.geo.lng}" target="_blank" rel="noopener noreferrer">Ver no mapa</a></span></div>`:'<div class="rl"><span>Coordenadas</span><span>Não informadas</span></div>'}
     <hr><div style="color:var(--muted)">Código de verificação (SHA-256)</div><div class="hash">${esc(p.hash)}</div>
   </div>`;
 }
 function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`)}
 
 /* ---------- Captura facial ---------- */
-let STREAM=null,CAP=null;
-function stopCam(){if(STREAM){STREAM.getTracks().forEach(t=>t.stop());STREAM=null}}
-function startCapture(mode){
-  const e=ME;const enrolling=mode==='enroll'||!e.face;
-  if(enrolling&&!temConsent('biometria')){
-    openModal(`<div class="modal-h"><h3>Autorizar biometria facial</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
-      <p>Para registrar o ponto pelo rosto, o sistema guarda uma referência numérica do seu rosto e uma miniatura. Elas ficam protegidas no servidor e só servem para confirmar que é você.</p>
-      <p class="muted">A autorização é opcional. Sem ela, você registra o ponto com ${ME.temPin?'o PIN':'a senha'}. Você pode revogar quando quiser no seu Perfil, e os dados são apagados na hora.</p>
-    </div><div class="modal-f"><button class="btn ghost" data-act="close">Agora não</button><button class="btn primary" data-act="bio-ok" data-mode="${mode}">Autorizar e continuar</button></div>`);
-    return;
-  }
-  CAP={mode,enrolling};
-  const n=marksOf(e.id,today()).length;
-  openModal(`<div class="modal-h"><div><div class="eyebrow">${enrolling?'Cadastro biométrico':'Registro de ponto'}</div><h3>${enrolling?'Cadastre sua referência facial':esc(tipoN(n))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div>
-  <div class="modal-b">
-    <div class="capture">
-      <div class="viewport"><div class="ring idle" id="ring"></div><div class="cam" id="cam"><div class="cam-ph">Abrindo a câmera…</div></div><div class="scanline" id="scan" hidden></div></div>
-      <div id="cap-msg" style="text-align:center;font-size:.9rem;max-width:300px">${enrolling?'Centralize o rosto no círculo, com boa iluminação e sem óculos escuros.':'Olhe para a câmera e mantenha o rosto dentro do círculo.'}</div>
-      <div class="steps" id="steps" hidden></div>
-    </div>
-    <div id="cap-actions" class="row" style="justify-content:center"></div>
-    <input type="file" id="selfie" accept="image/*" capture="user" hidden>
-  </div>`);
-  const actions=$('#cap-actions');
-  const fallback=why=>{$('#cam').innerHTML=`<div class="cam-ph">${esc(why)}<br><br>${senhaOk()&&!(enrolling&&mode==='enroll')?'Tire uma selfie com a câmera frontal ou registre com a sua senha.':'Use a câmera frontal do celular para tirar uma selfie.'}</div>`;actions.innerHTML=`<button class="btn primary" data-act="selfie">Tirar selfie</button>${senhaOk()&&mode==='punch'?`<button class="btn" data-act="use-pw">Registrar com ${ME.temPin?'PIN':'senha'}</button>`:''}`};
-  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-    navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:640}},audio:false}).then(st=>{
-      if(!CAP){st.getTracks().forEach(t=>t.stop());return}
-      STREAM=st;const v=document.createElement('video');v.autoplay=true;v.playsInline=true;v.muted=true;v.srcObject=st;$('#cam').innerHTML='';$('#cam').appendChild(v);CAP.video=v;
-      actions.innerHTML=`<button class="btn primary" data-act="shoot">${IC.face.replace('<svg','<svg width="18" height="18"')}${enrolling?'Capturar referência':'Validar e registrar'}</button>`;
-    }).catch(()=>fallback('Não foi possível abrir a câmera ao vivo. Verifique se o navegador tem permissão de câmera.'));
-  }else fallback('Este navegador não oferece câmera ao vivo.');
-}
-function frameFromVideo(v){const c=document.createElement('canvas');const s=Math.min(v.videoWidth,v.videoHeight)||480;c.width=c.height=Math.min(s,480);const x=c.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,c.width,c.height);return c}
-function frameFromImg(img){const c=document.createElement('canvas');const s=Math.min(img.naturalWidth,img.naturalHeight);c.width=c.height=Math.min(s,480);c.getContext('2d').drawImage(img,(img.naturalWidth-s)/2,(img.naturalHeight-s)/2,s,s,0,0,c.width,c.height);return c}
-function signature(c){
-  const k=document.createElement('canvas');k.width=k.height=16;const x=k.getContext('2d');const s=c.width*.62;x.drawImage(c,(c.width-s)/2,(c.height-s)/2*.85,s,s,0,0,16,16);
-  const d=x.getImageData(0,0,16,16).data,g=[];for(let i=0;i<d.length;i+=4)g.push(.299*d[i]+.587*d[i+1]+.114*d[i+2]);
-  const m=g.reduce((a,b)=>a+b,0)/g.length,sd=Math.sqrt(g.reduce((a,b)=>a+(b-m)**2,0)/g.length)||1;
-  return{sig:g.map(v=>+((v-m)/sd).toFixed(3)),lum:m,contrast:sd};
-}
-function thumb(c,size){const k=document.createElement('canvas');k.width=k.height=size;k.getContext('2d').drawImage(c,0,0,size,size);return k.toDataURL('image/jpeg',.72)}
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let CAP=null;
+function stopCam(){}
 function getGeo(){return new Promise(res=>{if(!navigator.geolocation)return res(null);let done=false;const t=setTimeout(()=>{if(!done){done=true;res(null)}},8000);try{navigator.geolocation.getCurrentPosition(p=>{if(done)return;done=true;clearTimeout(t);res({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy})},()=>{if(done)return;done=true;clearTimeout(t);res(null)},{enableHighAccuracy:true,timeout:7500,maximumAge:30000})}catch(e){done=true;clearTimeout(t);res(null)}})}
 
-async function processCapture(canvas){
-  const e=ME,enrolling=CAP.enrolling,mode=CAP.mode;
-  stopCam();
-  $('#cam').innerHTML=`<img class="snap" src="${canvas.toDataURL('image/jpeg',.8)}" alt="Captura">`;
-  $('#ring').className='ring';$('#scan').hidden=false;$('#cap-actions').innerHTML='';
-  const stepsEl=$('#steps');stepsEl.hidden=false;
-  const names=enrolling?['Detectando rosto','Verificando qualidade da imagem','Salvando referência biométrica']:['Detectando rosto','Verificando qualidade da imagem','Conferindo o rosto no servidor e registrando'];
-  stepsEl.innerHTML=names.map((n,i)=>`<div class="step" id="st${i}"><i></i><span>${n}</span></div>`).join('');
-  const setS=(i,st,txt)=>{const el=$('#st'+i);if(!el)return;el.className='step '+st;el.querySelector('i').textContent=st==='ok'?'✓':(st==='fail'?'!':'');if(txt)el.querySelector('span').textContent=txt};
-  const fail=(i,msg)=>{setS(i,'fail');$('#ring').className='ring bad';$('#scan').hidden=true;$('#cap-msg').innerHTML=`<b style="color:#fff">${esc(msg)}</b>`;
-    $('#cap-actions').innerHTML=`<button class="btn" data-act="retry">Tentar novamente</button>${mode==='punch'?(senhaOk()?`<button class="btn" data-act="use-pw">Registrar com ${ME.temPin?'PIN':'senha'}</button>`:(!enrolling?'<button class="btn ghost" data-act="nobio">Registrar sem biometria</button>':'')):''}`;CAP.lastCanvas=canvas};
-  const sg=signature(canvas);
-  setS(0,'run');await sleep(600);
-  if('FaceDetector' in window){try{const fd=new window.FaceDetector({fastMode:true,maxDetectedFaces:2});const faces=await fd.detect(canvas);if(!faces.length)return fail(0,'Nenhum rosto encontrado. Aproxime o rosto da câmera.');if(faces.length>1)return fail(0,'Mais de um rosto na imagem. Registre sozinho.')}catch(err){}}
-  setS(0,'ok');
-  setS(1,'run');await sleep(500);
-  if(sg.lum<45)return fail(1,'Imagem muito escura. Procure um local com mais luz.');
-  if(sg.lum>235)return fail(1,'Imagem estourada pela luz. Afaste-se da claridade.');
-  if(sg.contrast<14)return fail(1,'Imagem sem nitidez. Limpe a lente e tente de novo.');
-  setS(1,'ok');
-  if(enrolling){
-    setS(2,'run');
-    const th=thumb(canvas,120);
-    const {error}=await sb.rpc('cadastrar_face',{p_sig:sg.sig,p_thumb:th});
-    if(error)return fail(2,errMsg(error));
-    ME.face={thumb:th};ME.bio='pendente';const me=S.emps.find(x=>x.id===ME.id);if(me){me.face=ME.face;me.bio='pendente'}
-    setS(2,'ok');$('#ring').className='ring ok';$('#scan').hidden=true;
-    if(mode==='enroll'){$('#cap-msg').innerHTML='<b style="color:#fff">Referência enviada.</b><br>O RH vai validar sua foto.';$('#cap-actions').innerHTML='<button class="btn primary" data-act="close">Concluir</button>';return}
-    $('#cap-msg').innerHTML='<b style="color:#fff">Referência cadastrada.</b> Registrando seu ponto…';
-    stepsEl.insertAdjacentHTML('beforeend','<div class="step" id="st9"><i></i><span>Registrando no servidor</span></div>');
-    return finalizePunch({metodo:'cadastro',sig:sg.sig,foto:thumb(canvas,96)},9,fail);
-  }
-  CAP.lastCanvas=canvas;
-  return finalizePunch({metodo:'facial',sig:sg.sig,foto:thumb(canvas,96)},2,fail);
-}
-async function finalizePunch(info,stepId,onFail){
-  const el=()=>$('#st'+stepId);
-  if(el()){el().className='step run'}
-  const geo=await getGeo();
-  const {data,error}=await sb.rpc('registrar_ponto',{p_metodo:info.metodo,p_sig:info.sig||null,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null,p_foto:info.foto||null,p_obs:info.obs||null});
-  if(error&&onFail&&/Rosto não confere/.test(errMsg(error)))return onFail(stepId,errMsg(error));
-  if(error){if(el()){el().className='step fail';el().querySelector('i').textContent='!'}$('#ring').className='ring bad';$('#scan').hidden=true;$('#cap-msg').innerHTML=`<b style="color:#fff">${esc(errMsg(error))}</b>`;$('#cap-actions').innerHTML='<button class="btn" data-act="close">Fechar</button>';return}
-  const p=mapPunch(data);S.punches.push(p);
-  if(el()){el().className='step ok';el().querySelector('i').textContent='✓';el().querySelector('span').textContent=(p.score!=null&&info.metodo==='facial'?`Rosto conferido (${Math.round(p.score*100)}%) · `:'')+(geo?(p.foraCerca?'fora da cerca virtual':'com localização'):'sem localização')}
-  $('#ring').className='ring ok';$('#scan').hidden=true;await sleep(400);
-  $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}${p.revisao==='pendente'?'<div class="notice">Esta marcação foi enviada para revisão do RH.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
-}
-
-/* ---------- Marcação por senha ---------- */
 function pwForm(){
   stopCam();CAP=null;
+  if(!ME.temPin){MODE='pin';render();toast('Crie seu PIN de ponto para registrar');return}
   const n=marksOf(ME.id,today()).length;
-  openModal(`<form data-form="punch-pw"><div class="modal-h"><div><div class="eyebrow">Registro com ${ME.temPin?'PIN':'senha'}</div><h3>${esc(tipoN(n))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div>
+  openModal(`<form data-form="punch-pw"><div class="modal-h"><div><div class="eyebrow">Assinatura com PIN</div><h3>${esc(tipoN(n))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div>
   <div class="modal-b">
-    <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)} · ${esc(ME.login)}</div></div>
-    <input type="text" name="usuario" value="${esc(ME.login)}" autocomplete="username" hidden>
-    <div class="field"><label for="pw-s">${ME.temPin?'Seu PIN de ponto (6 números)':'Sua senha de acesso'}</label><input class="input ${ME.temPin?'mono pin-in':''}" id="pw-s" name="senha" type="password" ${ME.temPin?'inputmode="numeric" maxlength="6" autocomplete="off"':'autocomplete="current-password"'} required autofocus></div>
+    <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)}</div></div>
+    <div class="geo-st" id="geo-st" data-st="busca">${IC.pin.replace('<svg','<svg width="16" height="16"')}<span>Obtendo a sua localização…</span></div>
+    <div class="field"><label for="pw-s">Seu PIN de ponto (6 números)</label><input class="input mono pin-in" id="pw-s" name="senha" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="off" required autofocus></div>
     <div class="err" id="pw-err"></div>
-    <div class="notice">${ME.temPin?'Use o PIN que você criou no primeiro acesso.':'Use a mesma senha do login.'} O horário oficial é definido pelo servidor${S.config.cerca.ativa?' e a sua localização é conferida com a cerca virtual':''}.${S.config.modoSenha==='revisao'?' Marcações por senha passam por revisão do RH.':''}</div>
+    <div class="notice">O horário oficial é definido pelo servidor e a localização do aparelho fica gravada junto com o registro.</div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Registrar ponto</button></div></form>`);
   setTimeout(()=>{const i=$('#pw-s');if(i)i.focus()},50);
+  UI.geoP=getGeo().then(g=>{const el=$('#geo-st');if(el){if(g){el.dataset.st='ok';el.querySelector('span').textContent=`Localização capturada (precisão de ${Math.round(g.acc)} m)`}else{el.dataset.st='erro';el.querySelector('span').textContent='Localização indisponível. Permita o acesso à localização no navegador.'}}return g});
 }
 
 /* ---------- Formulários ---------- */
-function reqForm(tipo){
-  const td=today();
-  openModal(`<form data-form="req"><div class="modal-h"><h3>Nova solicitação</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
-    <div class="field"><label for="r-t">Tipo</label><select class="input" id="r-t" name="tipo" data-change="reqtipo">${Object.entries(REQT).map(([k,v])=>`<option value="${k}" ${k===tipo?'selected':''}>${v}</option>`).join('')}</select></div>
-    <div class="grid2"><div class="field"><label for="r-d">${tipo==='ajuste'?'Data':'Início'}</label><input class="input" type="date" id="r-d" name="data" value="${td}" required></div>
-    ${tipo==='ajuste'?`<div class="field"><label for="r-h">Horário correto</label><input class="input" type="time" id="r-h" name="hora" required></div>`:`<div class="field"><label for="r-a">Fim</label><input class="input" type="date" id="r-a" name="ate" value="${td}" required></div>`}</div>
-    <div class="field"><label for="r-m">Motivo</label><textarea class="input" id="r-m" name="motivo" rows="3" required placeholder="${tipo==='ajuste'?'Ex.: esqueci de registrar a saída do intervalo':'Descreva o motivo'}"></textarea></div>
-    ${tipo==='atestado'||tipo==='abono'?`<div class="field"><label for="r-f">Anexo (foto ou PDF, até 10 MB)</label><input class="input" type="file" id="r-f" name="anexo" accept="image/*,.pdf"></div>`:''}
+function reqForm(tipo,keep){
+  const td=today(),k=keep||{};tipo=REQT[tipo]?tipo:'justificativa';
+  const precisa=tipo==='atestado'||tipo==='licenca';
+  openModal(`<form data-form="req"><div class="modal-h"><div><div class="eyebrow">Enviar ao RH</div><h3>Nova solicitação</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <div class="field"><label for="r-t">Tipo</label><select class="input" id="r-t" name="tipo" data-change="reqtipo">${Object.entries(REQT).map(([x,v])=>`<option value="${x}" ${x===tipo?'selected':''}>${v}</option>`).join('')}</select><span class="muted" style="font-size:.8rem">${REQD[tipo]}</span></div>
+    ${tipo==='licenca'?`<div class="field"><label for="r-s">Tipo de licença</label><select class="input" id="r-s" name="subtipo" required>${LICT.map(x=>`<option ${x===k.subtipo?'selected':''}>${x}</option>`).join('')}</select></div>`:''}
+    <div class="grid2"><div class="field"><label for="r-d">${tipo==='ajuste'?'Data':'Início'}</label><input class="input" type="date" id="r-d" name="data" value="${esc(k.data||td)}" required></div>
+    ${tipo==='ajuste'?`<div class="field"><label for="r-h">Horário correto</label><input class="input" type="time" id="r-h" name="hora" value="${esc(k.hora||'')}" required></div>`:`<div class="field"><label for="r-a">Fim</label><input class="input" type="date" id="r-a" name="ate" value="${esc(k.ate||td)}" required></div>`}</div>
+    <div class="field"><label for="r-m">Justificativa</label><textarea class="input" id="r-m" name="motivo" rows="4" maxlength="1500" required placeholder="${tipo==='ajuste'?'Ex.: esqueci de registrar a saída do intervalo':tipo==='justificativa'?'Explique o que aconteceu. Ex.: consulta médica do meu filho das 8h às 10h':'Descreva o motivo'}">${esc(k.motivo||'')}</textarea></div>
+    ${tipo!=='ferias'?`<div class="field"><label for="r-f">Documentos ${precisa?'(obrigatório)':'(opcional)'}</label>
+      <label class="drop" for="r-f"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><b>Anexar atestado, declaração ou comprovante</b><span>Foto ou PDF · até 5 arquivos de 10 MB</span></label>
+      <input class="sr-only" type="file" id="r-f" name="anexo" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" multiple data-change="anexos">
+      <div class="anx-list" id="r-fl"></div></div>`:''}
+    <div class="err" id="req-err"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Enviar ao RH</button></div></form>`);
 }
 function empForm(id){
@@ -1448,7 +1378,7 @@ function addPunchForm(eid){
 function decideForm(id,v){
   const r=S.requests.find(x=>x.id===id);const e=emp(r.empId)||{nome:'Colaborador'};
   openModal(`<form data-form="dec" data-id="${id}" data-v="${v}"><div class="modal-h"><h3>${v==='aprovado'?'Aprovar':'Recusar'} solicitação</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
-    <div>${esc(e.nome)} · ${REQT[r.tipo]} · ${fmtDate(r.data)}${r.hora?' às '+r.hora:''}</div>
+    <div>${esc(e.nome)} · ${esc(reqTit(r))} · ${fmtDate(r.data)}${r.hora?' às '+r.hora:''}</div>
     ${r.tipo==='ajuste'&&v==='aprovado'?`<div class="notice">Uma marcação às <b class="mono">${r.hora}</b> será incluída em ${fmtDate(r.data)}, identificada como ajuste do RH.</div>`:''}
     <div class="field"><label for="d-r">Mensagem ao colaborador</label><input class="input" id="d-r" name="resposta" ${v==='recusado'?'required':''} placeholder="${v==='aprovado'?'Opcional':'Explique o motivo da recusa'}"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='aprovado'?'primary':'danger'}" type="submit">${v==='aprovado'?'Aprovar':'Recusar'}</button></div></form>`);
@@ -1497,12 +1427,12 @@ async function afterLogin(){
 function proximaTela(perfil){
   if(!temConsent('termos'))return 'termos';
   if(ME.trocarSenha)return 'senha';
-  if(ME.google&&!ME.temPin)return 'pin';
+  if(!ME.temPin&&perfil!=='rh')return 'pin';
   return perfil==='rh'?'rh':'emp';
 }
 async function aceitarConvite(tok){
   let ac={};try{ac=JSON.parse(ss.get('batida.aceite')||'{}')}catch(e){}
-  const {error}=await sb.rpc('aceitar_convite',{p_token:tok,p_termos:!!ac.termos,p_biometria:!!ac.biometria});
+  const {error}=await sb.rpc('aceitar_convite',{p_token:tok,p_termos:!!ac.termos,p_biometria:false});
   if(error){BOOT.conviteErro=errMsg(error);MODE='convite';try{const r=await sb.rpc('ver_convite',{p_token:tok});BOOT.convite=r.data||{valido:false}}catch(e){}return}
   ss.del('batida.convite');ss.del('batida.aceite');UI.loginRole='emp';
   await afterLogin();
@@ -1551,13 +1481,7 @@ document.addEventListener('click',async ev=>{
     case 'mode':MODE=t.dataset.v;render();window.scrollTo(0,0);break;
     case 'etab':UI.empTab=t.dataset.v;UI.mirrorMonth=null;render();window.scrollTo(0,0);break;
     case 'rtab':UI.rhTab=t.dataset.v;UI.navOpen=false;render();window.scrollTo(0,0);break;
-    case 'punch':startCapture('punch');break;
-    case 'enroll':startCapture('enroll');break;
     case 'punch-pw':case 'use-pw':pwForm();break;
-    case 'shoot':if(CAP&&CAP.video&&CAP.video.videoWidth)processCapture(frameFromVideo(CAP.video));else toast('A câmera ainda está iniciando');break;
-    case 'selfie':$('#selfie').click();break;
-    case 'retry':{const m=CAP.mode;stopCam();startCapture(m);break}
-    case 'nobio':$('#steps').innerHTML='<div class="step" id="st9"><i></i><span>Registrando no servidor</span></div>';$('#cap-actions').innerHTML='';await finalizePunch({metodo:'sem-biometria',score:null,foto:CAP.lastCanvas?thumb(CAP.lastCanvas,96):null,obs:'Biometria não conferiu'},9);break;
     case 'close':closeModal();break;
     case 'receipt':showReceipt(t.dataset.id);break;
     case 'new-req':reqForm(t.dataset.tipo||'ajuste');break;
@@ -1576,9 +1500,6 @@ document.addEventListener('click',async ev=>{
     case 'convite-trocar':{await sb.auth.signOut();BOOT.conviteErro='';render();break}
     case 'convite-sair':{ss.del('batida.convite');ss.del('batida.aceite');BOOT.convite=null;BOOT.conviteErro='';MODE='login';try{const {data}=await sb.rpc('existe_rh');BOOT.existeRH=data!==false}catch(e){}render();break}
     case 'privacidade':openModal(`<div class="modal-h"><h3>Termo de uso e privacidade</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${termoHTML()}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`,true);break;
-    case 'bio-ok':{t.disabled=true;const {error}=await sb.rpc('registrar_consentimento',{p_tipo:'biometria'});if(error)throw error;ME.consent=(ME.consent||[]).concat([{tipo:'biometria',versao:S.config.termoVersao,revogado_em:null}]);closeModal();startCapture(t.dataset.mode);break}
-    case 'bio-revogar':confirmar('Revogar biometria facial','Seus dados biométricos (referência do rosto e miniatura) serão apagados agora. Você continua registrando o ponto com '+(ME.temPin?'o PIN':'a senha')+'. Para voltar a usar o rosto, basta autorizar de novo.','bio-revogar-ok');break;
-    case 'bio-revogar-ok':{t.disabled=true;const {error}=await sb.rpc('revogar_biometria');if(error)throw error;(ME.consent||[]).forEach(c=>{if(c.tipo==='biometria')c.revogado_em=new Date().toISOString()});ME.face=null;ME.bio='nenhuma';await loadAll();closeModal();toast('Biometria revogada e apagada');break}
     case 'pin-alterar':MODE='pin';render();break;
     case 'pin-cancel':MODE='emp';render();break;
     case 'u-invite':inviteForm(t.dataset.id);break;
@@ -1627,17 +1548,15 @@ document.addEventListener('click',async ev=>{
     case 'req-dec':decideForm(t.dataset.id,t.dataset.v);break;
     case 'anexo':{const {data,error}=await sb.storage.from('anexos').createSignedUrl(t.dataset.path,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');break}
     case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll({punches:true});render();toast(t.dataset.v==='aceita'?'Marcação aceita':'Marcação desconsiderada e arquivada');break}
-    case 'bio-dec':{t.disabled=true;const patch={bio_status:t.dataset.v};if(t.dataset.v==='rejeitada'){patch.face_sig=null;patch.face_thumb=null}const {error}=await sb.from('colaboradores').update(patch).eq('id',t.dataset.id);if(error)throw error;await loadAll();render();toast(t.dataset.v==='validada'?'Biometria validada':'Cadastro facial recusado');break}
-    case 'clear-face':{const {error}=await sb.from('colaboradores').update({face_sig:null,face_thumb:null,bio_status:'nenhuma'}).eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Referência facial apagada');break}
   }}catch(err){toast(errMsg(err));t.disabled=false}
 });
 document.addEventListener('change',ev=>{
   const t=ev.target;
-  if(t.id==='selfie'&&t.files&&t.files[0]){const img=new Image();img.onload=()=>processCapture(frameFromImg(img));img.onerror=()=>toast('Não foi possível ler a imagem');img.src=URL.createObjectURL(t.files[0]);return}
   const c=t.dataset.change;if(!c)return;
   if(c==='month'){UI.mirrorMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
   if(c==='memp'){UI.mirrorEmp=t.value;render()}
-  if(c==='reqtipo')reqForm(t.value);
+  if(c==='reqtipo'){const f=t.form;reqForm(t.value,{data:f.data&&f.data.value,ate:f.ate&&f.ate.value,hora:f.hora&&f.hora.value,motivo:f.motivo&&f.motivo.value})}
+  if(c==='anexos'){const fs=[...t.files];const l=$('#r-fl');if(l)l.innerHTML=fs.map(x=>`<span class="anx">${esc(x.name)} <span class="muted">${(x.size/1048576).toFixed(1)} MB</span></span>`).join('')}
   if(c==='u-modo'){const s=$('#u-senha-f'),em=$('#u-email'),sp=$('#u-senha');if(s)s.hidden=t.value!=='senha';if(em)em.required=t.value!=='senha';if(sp)sp.required=t.value==='senha'}
   if(c==='team-month'){UI.teamMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
 });
@@ -1664,7 +1583,8 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='punch-pw'){
     const errEl=$('#pw-err');errEl.textContent='';if(btn)btn.textContent='Registrando…';
-    const geo=await getGeo();
+    const geo=await (UI.geoP||getGeo());UI.geoP=null;
+    if(!geo){errEl.textContent='Não foi possível obter a sua localização. Permita o acesso à localização no navegador (ícone ao lado do endereço do site) e tente de novo.';if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null});
     if(error||!data||!data.ok){errEl.textContent=error?errMsg(error):(data&&data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const p=mapPunch(data.marcacao);S.punches.push(p);
@@ -1774,9 +1694,20 @@ document.addEventListener('submit',async ev=>{
     return;
   }
   if(k==='req'){
-    const file=f.querySelector('[name=anexo]');let path=null,nome=null;
-    if(file&&file.files[0]){const fl=file.files[0];if(fl.size>10485760)throw new Error('O anexo passa de 10 MB.');nome=fl.name;path=`${ME.id}/${Date.now()}-${fl.name.replace(/[^\w.\-]+/g,'_')}`;const up=await sb.storage.from('anexos').upload(path,fl,{contentType:fl.type||'application/octet-stream'});if(up.error)throw up.error}
-    const {error}=await sb.from('solicitacoes').insert({colaborador_id:ME.id,tipo:fd.tipo,data:fd.data,ate:fd.ate||null,hora:fd.hora||null,motivo:fd.motivo.trim(),anexo_path:path,anexo_nome:nome});
+    const inp=f.querySelector('[name=anexo]');const fls=inp?[...inp.files]:[];
+    if(fls.length>5)throw new Error('Envie no máximo 5 arquivos.');
+    const okT=/^(image\/(jpeg|png|webp|heic)|application\/pdf)$/;
+    for(const fl of fls){if(fl.size>10485760)throw new Error(`O arquivo ${fl.name} passa de 10 MB.`);if(!okT.test(fl.type||''))throw new Error(`O arquivo ${fl.name} não é foto nem PDF.`)}
+    if((fd.tipo==='atestado'||fd.tipo==='licenca')&&!fls.length)throw new Error('Anexe o documento para este tipo de solicitação.');
+    if(fd.ate&&fd.ate<fd.data)throw new Error('A data final não pode ser antes da inicial.');
+    const anexos=[];
+    for(const fl of fls){if(btn)btn.textContent=`Enviando ${anexos.length+1} de ${fls.length}…`;const path=`${ME.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}-${fl.name.replace(/[^\w.\-]+/g,'_').slice(-80)}`;const up=await sb.storage.from('anexos').upload(path,fl,{contentType:fl.type});if(up.error)throw up.error;anexos.push({path,nome:fl.name.slice(0,120)})}
+    const base={colaborador_id:ME.id,data:fd.data,ate:fd.ate||null,hora:fd.hora||null,anexo_path:anexos[0]?anexos[0].path:null,anexo_nome:anexos[0]?anexos[0].nome:null};
+    let {error}=await sb.from('solicitacoes').insert({...base,tipo:fd.tipo,subtipo:fd.subtipo||null,motivo:fd.motivo.trim(),anexos});
+    if(error&&/anexos|subtipo|tipo_check|schema cache/i.test(error.message||'')){
+      const extra=anexos.length>1?' [Outros anexos: '+anexos.slice(1).map(x=>x.nome).join(', ')+']':'';
+      ({error}=await sb.from('solicitacoes').insert({...base,tipo:['justificativa','licenca'].includes(fd.tipo)?'abono':fd.tipo,motivo:((fd.tipo==='licenca'?(fd.subtipo||'Licença')+': ':fd.tipo==='justificativa'?'Justificativa: ':'')+fd.motivo.trim()+extra).slice(0,1500)}));
+    }
     if(error)throw error;await loadAll();closeModal();UI.empTab='solic';render();toast('Solicitação enviada ao RH');return;
   }
   if(k==='emp'){
@@ -1811,7 +1742,7 @@ document.addEventListener('submit',async ev=>{
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',limiar:Math.min(.95,Math.max(.5,+fd.limiar||.78)),revisar_sem_bio:fd.exigir==='1',modo_senha:fd.facial==='0'&&fd.modoSenha==='bloqueada'?'permitida':fd.modoSenha,facial_ativo:fd.facial==='1',atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
