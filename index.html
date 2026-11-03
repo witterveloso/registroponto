@@ -451,6 +451,8 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .folha-cta .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .folha-cta .grow span{font-size:.82rem;color:var(--muted)}
 .folha-cta>svg:last-child{flex:none;color:var(--muted)}
+.folha-acts{gap:8px;flex-wrap:wrap}
+@media (max-width:560px){.folha-acts .btn{flex:1}}
 </style>
 </head><body>
 <div id="app"></div>
@@ -976,6 +978,7 @@ function empEspelho(e){
   const ym=UI.mirrorMonth||today().slice(0,7);const{ms,html}=mirrorTable(e,ym,{own:true});
   return `<div class="row"><h2>Folha de ponto</h2><div class="spacer"></div><select class="input" style="width:auto" id="mm" data-change="month">${monthOpts(ym)}</select></div>
   <div class="muted" style="font-size:.85rem;margin-top:-6px">Fechamento de ${MES[+ym.slice(5,7)-1].toLowerCase()}: ${fmtDate(fechamentoDe(ym))}${mesFechado(e,ym)?' · <b>mês fechado</b>':''}</div>
+  <div class="row folha-acts"><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar folha (CSV)</button>${mesFechado(e,ym)?'':'<button class="btn primary" data-act="new-req" data-tipo="ajuste">Marcação manual</button>'}</div>
   ${pendBox(e,ym,false)}
   <section class="kpis">
     <div class="card kpi"><span class="l">Trabalhado</span><span class="v">${dur(ms.worked)}</span></div>
@@ -984,11 +987,10 @@ function empEspelho(e){
   </section>
   ${aprovBlock(e,ym,ms)}
   <section class="card">${html}</section>
-  <div class="row"><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar folha (CSV)</button>${mesFechado(e,ym)?'':'<button class="btn ghost" data-act="new-req" data-tipo="justificativa">Relatar outra situação</button>'}</div>
   <p class="notice">Em vermelho, as marcações incluídas por ajuste do RH. A tolerância diária segue o art. 58, §1º da CLT: até 10 minutos por dia não geram saldo.</p>`;
 }
-const REQT={ajuste:'Ajuste de marcação',justificativa:'Justificativa de ausência',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
-const REQD={ajuste:'Esqueceu ou registrou errado',justificativa:'Falta, atraso, saída antecipada ou outra situação',atestado:'Envie o atestado para abonar o dia',licenca:'Maternidade, paternidade, casamento, luto e outras',abono:'Cursos, compromissos e ausências legais',ferias:'Peça o período ao RH'};
+const REQT={ajuste:'Marcação manual',justificativa:'Justificativa de ausência',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
+const REQD={ajuste:'Esqueceu de registrar ou registrou no horário errado',justificativa:'Falta, atraso, saída antecipada ou outra situação',atestado:'Envie o atestado para abonar o dia',licenca:'Maternidade, paternidade, casamento, luto e outras',abono:'Cursos, compromissos e ausências legais',ferias:'Peça o período ao RH'};
 const LICT=['Licença médica','Licença-maternidade','Licença-paternidade','Casamento (gala)','Falecimento de familiar (nojo)','Doação de sangue','Serviço eleitoral ou júri','Outra'];
 const reqTit=r=>REQT[r.tipo]+(r.subtipo?' · '+r.subtipo:'');
 const anexosHTML=r=>(r.anexos||[]).map(a=>`<button type="button" class="anx" data-act="anexo" data-path="${esc(a.path)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>${esc(a.nome)}</span></button>`).join('');
