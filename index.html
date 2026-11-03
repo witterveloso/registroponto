@@ -306,6 +306,28 @@ td.wrap{white-space:normal}
   .page-h h1{font-size:1.4rem}
   .page-h .search{order:5}
 }
+/* Celular: conteúdo centralizado */
+@media (max-width:900px){
+  .login-hero{align-items:center;text-align:center}
+  .login-hero .hero-brand{flex-direction:column;justify-content:center;gap:10px}
+  .login-box{text-align:center}
+  .login-box .field label{text-align:center}
+  .login-box .input{text-align:center}
+  .login-box .notice{text-align:center}
+  .clockcard{text-align:center;align-items:center}
+  .clockcard>.row{justify-content:center;flex-direction:column;gap:8px}
+  .cc-meta{justify-content:center}
+  .cc-loc{display:block!important;text-align:center}
+  .cc-loc svg{display:inline;vertical-align:-2px;margin-right:4px}
+  .emp>.row,.emp>section>.row:first-child{flex-direction:column;justify-content:center;text-align:center;gap:10px}
+  .emp>.row>.spacer,.emp>section>.row:first-child>.spacer{display:none}
+  .emp>.row>div{text-align:center}
+  .slot{align-items:center;text-align:center}
+  .kpi{align-items:center;text-align:center}
+  .emp .card-h{justify-content:center;text-align:center}
+  .emp .card-h .spacer{display:none}
+  .punch-btn,.clockcard>.btn{align-self:stretch}
+}
 </style>
 </head><body>
 <div id="app"></div>
@@ -559,7 +581,7 @@ function viewLogin(){
     </form>`;
   return `<div class="login">
   <section class="login-hero">
-    <div class="row" style="gap:14px">${logoPill(46)}<div class="brand" style="color:var(--deep-muted);font-size:.95rem"><div class="mark">${IC.logo}</div>Registro de Ponto</div></div>
+    <div class="row hero-brand" style="gap:14px">${logoPill(46)}<div class="brand" style="color:var(--deep-muted);font-size:.95rem"><div class="mark">${IC.logo}</div>Registro de Ponto</div></div>
     <div>
       <div class="eyebrow" style="color:var(--deep-muted)">Horário oficial de Brasília</div>
       <div class="hero-clock">${clockHTML()}</div>
@@ -604,7 +626,7 @@ function empPonto(e){
     <div class="cc-meta"><span class="chip plain">${esc(j.nome)}</span><span class="chip plain">${j.ini} às ${j.fim}</span><span class="chip plain">Intervalo ${j.intIni} às ${j.intFim}</span></div>
     ${facialOn()?`<button class="punch-btn" data-act="punch">${IC.face}Registrar ${esc(next.toLowerCase())}</button>`:`<button class="punch-btn" data-act="punch-pw">${IC.clock}Registrar ${esc(next.toLowerCase())}</button>`}
     ${facialOn()&&senhaOk()?`<button class="btn" style="background:transparent;color:var(--deep-ink);border-color:var(--deep-line);width:100%;padding:12px" data-act="punch-pw">Sem câmera? Registrar com senha</button>`:''}
-    <div style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)}${facialOn()?` · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}`:' · registro com a sua senha de acesso'}</div>
+    <div class="cc-loc" style="font-size:.78rem;color:var(--deep-muted);display:flex;gap:6px;align-items:center">${IC.pin.replace('<svg','<svg width="14" height="14"')} ${esc(S.company.local)}${facialOn()?` · biometria facial ${e.face?'cadastrada':'será cadastrada no primeiro registro'}`:' · registro com a sua senha de acesso'}</div>
   </section>
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><h2>Marcações de hoje</h2><div class="spacer"></div>${n?`<button class="btn sm ghost" data-act="receipt" data-id="${di.marks[n-1].id}">Último comprovante</button>`:''}</div>
