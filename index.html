@@ -497,7 +497,7 @@ function termoHTML(){return `<div class="termo">
   <p><b>Quem vê.</b> Você, o gestor do seu setor (só os seus horários e solicitações) e o RH. Atestados e documentos médicos ficam visíveis só para você e o RH. Nenhum dado é vendido ou compartilhado para outros fins.</p>
   <p><b>Base legal.</b> Cumprimento de obrigação legal (LGPD, art. 7º, II) para o controle de jornada. Dados de saúde em atestados são tratados para cumprir obrigações trabalhistas (art. 11, II, a).</p>
   <p><b>Por quanto tempo.</b> Os registros de ponto ficam guardados pelo prazo exigido pela legislação trabalhista.</p>
-  <p><b>Segurança.</b> Conexão criptografada, dados armazenados com criptografia, acesso por perfil validado no servidor, verificação em duas etapas para o RH, registros de ponto que não podem ser apagados nem alterados e histórico de auditoria de todas as alterações.</p>
+  <p><b>Segurança.</b> Conexão criptografada, dados armazenados com criptografia, acesso por perfil validado no servidor, verificação em duas etapas disponível para o RH, registros de ponto que não podem ser apagados nem alterados e histórico de auditoria de todas as alterações.</p>
   <p><b>Seus direitos.</b> Você pode consultar seus dados no próprio sistema, e pedir correção ao RH. Dúvidas sobre privacidade: fale com o RH.</p>
   <p class="muted" style="font-size:.78rem">Versão ${esc(S.config.termoVersao||'v1')}</p></div>`}
 function authShell(inner){return `<div class="auth-wrap"><div class="card card-b auth-card">${logoPill(34,'align-self:center;border:1px solid var(--line)')}${inner}</div></div>`}
@@ -520,8 +520,8 @@ const IC={
 
 /* ================= ESTADO ================= */
 let S={company:{razao:'',cnpj:'',local:''},config:{cerca:{}},jornadas:[],emps:[],punches:[],requests:[],setores:[],aprov:[],convites:[]};
-let AAL='aal1';
-const isRHsession=()=>ME&&ME.papel==='rh'&&AAL==='aal2'&&UI.loginRole==='rh';
+let AAL='aal1',MFA_REQ=true;
+const isRHsession=()=>ME&&ME.papel==='rh'&&(AAL==='aal2'||!MFA_REQ)&&UI.loginRole==='rh';
 let ME=null,MODE='login',BOOT={loading:true,existeRH:true,msg:''},CH=null,DIRTY=false;
 let UI={empTab:'ponto',rhTab:'painel',loginRole:(safeStorage.getItem('batida.perfil')==='rh'?'rh':'emp'),mirrorMonth:null,mirrorEmp:null,q:''};
 const emp=id=>S.emps.find(e=>e.id===id)||(ME&&ME.id===id?ME:null);
@@ -590,7 +590,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1'};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',exigirMfa:co.exigir_mfa!==false};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -775,7 +775,7 @@ function viewLogin(){
         </div>
       </aside>
       <section class="lg-main">
-        <div class="lg-head"><div class="eyebrow">${esc(org)}</div><h1>Acesse sua conta</h1><p>${!BOOT.existeRH?'Configure o primeiro acesso do sistema.':rh?'Área do RH e dos gestores, com verificação em duas etapas.':'Entre para registrar o ponto e acompanhar suas horas.'}</p></div>
+        <div class="lg-head"><div class="eyebrow">${esc(org)}</div><h1>Acesse sua conta</h1><p>${!BOOT.existeRH?'Configure o primeiro acesso do sistema.':rh?'Área do RH e dos gestores.':'Entre para registrar o ponto e acompanhar suas horas.'}</p></div>
         ${form}
       </section>
     </div>
@@ -1242,6 +1242,7 @@ function rhConfig(){
       <div class="field"><label for="c-blq">Fora da cerca</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
       <div class="field"><label>Forma de registro</label><span>Assinatura com PIN de 6 números e localização obrigatória</span></div>
+      <div class="field"><label for="c-mfa">Verificação em duas etapas no painel do RH</label><select class="input" id="c-mfa" name="mfa"><option value="0" ${!c.exigirMfa?'selected':''}>Dispensada (fase de testes)</option><option value="1" ${c.exigirMfa?'selected':''}>Exigida (recomendado em produção)</option></select></div>
       <div class="field"><label for="c-pw">Marcações com PIN</label><select class="input" id="c-pw" name="modoSenha"><option value="permitida" ${c.modoSenha!=='revisao'?'selected':''}>Valem direto</option><option value="revisao" ${c.modoSenha==='revisao'?'selected':''}>Passam por revisão do RH</option></select></div></div></div>
     <div class="row"><button class="btn primary" type="submit">Salvar configurações</button></div></div></form>
 
@@ -1415,7 +1416,8 @@ async function afterLogin(){
   if(perfil==='rh'){
     const {data:a}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
     AAL=(a&&a.currentLevel)||'aal1';
-    if(AAL!=='aal2'){MODE=a&&a.nextLevel==='aal2'?'mfa':'mfa-enroll';UI.mfa=null;BOOT.msg='';return}
+    try{const r=await sb.rpc('mfa_exigida');MFA_REQ=r.error?true:r.data!==false}catch(e){MFA_REQ=true}
+    if(AAL!=='aal2'&&MFA_REQ){MODE=a&&a.nextLevel==='aal2'?'mfa':'mfa-enroll';UI.mfa=null;BOOT.msg='';return}
   }else AAL='aal1';
   const cs=await sb.from('consentimentos').select('tipo,versao,revogado_em').eq('colaborador_id',ME.id);
   ME.consent=cs.data||[];
@@ -1742,7 +1744,7 @@ document.addEventListener('submit',async ev=>{
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
