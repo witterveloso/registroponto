@@ -242,6 +242,12 @@ tr.weekend td{color:var(--muted);background:color-mix(in srgb,var(--surface-2) 6
 td.wrap{white-space:normal}
 .side-logo{display:flex;flex-direction:column;gap:8px;padding:0 6px}
 @media (max-width:900px){.side-logo .eyebrow{display:none}.side-logo .logo-pill{padding:4px 8px}.side-logo .logo-pill img{height:26px!important}}
+.logo-btn{border:0;background:transparent;padding:0;cursor:pointer;display:inline-flex;border-radius:10px}
+.top-act{gap:6px}
+.rh-mtop{display:none;align-items:center;gap:8px}
+@media (max-width:900px){.rh-mtop{display:flex}.side-foot{display:none}}
+@media (max-width:560px){.top-who{display:none}}
+@media (max-width:360px){.top-act span{display:none}}
 </style>
 </head><body>
 <div id="app"></div>
@@ -518,8 +524,8 @@ function viewEmp(e){
   if(t==='ponto')body=empPonto(e);else if(t==='equipe'&&isGestor())body=empEquipe();else if(t==='espelho')body=empEspelho(e);else if(t==='solic')body=empSolic(e);else body=empPerfil(e);
   const tabs=[['ponto','Ponto',IC.clock],...(isGestor()?[['equipe','Equipe',IC.team]]:[]),['espelho','Espelho',IC.table],['solic','Solicitações',IC.inbox],['perfil','Perfil',IC.user]];
   return `<div class="emp">
-    <div class="topbar">${logoPill(30)}<div class="spacer"></div>
-      <div style="text-align:right;line-height:1.2"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">${esc(e.login)}</div></div>
+    <div class="topbar"><button class="logo-btn" data-act="home" aria-label="Voltar ao início">${logoPill(30)}</button><div class="spacer"></div>${UI.empTab!=='ponto'||UI.teamEmp?`<button class="btn sm ghost top-act" data-act="home"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-6h-6v6H4.5a.5.5 0 0 1-.5-.5z"/></svg><span>Início</span></button>`:''}<button class="btn sm ghost top-act" data-act="logout">${IC.out.replace('<svg','<svg width="16" height="16"')}<span>Sair</span></button>
+      <div class="top-who" style="text-align:right;line-height:1.2;min-width:0"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">${esc(e.login)}</div></div>
       <div class="avatar">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div></div>
     ${body}
   </div>
@@ -708,10 +714,10 @@ function viewRH(){
   const t=UI.rhTab,pc=pendingCount();
   const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['config','Configurações',IC.gear]];
   const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,config:rhConfig}[t]();
-  return `<div class="rh"><aside class="side"><div class="side-logo">${logoPill(38)}<span class="eyebrow" style="color:var(--deep-muted)">Gestão de ponto</span></div>
+  return `<div class="rh"><aside class="side"><div class="side-logo"><button class="logo-btn" data-act="home" aria-label="Voltar ao painel">${logoPill(38)}</button><span class="eyebrow" style="color:var(--deep-muted)">Gestão de ponto</span></div>
     <nav class="nav">${nav.map(n=>`<button data-act="rtab" data-v="${n[0]}" class="${t===n[0]?'on':''}">${n[2]}${n[1]}${n[3]?`<span class="badge">${n[3]}</span>`:''}</button>`).join('')}</nav>
     <div class="side-foot"><div class="who"><div style="color:#fff;font-weight:600">${esc(ME.nome)}</div><div>${esc(S.company.razao)}</div></div><button class="btn sm" data-act="logout">Sair</button></div></aside>
-    <main class="main">${body}</main></div>`;
+    <main class="main"><div class="rh-mtop">${UI.rhTab!=='painel'?`<button class="btn sm" data-act="home"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-6h-6v6H4.5a.5.5 0 0 1-.5-.5z"/></svg>Painel</button>`:''}<div class="spacer"></div><button class="btn sm" data-act="logout">${IC.out.replace('<svg','<svg width="16" height="16"')}Sair</button></div>${body}</main></div>`;
 }
 function rhPainel(){
   const act=S.emps.filter(e=>e.ativo),td=today(),d=NOW();
@@ -1169,6 +1175,7 @@ document.addEventListener('click',async ev=>{
     case 'see-mirror':UI.mirrorEmp=t.dataset.id;UI.rhTab='espelho';render();break;
     case 'jor-form':jorForm(t.dataset.id);break;
     case 'lrole':{const u=$('#l-user')?$('#l-user').value:'';UI.loginRole=t.dataset.v;BOOT.msg='';render();const n=$('#l-user');if(n){n.value=u;(u?$('#l-pw'):n).focus()}break}
+    case 'home':closeModal();if(MODE==='rh'){UI.rhTab='painel'}else{UI.empTab='ponto';UI.teamEmp=null}render();window.scrollTo(0,0);break;
     case 'u-new':userForm();break;
     case 'team-open':UI.teamEmp=t.dataset.id;render();window.scrollTo(0,0);break;
     case 'team-back':UI.teamEmp=null;render();break;
