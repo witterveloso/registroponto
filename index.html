@@ -476,6 +476,17 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .opt-card{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);margin-bottom:10px}
 .opt-card span{font-size:.86rem;color:var(--muted)}
 .opt-card .btn{align-self:flex-start;margin-top:4px}
+.just-marc{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));background:var(--warn-bg);margin-bottom:12px}
+.jm-h{display:flex;gap:10px;align-items:flex-start}
+.jm-h svg{flex:none;width:20px;height:20px;color:var(--warn);margin-top:2px}
+.jm-h div{display:flex;flex-direction:column;gap:2px}
+.jm-h span{font-size:.85rem;color:var(--ink)}
+.just-marc .btn{align-self:flex-start}
+.rev-just{display:flex;flex-direction:column;gap:2px;margin-top:8px;padding:10px 12px;border-radius:10px;border-left:3px solid var(--accent);background:var(--accent-soft);font-size:.88rem}
+.rev-just b{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.rev-just.vazio{border-left-color:var(--warn);background:var(--warn-bg)}
+.rev-just.vazio b{color:var(--warn)}
+.req.rev{align-items:flex-start}
 </style>
 </head><body>
 <div id="app"></div>
@@ -584,11 +595,30 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
 
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
 const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin});
-const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
+const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
 
 let LOADED_FROM=null;
-const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco';
+const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco,motivo_revisao,justificativa,justificado_em,revisado_em';
+const MOTIVO={externo:'Registro fora da sede',extra:'Jornada extra'};
+const motivoTxt=p=>{const t=(p.motivo&&p.motivo.length?p.motivo:(p.foraCerca?['externo']:[])).map(m=>(MOTIVO[m]||m).toLowerCase()).join(' e ');return t?t.charAt(0).toUpperCase()+t.slice(1):'Revisão'};
+const precisaJust=p=>p.revisao==='pendente'&&(p.motivo.length||p.foraCerca)&&!p.just;
+function justMarcHTML(p){
+  const ext=p.motivo.includes('externo')||p.foraCerca,ex=p.motivo.includes('extra');
+  return `<form data-form="just-marc" data-id="${p.id}" class="just-marc"><div class="jm-h">${IC.pin}<div><b>${esc(motivoTxt(p))}: justifique este registro</b><span>${ext&&ex?'Você registrou o ponto fora da sede e fora do horário da sua jornada.':ext?'Você registrou o ponto fora da sede da emissora.':'Você registrou o ponto fora do horário da sua jornada.'} O seu gestor vai analisar a justificativa${ext?' junto com a localização':''}.</span></div></div>
+    <div class="field"><label for="jm-${p.id}">Justificativa</label><textarea class="input" id="jm-${p.id}" name="texto" rows="3" minlength="10" maxlength="1000" required placeholder="${ext?'Ex.: gravação externa na Câmara Municipal, pauta da manhã':'Ex.: cobertura do evento da prefeitura, autorizada pela chefia'}"></textarea></div>
+    <div class="err"></div><button class="btn primary" type="submit">Enviar justificativa</button></form>`;
+}
+function justMarcForm(id){const p=S.punches.find(x=>x.id===id);if(!p)return;openModal(`<div class="modal-h"><div><div class="eyebrow">${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)}</div><h3>Justificar registro</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${justMarcHTML(p)}</div>`)}
+/* Cartão de análise para o gestor e o RH: motivo, localização e justificativa */
+function revCard(p){const e=emp(p.empId)||{nome:'Colaborador'};
+  return `<div class="req rev"><div class="avatar" style="width:44px;height:44px">${initials(e.nome)}</div><div class="grow">
+    <div style="font-weight:600">${esc(e.nome)} · ${esc(motivoTxt(p))}</div>
+    <div class="muted mono" style="font-size:.85rem">${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,19)} · NSR ${String(p.nsr).padStart(9,'0')}</div>
+    ${p.foraCerca?`<div style="font-size:.85rem">${esc(p.local)}</div>`:''}
+    <div class="rev-just ${p.just?'':'vazio'}"><b>Justificativa do colaborador</b>${p.just?`<span>${esc(p.just)}</span>`:'<span>Ainda não enviada. O colaborador foi avisado para justificar.</span>'}</div>
+    ${geoBloco(p)}</div>
+    <div class="row"><button class="btn sm danger" data-act="pun-dec" data-id="${p.id}" data-v="desconsiderada">Desconsiderar</button><button class="btn sm primary" data-act="pun-dec" data-id="${p.id}" data-v="aceita">Aceitar</button></div></div>`}
 /* Localização exata das marcações: endereço (rua, número, bairro, cidade) e link para o mapa */
 const mapsUrl=g=>`https://www.google.com/maps/search/?api=1&query=${g.lat},${g.lng}`;
 const GEO_PED={};
@@ -607,7 +637,7 @@ function geoBloco(p){
     <div class="geo-meta mono">${p.geo.lat.toFixed(6)}, ${p.geo.lng.toFixed(6)} · precisão de ${Math.round(p.geo.acc||0)} m</div>
     <a class="btn sm" href="${mapsUrl(p.geo)}" target="_blank" rel="noopener noreferrer">Ver no mapa</a></div>`;
 }
-const extPin=x=>x.foraCerca&&x.geo?` <button type="button" class="ext-pin" data-act="receipt" data-id="${x.id}" title="Registro externo: ver localização">${IC.pin}</button>`:'';
+const extPin=x=>(x.foraCerca||(x.motivo&&x.motivo.length))&&x.geo?` <button type="button" class="ext-pin" data-act="receipt" data-id="${x.id}" title="Registro externo: ver localização">${IC.pin}</button>`:'';
 const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,face_em,setor_id,trocar_senha,tem_pin';
 const monthStart=ym=>new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);
 async function fetchPunches(fromDate,toDate){
@@ -896,6 +926,7 @@ function empPonto(e){
     <button class="folha-cta" data-act="etab" data-v="espelho">${IC.table}<span class="grow"><b>Ver marcações e folha de ponto</b><span>Todos os dias do mês, horas trabalhadas, saldo e ocorrências</span></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
     ${extras.length?`<div class="notice">Marcações extras: ${extras.map(m=>`<b class="mono">${m.ts.slice(11,16)}</b>`).join(', ')}</div>`:''}
   </section>
+  ${(()=>{const pj=S.punches.filter(p=>p.empId===e.id&&precisaJust(p)).sort((a,b)=>a.ts<b.ts?1:-1);return pj.length?`<section class="card pend-box"><div class="pend-h"><span class="pend-ico">!</span><div class="grow"><b>${pj.length} ${pj.length>1?'registros precisam':'registro precisa'} de justificativa</b><span>Registros fora da sede ou fora do horário da jornada são analisados pelo seu gestor.</span></div></div><div class="pend-list">${pj.slice(0,5).map(p=>`<div class="pend-i"><div class="grow"><b class="mono">${p.ts.slice(8,10)}/${p.ts.slice(5,7)} ${p.ts.slice(11,16)}</b> · ${esc(motivoTxt(p))}</div><button class="btn sm primary" data-act="just-marc" data-id="${p.id}">Justificar</button></div>`).join('')}</div></section>`:''})()}
   ${pendBox(e,null,true)}
   <section class="card just-card"><div class="grow"><b>Precisa justificar uma ausência?</b><span class="muted">Falta, atraso, saída antecipada, atestado ou licença. Anexe os documentos e o RH analisa.</span></div>
     <div class="just-acts"><button class="btn primary sm" data-act="new-req" data-tipo="justificativa">Justificar</button><button class="btn sm" data-act="new-req" data-tipo="atestado">Enviar atestado ou licença</button></div></section>
@@ -983,12 +1014,14 @@ function empEquipe(){
   const boxMan=manuais.length?`<section class="card"><div class="card-h"><h3>Solicitações da equipe aguardando sua decisão</h3><span class="chip warn">${manuais.length}</span></div>
     ${manuais.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário informado <b class="mono">'+esc(r.hora)+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}</div>
     <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join('')}</section>`:'';
+  const revEq=S.punches.filter(p=>p.revisao==='pendente'&&ids.has(p.empId)).sort((a,b)=>a.ts<b.ts?-1:1);
+  const boxRev=revEq.length?`<section class="card"><div class="card-h"><h3>Registros fora da sede e jornadas extras</h3><span class="chip warn">${revEq.length}</span></div>${revEq.map(revCard).join('')}</section>`:'';
   const boxRH=soRH.length?`<div class="notice">${soRH.length} ${soRH.length>1?'atestados, licenças ou pedidos de férias da equipe estão':'atestado, licença ou pedido de férias da equipe está'} com o RH. Esses documentos são analisados só pelo RH.</div>`:'';
   const ocorr=team.map(e=>({e,n:pendencias(e).length})).filter(x=>x.n);
   const boxOc=ocorr.length?`<section class="card"><div class="card-h"><h3>Ocorrências sem justificativa</h3><span class="chip bad">${ocorr.reduce((t,x)=>t+x.n,0)}</span></div><div class="list">${ocorr.map(x=>`<button class="li kpi-li" data-act="team-open" data-id="${x.e.id}"><div class="avatar">${initials(x.e.nome)}</div><div class="grow"><div class="ttl">${esc(x.e.nome)}</div><div class="sub">${pendencias(x.e).slice(0,4).map(o=>o.di.ds.slice(8)+'/'+o.di.ds.slice(5,7)+' '+ANOM[o.a].toLowerCase()).join(' · ')}${x.n>4?' …':''}</div></div><span class="chip warn">${x.n}</span></button>`).join('')}</div></section>`:'';
   const cnt={ok:rows.filter(r=>r.a&&r.a.status==='aprovado').length,dev:rows.filter(r=>r.a&&r.a.status==='devolvido').length};cnt.pend=rows.length-cnt.ok-cnt.dev;
   return `<div class="row"><div><div class="eyebrow">${meusSetores().map(s=>esc(s.nome)).join(' · ')}</div><h2>Minha equipe</h2></div><div class="spacer"></div><select class="input" style="width:auto" id="tm" data-change="team-month">${monthOpts(ym)}</select></div>
-  ${boxMan}${boxRH}${boxOc}
+  ${boxRev}${boxMan}${boxRH}${boxOc}
   <section class="kpis">
     <div class="card kpi"><span class="l">Colaboradores</span><span class="v">${rows.length}</span></div>
     <div class="card kpi"><span class="l">Aguardando aprovação</span><span class="v" style="color:${cnt.pend?'var(--warn)':'inherit'}">${cnt.pend}</span></div>
@@ -1135,7 +1168,7 @@ function rhPainel(){
     if(ym.length&&tdi.marks.length){const gap=(parseD(tdi.marks[0].ts)-parseD(ym[ym.length-1].ts))/6e4;if(gap<660)al.push(['bad',`${e.nome}: interjornada de ${dur(gap)}`,'Mínimo de 11h entre jornadas (CLT art. 66)'])}
     for(let b=1;b<8;b++){const x=dstr(new Date(d.getFullYear(),d.getMonth(),d.getDate()-b));if((e.admissao&&x<e.admissao)||x<(S.config.inicioPonto||''))break;const di=dayInfo(e,x);if(di.status==='incompleto'){al.push(['warn',`${e.nome} tem marcação incompleta em ${fmtDate(x)}`,'Falta registrar uma saída']);break}if(di.status==='falta'){al.push(['bad',`${e.nome} faltou em ${fmtDate(x)} sem justificativa`,'Nenhuma marcação no dia']);break}}
   });
-  S.punches.filter(p=>p.revisao==='pendente').forEach(p=>{const e=emp(p.empId);if(e)al.push(['info',`${e.nome}: marcação ${p.foraCerca?'registrada fora da sede':'para revisão'}`,`${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)} · ${p.local}`])});
+  S.punches.filter(p=>p.revisao==='pendente').forEach(p=>{const e=emp(p.empId);if(e)al.push(['info',`${e.nome}: marcação ${esc(motivoTxt(p).toLowerCase())}${p.just?'':' (sem justificativa)'}`,`${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)} · ${p.local}`])});
   const col={warn:'var(--warn)',bad:'var(--bad)',info:'var(--info)'};
   return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div><div class="spacer"></div>${holOf(td)?`<span class="chip warn">Feriado · ${esc(holOf(td))}</span>`:''}<span class="chip ok">Ao vivo · ${clockHTML()}</span></div>
   <section class="kpis">
@@ -1285,9 +1318,8 @@ function rhAprov(){
   <section class="card"><div class="card-h"><h3>Solicitações dos colaboradores</h3><span class="chip warn">${reqs.length}</span></div>
   ${reqs.length?reqs.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário solicitado <b class="mono">'+r.hora+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}<div class="muted" style="font-size:.75rem;margin-top:4px">Enviado em ${fmtDate(r.criado.slice(0,10))} às ${r.criado.slice(11,16)}</div></div>
   <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join(''):'<div class="empty">Nenhuma solicitação aguardando.</div>'}</section>
-  <section class="card"><div class="card-h"><h3>Marcações para revisão</h3><span class="chip info">${pun.length}</span></div>
-  ${pun.length?pun.map(p=>{const e=emp(p.empId)||{nome:'Colaborador'};return `<div class="req">${p.foto?`<img class="thumb" src="${p.foto}" alt="Foto da marcação">`:`<div class="avatar" style="width:64px;height:64px">${initials(e.nome)}</div>`}<div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${p.foraCerca?'Registro fora da sede':'Revisão do RH'}</div><div class="muted mono" style="font-size:.85rem">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,19)} · NSR ${String(p.nsr).padStart(9,'0')}</div><div style="font-size:.85rem">${esc(p.local)}${p.obs?' · '+esc(p.obs):''}</div>${geoBloco(p)}</div>
-  <div class="row"><button class="btn sm danger" data-act="pun-dec" data-id="${p.id}" data-v="desconsiderada">Desconsiderar</button><button class="btn sm primary" data-act="pun-dec" data-id="${p.id}" data-v="aceita">Aceitar</button></div></div>`}).join(''):'<div class="empty">Nenhuma marcação aguardando revisão.</div>'}</section>
+  <section class="card"><div class="card-h"><h3>Registros fora da sede e jornadas extras</h3><span class="chip info">${pun.length}</span></div>
+  ${pun.length?pun.map(revCard).join(''):'<div class="empty">Nenhuma marcação aguardando revisão.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Decisões recentes</h3></div><div class="list">${hist.map(r=>reqLine(r,true)).join('')||'<div class="empty">Sem histórico.</div>'}</div></section>`;
 }
 function rhEspelho(){
@@ -1415,12 +1447,13 @@ function receiptHTML(p){
     <div class="rl"><span>NSR</span><span>${String(p.nsr).padStart(9,'0')}</span></div>
     <div class="rl"><span>Local</span><span>${esc(p.local)}</span></div>
     <div class="rl"><span>Validação</span><span>${p.metodo==='facial'?`Facial · ${Math.round((p.score||0)*100)}%`:p.metodo==='cadastro'?'Cadastro facial inicial':p.metodo==='pin'?'Assinatura com PIN':p.metodo==='senha'?'Senha pessoal':p.metodo==='ajuste-rh'?'Inclusão pelo RH':'Sem biometria'}</span></div>
+    ${(p.motivo&&p.motivo.length)||p.foraCerca?`<div class="rl"><span>Análise</span><span>${esc(motivoTxt(p))} · ${({pendente:'aguardando gestor',aceita:'aceita',desconsiderada:'desconsiderada'})[p.revisao]||'registrada'}</span></div>${p.just?`<div class="rl"><span>Justificativa</span><span data-end="j">${esc(p.just)}</span></div>`:''}`:''}
     ${p.geo?`<div class="rl"><span>Endereço</span><span data-end="${p.id}">${esc(p.endereco||'Buscando o endereço…')}</span></div>`:''}
     ${p.geo?`<div class="rl"><span>Coordenadas</span><span>${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)} ±${Math.round(p.geo.acc)}m</span></div><div class="rl"><span>Mapa</span><span><a href="https://www.google.com/maps?q=${p.geo.lat},${p.geo.lng}" target="_blank" rel="noopener noreferrer">Ver no mapa</a></span></div>`:'<div class="rl"><span>Coordenadas</span><span>Não informadas</span></div>'}
     <hr><div style="color:var(--muted)">Código de verificação (SHA-256)</div><div class="hash">${esc(p.hash)}</div>
   </div>`;
 }
-function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.geo&&!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`)}
+function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.geo&&!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);const meu=ME&&p.empId===ME.id;openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${meu&&precisaJust(p)?justMarcHTML(p):''}${!meu&&p.revisao==='pendente'&&(isRHsession()||(ME&&minhaEquipe().some(x=>x.id===p.empId)))?revCard(p):''}${receiptHTML(p)}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`)}
 
 /* ---------- Captura facial ---------- */
 let CAP=null;
@@ -1718,6 +1751,7 @@ document.addEventListener('click',async ev=>{
     case 'emp-form':empForm(t.dataset.id);break;
     case 'see-mirror':if($('#modal-root').innerHTML)closeModal();UI.mirrorEmp=t.dataset.id;UI.rhTab='espelho';render();window.scrollTo(0,0);break;
     case 'kpi-lista':kpiLista(t.dataset.v);break;
+    case 'just-marc':justMarcForm(t.dataset.id);break;
     case 'jor-form':jorForm(t.dataset.id);break;
     case 'lrole':{const u=$('#l-user')?$('#l-user').value:'';UI.loginRole=t.dataset.v;BOOT.msg='';render();const n=$('#l-user');if(n){n.value=u;(u?$('#l-pw'):n).focus()}break}
     case 'home':UI.navOpen=false;closeModal();if(MODE==='rh'){UI.rhTab='painel'}else{UI.empTab='ponto';UI.teamEmp=null}render();window.scrollTo(0,0);break;
@@ -1785,7 +1819,7 @@ document.addEventListener('click',async ev=>{
     case 'add-punch':addPunchForm(t.dataset.id);break;
     case 'req-dec':decideForm(t.dataset.id,t.dataset.v);break;
     case 'anexo':{const {data,error}=await sb.storage.from('anexos').createSignedUrl(t.dataset.path,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');break}
-    case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll({punches:true});render();toast(t.dataset.v==='aceita'?'Marcação aceita':'Marcação desconsiderada e arquivada');break}
+    case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll({punches:true});if($('#modal-root').innerHTML)closeModal();else render();toast(t.dataset.v==='aceita'?'Registro aceito':'Registro desconsiderado: não conta nas horas');break}
   }}catch(err){toast(errMsg(err));t.disabled=false}
 });
 document.addEventListener('change',ev=>{
@@ -1826,10 +1860,16 @@ document.addEventListener('submit',async ev=>{
     const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null});
     if(error||!data||!data.ok){errEl.textContent=error?errMsg(error):(data&&data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const p=mapPunch(data.marcacao);S.punches.push(p);setTimeout(()=>pedirEnderecos([p]),300);
-    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${receiptHTML(p)}${p.revisao==='pendente'?'<div class="notice">Esta marcação foi enviada para revisão do RH.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
+    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${p.revisao==='pendente'&&!precisaJust(p)?'<div class="notice">Esta marcação foi enviada para análise.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
     return;
   }
   if(k==='convite'){const g=f.querySelector('[data-act="google-convite"]');if(g)g.click();if(btn)btn.disabled=false;return}
+  if(k==='just-marc'){
+    const id=f.dataset.id;const txt=(fd.texto||'').trim();if(txt.length<10)throw new Error('Explique o motivo com pelo menos 10 caracteres.');
+    const {error}=await sb.rpc('justificar_marcacao',{p_id:id,p_texto:txt});if(error)throw error;
+    const p=S.punches.find(x=>x.id===id);if(p){p.just=txt;p.justEm=new Date().toISOString()}
+    f.outerHTML='<div class="notice" style="border-color:var(--ok)"><b>Justificativa enviada.</b> O seu gestor vai analisar o registro.</div>';toast('Justificativa enviada');if(!$('.modal .just-marc')&&$('#modal-root').innerHTML&&!$('.modal .receipt'))closeModal();return;
+  }
   if(k==='termos'){
     const {error}=await sb.rpc('registrar_consentimento',{p_tipo:'termos'});if(error)throw error;
     ME.consent=(ME.consent||[]).concat([{tipo:'termos',versao:S.config.termoVersao,revogado_em:null}]);
