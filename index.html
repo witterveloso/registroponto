@@ -1134,7 +1134,7 @@ function empPerfil(e){
 function pendingCount(){return S.requests.filter(r=>r.status==='pendente').length+S.punches.filter(p=>p.revisao==='pendente').length}
 function viewRH(){
   const t=UI.rhTab,pc=pendingCount();
-  const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['auditoria','Auditoria',IC.check],['config','Configurações',IC.gear]];
+  const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['holerite','Holerites',IC.inbox],['auditoria','Auditoria',IC.check],['config','Configurações',IC.gear]];
   const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,auditoria:rhAuditoria,config:rhConfig}[t]();
   return `<div class="rh"><aside class="side${UI.navOpen?' open':''}"><div class="side-logo"><button class="logo-btn" data-act="home" aria-label="Voltar ao painel">${logoPill(38)}</button><span class="eyebrow" style="color:var(--deep-muted)">Gestão de ponto</span></div>
     <div class="m-cur">${esc((nav.find(n=>n[0]===t)||[])[1]||'')}</div>
@@ -1757,7 +1757,7 @@ document.addEventListener('click',async ev=>{
     case 'logout':await logout();break;
     case 'mode':MODE=t.dataset.v;render();window.scrollTo(0,0);break;
     case 'etab':UI.empTab=t.dataset.v;UI.mirrorMonth=null;render();window.scrollTo(0,0);break;
-    case 'rtab':UI.rhTab=t.dataset.v;UI.navOpen=false;render();window.scrollTo(0,0);break;
+    case 'rtab':if(t.dataset.v==='holerite'){location.href='holerite.html';break}UI.rhTab=t.dataset.v;UI.navOpen=false;render();window.scrollTo(0,0);break;
     case 'punch-pw':case 'use-pw':pwForm();break;
     case 'close':closeModal();break;
     case 'receipt':showReceipt(t.dataset.id);break;

@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://anotrdjomxzgyqvvdzbe.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<meta name="theme-color" content="#003165">
+<title>Holerites · FTVTEC</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: barra superior com abas; no Holerite, editor à esquerda e folha (papel) à direita, empilhando no celular. O papel é sempre claro, como impresso. */
+:root{
+  --navy:#003165; --teal:#00BDA0; --teal-ink:#007F6B;
+  --bg:#F2F5F8; --surface:#FFFFFF; --surface-2:#E9EEF3; --line:#D3DCE5;
+  --fg:#0E1C2B; --muted:#5A6B7D; --accent:#003165; --accent-fg:#FFFFFF;
+  --chip-v:#E1F6F1; --chip-v-fg:#00715F; --chip-d:#FBE9E7; --chip-d-fg:#A3341F;
+  --danger:#B3311B;
+  --f-display:"Sora", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* papel: fixo, independe do tema */
+  --p-bg:#FFFFFF; --p-ink:#0E1C2B; --p-muted:#5F6E7E; --p-line:#C9D3DD; --p-band:#EEF3F7; --p-navy:#003165; --p-teal:#00BDA0;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1420; --surface:#121E2C; --surface-2:#1A2838; --line:#2A3B4E;
+  --fg:#E6EDF4; --muted:#93A4B6; --accent:#3FD3B8; --accent-fg:#06231E; --teal-ink:#3FD3B8;
+  --chip-v:#0F3A33; --chip-v-fg:#7FE7D3; --chip-d:#3E1C17; --chip-d-fg:#F3A797; --danger:#F08A73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1420; --surface:#121E2C; --surface-2:#1A2838; --line:#2A3B4E;
+  --fg:#E6EDF4; --muted:#93A4B6; --accent:#3FD3B8; --accent-fg:#06231E; --teal-ink:#3FD3B8;
+  --chip-v:#0F3A33; --chip-v-fg:#7FE7D3; --chip-d:#3E1C17; --chip-d-fg:#F3A797; --danger:#F08A73; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:18px 14px}
+header.top img{height:40px;width:auto;background:#fff;border-radius:8px;padding:4px 8px}
+header.top h1{font-family:var(--f-display);font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+header.top .sub{color:var(--muted);font-size:12.5px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px;scrollbar-width:none}
+nav.tabs button{font:500 14px var(--f-body);color:var(--muted);background:none;border:0;padding:10px 14px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--teal)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h2{font:600 15px var(--f-display);margin:0}
+.panel h3{font:600 12px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+input,select,textarea{font:400 14px var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:60px}
+input.num{font-family:var(--f-mono);text-align:right}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg)}
+.check input{width:auto}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:500 14px var(--f-body);border-radius:8px;padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.ghost{background:none}
+.btn.sm{padding:5px 10px;font-size:12.5px}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.55;cursor:default}
+.hint{font-size:12px;color:var(--muted);margin:0}
+
+/* eventos */
+.ev-list{display:flex;flex-direction:column;gap:6px}
+.ev{display:grid;grid-template-columns:52px minmax(0,1fr) 64px 96px 28px;gap:6px;align-items:center}
+.ev input{padding:6px 7px;font-size:13px}
+.ev .lock{font:500 13px var(--f-mono);text-align:right;padding:6px 7px;color:var(--muted)}
+.ev .descwrap{display:flex;align-items:center;gap:6px;min-width:0}
+.ev .descwrap input{flex:1}
+.chip{font:600 10px var(--f-body);letter-spacing:.04em;padding:2px 6px;border-radius:99px;white-space:nowrap}
+.chip.V{background:var(--chip-v);color:var(--chip-v-fg)}
+.chip.D{background:var(--chip-d);color:var(--chip-d-fg)}
+.ev .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0}
+.ev-head{display:grid;grid-template-columns:52px minmax(0,1fr) 64px 96px 28px;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ev-head span:nth-child(3),.ev-head span:nth-child(4){text-align:right}
+.add{display:flex;gap:8px}
+.add select{flex:1}
+.sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sum div{background:var(--surface-2);border-radius:8px;padding:8px 10px;min-width:0}
+.sum small{display:block;font-size:11px;color:var(--muted)}
+.sum b{font:600 15px var(--f-mono);font-variant-numeric:tabular-nums}
+.sum .liq b{color:var(--teal-ink)}
+
+/* papel */
+.paper-scroll{overflow-x:auto;background:var(--surface-2);border-radius:10px;padding:16px;border:1px solid var(--line)}
+.paper{width:794px;margin:0 auto;background:var(--p-bg);color:var(--p-ink);font-family:var(--f-body);font-size:10.5px;line-height:1.35;padding:26px 30px;box-shadow:0 1px 2px rgba(0,20,50,.12),0 8px 24px rgba(0,20,50,.10)}
+.via{display:flex;flex-direction:column;gap:8px}
+.cut{border-top:1px dashed var(--p-line);margin:18px 0;position:relative}
+.cut span{position:absolute;left:50%;top:-8px;transform:translateX(-50%);background:var(--p-bg);padding:0 8px;color:var(--p-muted);font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+.p-head{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;border-bottom:2px solid var(--p-navy);padding-bottom:8px}
+.p-head img{height:46px;width:auto;display:block}
+.p-emp b{display:block;font:600 12.5px var(--f-display);color:var(--p-navy)}
+.p-emp span{display:block;color:var(--p-muted);font-size:9.5px}
+.p-doc{text-align:right}
+.p-doc .t{font:600 10px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--p-navy)}
+.p-doc .c{font:600 15px var(--f-display);color:var(--p-ink)}
+.p-doc .v{display:inline-block;margin-top:2px;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;background:var(--p-teal);color:#fff;padding:1px 7px;border-radius:99px}
+.p-func{display:grid;grid-template-columns:62px 1.6fr 1.1fr 66px 74px 74px;border:1px solid var(--p-line);border-radius:4px}
+.p-func>div{padding:4px 7px;border-right:1px solid var(--p-line);min-width:0}
+.p-func>div:last-child{border-right:0}
+.p-func .l{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--p-muted)}
+.p-func .v{display:block;font-weight:600;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-func .wide{grid-column:span 6;border-top:1px solid var(--p-line);display:flex;gap:18px;flex-wrap:wrap;border-right:0}
+.p-func .wide span{color:var(--p-muted)}
+.p-func .wide b{color:var(--p-ink);font-weight:600}
+table.p-ev{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.p-ev th{font:600 8.5px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--p-navy);padding:5px 7px;text-align:left}
+.p-ev th.n,.p-ev td.n{text-align:right}
+.p-ev td{padding:3.5px 7px;border-bottom:1px solid var(--p-band)}
+.p-ev td.m{font-family:var(--f-mono);font-size:10px}
+.p-ev tr.fill td{height:19px}
+.p-ev tbody tr:nth-child(even) td{background:#F8FAFC}
+.p-ev tfoot td{border-top:1px solid var(--p-ink);border-bottom:0;font-weight:600;background:none !important;padding-top:5px}
+.p-ev tfoot td.lbl{font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--p-muted);font-weight:600}
+.p-liq{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--p-band);border-left:4px solid var(--p-teal);padding:7px 10px}
+.p-liq .ext{font-size:9.5px;color:var(--p-muted);font-style:italic}
+.p-liq .ext b{display:block;font-style:normal;color:var(--p-ink);font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1px}
+.p-liq .val{text-align:right}
+.p-liq .val small{display:block;font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--p-muted)}
+.p-liq .val b{font:600 18px var(--f-mono);color:var(--p-navy)}
+.p-bases{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--p-line);border-radius:4px}
+.p-bases div{padding:4px 6px;border-right:1px solid var(--p-line);min-width:0}
+.p-bases div:last-child{border-right:0}
+.p-bases small{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--p-muted);white-space:nowrap}
+.p-bases b{font:500 10px var(--f-mono)}
+.p-note{font-size:9px;color:var(--p-muted)}
+.p-msg{font-size:9.5px;border:1px dashed var(--p-line);padding:5px 8px;border-radius:4px}
+.p-msg b{color:var(--p-navy)}
+.p-sign{display:grid;grid-template-columns:1.2fr 1fr 1.6fr;gap:16px;align-items:end;margin-top:4px}
+.p-sign .decl{font-size:9px;color:var(--p-muted)}
+.p-sign .ln{border-top:1px solid var(--p-ink);padding-top:3px;font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--p-muted);text-align:center}
+.p-foot{display:flex;justify-content:space-between;font-size:8px;color:var(--p-muted);margin-top:2px}
+
+/* listas */
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface)}
+.item:last-child{border-bottom:0}
+.item b{display:block;font-weight:600}
+.item span{font-size:12.5px;color:var(--muted)}
+.item .r{font:600 14px var(--f-mono)}
+.item.sel{background:var(--surface-2)}
+.empty{padding:22px;text-align:center;color:var(--muted);font-size:13px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px;align-items:start}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+table.tab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tab th,.tab td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);font-size:13px}
+.tab th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.tab td.n,.tab th.n{text-align:right;font-family:var(--f-mono)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13.5px;z-index:20;max-width:calc(100% - 32px)}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;background:var(--chip-d);color:var(--chip-d-fg);padding:8px 10px;border-radius:8px}
+.render-host{position:fixed;left:-10000px;top:0}
+@media print{
+  body{background:#fff}
+  .wrap>*:not(#tab-holerite),#tab-holerite .grid>.stack:first-child,.noprint{display:none !important}
+  .grid{display:block}.paper-scroll{background:none;border:0;padding:0}.paper{box-shadow:none;padding:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+
+body{margin:0}
+[hidden]{display:none!important}
+.top .back{margin-left:auto;display:flex;gap:8px;align-items:center}
+.top .back a{font:500 13.5px var(--f-body);color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:7px 12px;background:var(--surface)}
+.top .who{font-size:12px;color:var(--muted);text-align:right}
+.gate{min-height:70vh;display:grid;place-items:center;text-align:center;padding:24px}
+.gate div{max-width:420px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.gate a{color:var(--accent)}
+input[readonly]{background:var(--surface-2);color:var(--muted)}
+.lock-note{font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.srch{width:100%}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header class="top">
+    <img id="hdrLogo" alt="FTVTEC" src="data:image/png;base64,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">
+    <div>
+      <h1>Gerador de Holerite</h1>
+      <div class="sub" id="hdrEmp">Fundação Escola TVTEC Jundiaí</div>
+    </div>
+    <div class="back"><div class="who" id="hdrWho"></div><a href="./">Voltar ao painel do RH</a></div>
+  </header>
+
+  <div class="gate" id="gate"><div><b>Carregando…</b></div></div>
+  <div id="appArea" hidden>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="holerite" aria-selected="true">Holerite</button>
+    <button role="tab" data-tab="func" aria-selected="false">Funcionários</button>
+    <button role="tab" data-tab="hist" aria-selected="false">Histórico</button>
+    <button role="tab" data-tab="empresa" aria-selected="false">Empresa</button>
+    <button role="tab" data-tab="tabelas" aria-selected="false">Tabelas 2026</button>
+  </nav>
+
+  <!-- HOLERITE -->
+  <section id="tab-holerite">
+    <div class="grid">
+      <div class="stack">
+        <div class="panel">
+          <h2>Dados da folha</h2>
+          <label class="f">Funcionário<select id="hEmp"></select></label>
+          <div class="row">
+            <label class="f">Competência<input id="hComp" type="month"></label>
+            <label class="f">Dias trabalhados<input id="hDias" type="number" min="0" max="30" step="1" class="num"></label>
+            <label class="f">Data de pagamento<input id="hPag" type="date"></label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Eventos</h2>
+          <div class="ev-head"><span>Cód.</span><span>Descrição</span><span>Ref.</span><span>Valor</span><span></span></div>
+          <div class="ev-list" id="evList"></div>
+          <div class="add">
+            <select id="evPreset" aria-label="Escolher evento"></select>
+            <button class="btn sm" id="evAdd">Adicionar</button>
+          </div>
+          <p class="hint">Salário, INSS, IRRF e FGTS são calculados automaticamente pelas tabelas de 2026, com a redução do IR da Lei 15.270/2025. Horas extras, faltas e percentuais calculam o valor pela referência.</p>
+          <div class="sum">
+            <div><small>Vencimentos</small><b id="sV">0,00</b></div>
+            <div><small>Descontos</small><b id="sD">0,00</b></div>
+            <div class="liq"><small>Líquido</small><b id="sL">0,00</b></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Mensagem e layout</h2>
+          <label class="f">Mensagem ao colaborador<textarea id="hMsg" maxlength="240"></textarea></label>
+          <label class="check"><input type="checkbox" id="hVias"> Duas vias na página (empregador e colaborador)</label>
+          <div class="btns">
+            <button class="btn primary" id="bPdf">Baixar PDF</button>
+            <button class="btn" id="bSave">Salvar no histórico</button>
+            <button class="btn" id="bPrint" hidden>Imprimir</button>
+          </div>
+          <p class="hint" id="pdfHint">O PDF sai em A4 com as duas vias, pronto para assinatura.</p>
+        </div>
+      </div>
+
+      <div class="paper-scroll"><div class="paper" id="paper"></div></div>
+    </div>
+  </section>
+
+  <!-- FUNCIONÁRIOS -->
+  <section id="tab-func" hidden>
+    <div class="two">
+      <div class="panel">
+        <div class="btns" style="justify-content:space-between;align-items:center"><h2>Funcionários</h2><span class="hint" id="fCount"></span></div>
+        <input class="srch" id="fBusca" placeholder="Buscar por nome, matrícula ou cargo" aria-label="Buscar funcionário">
+        <p class="hint">A lista vem da relação de funcionários do Registro de Ponto. Para incluir ou desligar alguém, use Colaboradores no painel do RH.</p>
+        <div class="list" id="fList"></div>
+      </div>
+      <form class="panel" id="fForm" autocomplete="off">
+        <h2 id="fTitle">Dados de pagamento</h2>
+        <p class="lock-note">Nome, cargo, setor e admissão vêm do cadastro do Registro de Ponto. Aqui ficam só os dados de pagamento, visíveis apenas para o RH.</p>
+        <div class="row">
+          <label class="f">Matrícula<input id="f_cod" class="num" readonly></label>
+          <label class="f" style="grid-column:span 2">Nome completo<input id="f_nome" readonly></label>
+        </div>
+        <div class="row">
+          <label class="f">CPF<input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></label>
+          <label class="f">Cargo<input id="f_cargo" readonly></label>
+          <label class="f">Função<input id="f_funcao"></label>
+        </div>
+        <div class="row">
+          <label class="f">CBO<input id="f_cbo" placeholder="0000-00"></label>
+          <label class="f">Departamento<input id="f_depto" readonly></label>
+          <label class="f">Admissão<input id="f_adm" type="date" readonly></label>
+        </div>
+        <h3>Remuneração e descontos fixos</h3>
+        <div class="row">
+          <label class="f">Salário base (R$)<input id="f_sal" class="num" inputmode="decimal"></label>
+          <label class="f">Dependentes IR<input id="f_dep" type="number" min="0" step="1" class="num"></label>
+          <label class="f">Adiantamento (%)<input id="f_adi" type="number" min="0" max="100" step="1" class="num"></label>
+        </div>
+        <div class="row">
+          <label class="f">Vale-transporte pago (R$)<input id="f_vt" class="num" inputmode="decimal"></label>
+          <label class="f">Auxílio alimentação (R$)<input id="f_aux" class="num" inputmode="decimal"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="f_fgts"> Recolhe FGTS (8%)</label>
+        <h3>Pagamento</h3>
+        <div class="row">
+          <label class="f">Banco<input id="f_banco"></label>
+          <label class="f">Agência<input id="f_ag"></label>
+          <label class="f">Conta<input id="f_cc"></label>
+        </div>
+        <div class="btns">
+          <button class="btn primary" type="submit">Salvar dados de pagamento</button>
+        </div>
+        <div id="fConfirm"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section id="tab-hist" hidden>
+    <div class="panel">
+      <h2>Holerites salvos</h2>
+      <p class="hint">Ficam guardados no sistema, acessíveis só para o RH. Abra um para revisar ou baixar o PDF de novo.</p>
+      <div class="list" id="hList"></div>
+
+    </div>
+  </section>
+
+  <!-- EMPRESA -->
+  <section id="tab-empresa" hidden>
+    <form class="panel" id="eForm" style="max-width:720px">
+      <h2>Dados da empresa</h2>
+      <p class="lock-note">Razão social e CNPJ vêm das Configurações do Registro de Ponto.</p>
+      <label class="f">Razão social<input id="e_nome" readonly></label>
+      <div class="row">
+        <label class="f">CNPJ<input id="e_cnpj" readonly></label>
+        <label class="f">Telefone<input id="e_tel"></label>
+      </div>
+      <label class="f">Endereço<input id="e_end"></label>
+      <label class="f">Mensagem padrão do holerite<textarea id="e_msg" maxlength="240"></textarea></label>
+      <label class="f">Logotipo (PNG ou JPG)<input type="file" id="e_logo" accept="image/png,image/jpeg"></label>
+      <div class="btns">
+        <button class="btn primary" type="submit">Salvar empresa</button>
+        <button class="btn ghost" type="button" id="eLogoReset">Voltar ao logo FTVTEC</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- TABELAS -->
+  <section id="tab-tabelas" hidden>
+    <div class="two">
+      <div class="panel">
+        <h2>INSS 2026 · empregado</h2>
+        <table class="tab"><thead><tr><th>Salário de contribuição</th><th class="n">Alíquota</th></tr></thead>
+          <tbody id="tINSS"></tbody></table>
+        <p class="hint">Cálculo progressivo, faixa a faixa, até o teto de R$ 8.475,55.</p>
+      </div>
+      <div class="panel">
+        <h2>IRRF 2026 · mensal</h2>
+        <table class="tab"><thead><tr><th>Base de cálculo</th><th class="n">Alíquota</th><th class="n">Parcela a deduzir</th></tr></thead>
+          <tbody id="tIRRF"></tbody></table>
+        <p class="hint">Dedução por dependente R$ 189,59. Desconto simplificado R$ 607,20 (o sistema usa o que for mais vantajoso). Redução da Lei 15.270/2025: até R$ 5.000,00 de rendimento tributável o imposto zera; de R$ 5.000,01 a R$ 7.350,00 a redução é 978,62 menos 0,133145 × rendimento.</p>
+      </div>
+    </div>
+  </section>
+  </div>
+</div>
+<div class="render-host" id="renderHost" aria-hidden="true"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+/* ================= CÁLCULO (puro) ================= */
+const T = {
+  inss: [[1621.00,0.075],[2902.84,0.09],[4354.27,0.12],[8475.55,0.14]],
+  irrf: [[2428.80,0,0],[2826.65,0.075,182.16],[3751.05,0.15,394.16],[4664.68,0.225,675.49],[Infinity,0.275,908.73]],
+  dep: 189.59, simpl: 607.20, redMax: 312.89, redA: 978.62, redB: 0.133145, redLim1: 5000, redLim2: 7350, fgts: 0.08
+};
+const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+function calcINSS(base){
+  let b = Math.min(Math.max(base,0), T.inss[T.inss.length-1][0]), prev = 0, tot = 0;
+  for (const [lim,al] of T.inss){ if (b > prev){ tot += Math.floor((Math.min(b,lim) - prev) * al * 100 + 1e-6) / 100; } prev = lim; }
+  return r2(tot);
+}
+function calcIRRF(rend, inss, deps, pensao){
+  const legal = r2(rend - inss - deps*T.dep - pensao);
+  const simpl = r2(rend - T.simpl - pensao);
+  const usaSimpl = simpl < legal;
+  const base = Math.max(0, usaSimpl ? simpl : legal);
+  let al = 0, ded = 0;
+  for (const [lim,a,d] of T.irrf){ if (base <= lim){ al = a; ded = d; break; } }
+  const bruto = Math.max(0, r2(base*al - ded));
+  let red = 0;
+  if (rend <= T.redLim1) red = Math.min(bruto, T.redMax);
+  else if (rend <= T.redLim2) red = Math.max(0, r2(T.redA - r2(T.redB*rend)));
+  const ir = Math.max(0, r2(bruto - red));
+  return { base, al, bruto, red: Math.min(red,bruto), ir, usaSimpl };
+}
+function valorEvento(e, sal){
+  const ref = +e.ref || 0, h = sal/220;
+  switch (e.kind){
+    case 'pct':   return r2(sal*ref/100);
+    case 'he50':  return r2(h*1.5*ref);
+    case 'he100': return r2(h*2*ref);
+    case 'not':   return r2(h*0.2*ref);
+    case 'falta': return r2(sal/30*ref);
+    case 'vt6':   return r2(sal*ref/100);
+    default:      return r2(+e.valor || 0);
+  }
+}
+function computar(emp, h){
+  const sal = +emp.sal || 0, dias = Math.min(30, Math.max(0, +h.dias || 0));
+  const linhas = [];
+  const salMes = r2(sal*dias/30);
+  linhas.push({cod:'1', desc:'SALÁRIO', ref:fmtRef(dias), tipo:'V', valor:salMes, auto:true});
+  let bINSS = salMes, rend = salMes, bFGTS = salMes, pensao = 0;
+  for (const e of h.eventos){
+    const v = valorEvento(e, sal);
+    linhas.push({cod:e.cod, desc:e.desc, ref:e.kind==='valor' ? (e.ref?fmtRef(e.ref):'') : fmtRef(e.ref), tipo:e.tipo, valor:v, id:e.id});
+    const s = e.tipo === 'V' ? 1 : -1;
+    if (e.inc){ bINSS += s*v; rend += s*v; bFGTS += s*v; }
+    if (e.kind === 'pensao') pensao += v;
+  }
+  bINSS = r2(Math.max(0,bINSS)); rend = r2(Math.max(0,rend)); bFGTS = r2(Math.max(0,bFGTS));
+  const inss = calcINSS(bINSS);
+  const ir = calcIRRF(rend, inss, +emp.dep || 0, pensao);
+  linhas.push({cod:'5001', desc:'INSS', ref:fmtRef(aliqEfetiva(inss,bINSS)), tipo:'D', valor:inss, auto:true});
+  if (ir.ir > 0) linhas.push({cod:'5004', desc:'IRRF SOBRE SALÁRIO', ref:fmtRef(ir.al*100), tipo:'D', valor:ir.ir, auto:true});
+  const tv = r2(linhas.filter(l=>l.tipo==='V').reduce((a,l)=>a+l.valor,0));
+  const td = r2(linhas.filter(l=>l.tipo==='D').reduce((a,l)=>a+l.valor,0));
+  const fgts = emp.fgts ? r2(bFGTS*T.fgts) : 0;
+  return { linhas, tv, td, liq:r2(tv-td), sal, bINSS:Math.min(bINSS,T.inss[3][0]), bFGTS: emp.fgts?bFGTS:0, fgts, ir, rend };
+}
+function aliqEfetiva(v,b){ return b>0 ? r2(v/b*100) : 0; }
+function fmtRef(x){ const n = +x; if (!isFinite(n) || n===0) return ''; return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+/* valor por extenso */
+const U=['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+const D=['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+const C=['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+function grp(n){ if(n===100) return 'cem'; const c=Math.floor(n/100), r=n%100, p=[]; if(c) p.push(C[c]);
+  if(r){ if(r<20) p.push(U[r]); else { const t=Math.floor(r/10), u=r%10; p.push(u? D[t]+' e '+U[u] : D[t]); } } return p.join(' e '); }
+function inteiro(n){ if(n===0) return 'zero'; const mi=Math.floor(n/1e6), mil=Math.floor(n/1000)%1000, r=n%1000, parts=[];
+  if(mi) parts.push(grp(mi)+(mi===1?' milhão':' milhões'));
+  if(mil) parts.push(mil===1?'mil':grp(mil)+' mil');
+  if(r) parts.push(grp(r));
+  if(parts.length>1 && r && (r<100 || r%100===0)) { const last=parts.pop(); return parts.join(' ')+' e '+last; }
+  return parts.join(' '); }
+function extenso(v){ v=Math.max(0,r2(v)); const re=Math.floor(v), ce=Math.round((v-re)*100); const out=[];
+  if(re){ const so_mi = re%1e6===0; out.push(inteiro(re)+(so_mi?' de':'')+(re===1?' real':' reais')); }
+  if(ce) out.push(inteiro(ce)+(ce===1?' centavo':' centavos'));
+  if(!out.length) return 'zero real';
+  const s = out.join(' e '); return s.charAt(0).toUpperCase()+s.slice(1); }
+
+/* ================= ESTADO ================= */
+const LOGO_DEFAULT = document.getElementById('hdrLogo').src;
+const PRESETS = [
+  {cod:'150', desc:'HORAS EXTRAS 50%', tipo:'V', kind:'he50', ref:10, inc:true, rot:'Horas extras 50% (ref. em horas)'},
+  {cod:'200', desc:'HORAS EXTRAS 100%', tipo:'V', kind:'he100', ref:4, inc:true, rot:'Horas extras 100% (ref. em horas)'},
+  {cod:'25',  desc:'ADICIONAL NOTURNO 20%', tipo:'V', kind:'not', ref:20, inc:true, rot:'Adicional noturno 20% (ref. em horas)'},
+  {cod:'300', desc:'GRATIFICAÇÃO', tipo:'V', kind:'valor', valor:300, inc:true, rot:'Gratificação (tributável)'},
+  {cod:'310', desc:'BÔNUS / PRÊMIO', tipo:'V', kind:'valor', valor:500, inc:true, rot:'Bônus ou prêmio (tributável)'},
+  {cod:'802', desc:'VALE TRANSPORTE', tipo:'V', kind:'valor', valor:0, inc:false, ref:1, rot:'Vale-transporte pago (não tributável)'},
+  {cod:'837', desc:'AUXÍLIO ALIMENTAÇÃO', tipo:'V', kind:'valor', valor:0, inc:false, ref:1, rot:'Auxílio alimentação (não tributável)'},
+  {cod:'850', desc:'REEMBOLSO DE DESPESAS', tipo:'V', kind:'valor', valor:0, inc:false, rot:'Reembolso (não tributável)'},
+  {cod:'420', desc:'FALTAS', tipo:'D', kind:'falta', ref:1, inc:true, rot:'Faltas (ref. em dias)'},
+  {cod:'5010',desc:'DESCONTO VALE TRANSPORTE', tipo:'D', kind:'vt6', ref:6, inc:false, rot:'Desconto VT 6%'},
+  {cod:'5020',desc:'PLANO DE SAÚDE', tipo:'D', kind:'valor', valor:0, inc:false, rot:'Plano de saúde'},
+  {cod:'5030',desc:'PENSÃO ALIMENTÍCIA', tipo:'D', kind:'pensao', valor:0, inc:false, rot:'Pensão alimentícia (deduz do IR)'},
+  {cod:'5040',desc:'EMPRÉSTIMO CONSIGNADO', tipo:'D', kind:'valor', valor:0, inc:false, rot:'Empréstimo consignado'},
+  {cod:'5076',desc:'ADIANTAMENTO SALARIAL SEM IR', tipo:'D', kind:'pct', ref:35, inc:false, rot:'Adiantamento salarial (% do salário)'},
+  {cod:'900', desc:'OUTRO PROVENTO', tipo:'V', kind:'valor', valor:0, inc:true, rot:'Outro provento (tributável)'},
+  {cod:'950', desc:'OUTRO DESCONTO', tipo:'D', kind:'valor', valor:0, inc:false, rot:'Outro desconto'}
+];
+const uid = () => Math.random().toString(36).slice(2,9);
+function hoje(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function compAtual(){ const d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); }
+/* Dados: relação de funcionários do Registro de Ponto + dados de pagamento (somente RH, protegidos no servidor) */
+const sb = window.supabase.createClient('https://anotrdjomxzgyqvvdzbe.supabase.co','sb_publishable__JQhHNgikP7uGF-iVFCdsQ_Q6pOaU6C',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,flowType:'pkce'}});
+let S = {empresa:{nome:'',cnpj:'',end:'',tel:'',msg:'',logo:null}, funcs:[], hist:[], cur:null};
+function persist(){}
+const num = s => { if (typeof s === 'number') return s; s = String(s||'').trim(); if(!s) return 0; if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.'); return parseFloat(s)||0; };
+const brl = v => (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const compTxt = c => { if(!c) return ''; const [y,m]=c.split('-'); return MESES[+m-1]+'/'+y; };
+const dataBR = d => d ? d.split('-').reverse().join('/') : '';
+const empFor = id => S.funcs.find(f=>f.id===id) || S.funcs[0] || {nome:'',cod:'',sal:0};
+const empCalc = f => ({...f, sal:num(f.sal), dep:+f.dep||0, fgts:!!f.fgts});
+
+function novoHolerite(f){
+  if (!f) return {id:uid(), empId:null, comp:compAtual(), dias:30, pag:hoje(), eventos:[], msg:S.empresa.msg||'', vias:true};
+  const ev = [];
+  if (num(f.vt) > 0) ev.push({id:uid(), cod:'802', desc:'VALE TRANSPORTE', tipo:'V', kind:'valor', ref:1, valor:num(f.vt), inc:false});
+  if (num(f.aux) > 0) ev.push({id:uid(), cod:'837', desc:'AUXÍLIO ALIMENTAÇÃO', tipo:'V', kind:'valor', ref:1, valor:num(f.aux), inc:false});
+  if (+f.adi > 0) ev.push({id:uid(), cod:'5076', desc:'ADIANTAMENTO SALARIAL SEM IR', tipo:'D', kind:'pct', ref:+f.adi, inc:false});
+  return {id:uid(), empId:f.id, comp:compAtual(), dias:30, pag:hoje(), eventos:ev, msg:S.empresa.msg||'', vias:true};
+}
+
+
+async function carregar(){
+  const gate = msg => { $('gate').innerHTML = '<div>'+msg+'</div>'; $('gate').hidden=false; $('appArea').hidden=true; };
+  const {data:{session}} = await sb.auth.getSession();
+  if (!session){ gate('<b>Entre no Registro de Ponto como RH</b><span class="hint">O gerador de holerites usa a mesma conta do painel do RH.</span><a class="btn primary" href="./">Ir para o login</a>'); return false; }
+  const {data:rh} = await sb.rpc('is_rh');
+  if (rh !== true){ gate('<b>Acesso restrito ao RH</b><span class="hint">Entre no Registro de Ponto escolhendo <b>RH · Gestão</b> e abra Holerites pelo menu.</span><a class="btn primary" href="./">Voltar</a>'); return false; }
+  const [em, co, se, fd, hi, me] = await Promise.all([
+    sb.from('empresa').select('razao,cnpj,local,holerite_endereco,holerite_telefone,holerite_mensagem,holerite_logo').eq('id',1).single(),
+    sb.from('colaboradores').select('id,matricula,nome,cargo,depto,vinculo,admissao,cpf,setor_id,ativo').eq('ativo',true).order('nome'),
+    sb.from('setores').select('id,nome'),
+    sb.from('folha_dados').select('*'),
+    sb.from('holerites').select('id,colaborador_id,competencia,dados,liquido,salvo_em').order('salvo_em',{ascending:false}),
+    sb.from('colaboradores').select('nome').eq('user_id',session.user.id).maybeSingle()]);
+  for (const r of [em,co,se,fd,hi]) if (r.error) throw r.error;
+  const E = em.data;
+  S.empresa = {nome:E.razao||'', cnpj:E.cnpj||'', end:E.holerite_endereco||'', tel:E.holerite_telefone||'', msg:E.holerite_mensagem||'', logo:E.holerite_logo||null};
+  const setor = Object.fromEntries((se.data||[]).map(s=>[s.id,s.nome]));
+  const pag = Object.fromEntries((fd.data||[]).map(x=>[x.colaborador_id,x]));
+  S.funcs = (co.data||[]).map(c => { const p = pag[c.id] || {}; return {id:c.id, cod:c.matricula||'', nome:(c.nome||'').toUpperCase(), cpf:c.cpf||'', cargo:(c.cargo||'').toUpperCase(),
+    funcao:(p.funcao||'').toUpperCase(), cbo:p.cbo||'', depto:((c.setor_id&&setor[c.setor_id])||c.vinculo||c.depto||'').toUpperCase(), adm:c.admissao||'',
+    sal:+p.salario||0, dep:+p.dependentes||0, adi:+p.adiantamento_pct||0, vt:+p.vale_transporte||0, aux:+p.auxilio_alimentacao||0, fgts:p.fgts!==false,
+    banco:p.banco||'', ag:p.agencia||'', cc:p.conta||'', temPag:!!pag[c.id]}; });
+  S.hist = (hi.data||[]).map(h => ({...h.dados, id:h.id, empId:h.colaborador_id, comp:h.competencia, liq:+h.liquido, salvoEm:h.salvo_em, nome:(S.funcs.find(f=>f.id===h.colaborador_id)||h.dados.empSnap||{}).nome||'Funcionário'}));
+  S.cur = novoHolerite(S.funcs[0]);
+  $('hdrWho').textContent = me.data ? me.data.nome : '';
+  $('gate').hidden = true; $('appArea').hidden = false;
+  return true;
+}
+
+/* ================= UI ================= */
+const $ = id => document.getElementById(id);
+function toast(t){ const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true, 2600); }
+
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
+  ['holerite','func','hist','empresa','tabelas'].forEach(t => $('tab-'+t).hidden = (t !== b.dataset.tab));
+  if (b.dataset.tab==='func') renderFuncs(); if (b.dataset.tab==='hist') renderHist();
+}));
+
+function logoSrc(){ return S.empresa.logo || LOGO_DEFAULT; }
+
+function renderHoleriteForm(){
+  const h = S.cur;
+  $('hEmp').innerHTML = S.funcs.map(f => `<option value="${f.id}" ${f.id===h.empId?'selected':''}>${esc(f.cod)} · ${esc(f.nome)}</option>`).join('');
+  $('hComp').value = h.comp; $('hDias').value = h.dias; $('hPag').value = h.pag; $('hMsg').value = h.msg; $('hVias').checked = h.vias !== false;
+  renderEventos();
+}
+function renderEventos(){
+  const h = S.cur, emp = empCalc(empFor(h.empId)), R = computar(emp, h);
+  const rows = [];
+  for (const l of R.linhas){
+    if (l.auto){
+      rows.push(`<div class="ev"><span class="lock">${esc(l.cod)}</span><div class="descwrap"><span class="chip ${l.tipo}">${l.tipo==='V'?'PROV':'DESC'}</span><span style="font-size:13px">${esc(l.desc)} <small style="color:var(--muted)">· auto</small></span></div><span class="lock">${l.ref}</span><span class="lock">${brl(l.valor)}</span><span></span></div>`);
+    } else {
+      const e = h.eventos.find(x=>x.id===l.id);
+      const refEd = e.kind !== 'valor' && e.kind !== 'pensao';
+      rows.push(`<div class="ev" data-id="${e.id}">
+        <input data-k="cod" value="${esc(e.cod)}" aria-label="Código" id="c_${e.id}">
+        <div class="descwrap"><span class="chip ${e.tipo}">${e.tipo==='V'?'PROV':'DESC'}</span><input data-k="desc" value="${esc(e.desc)}" aria-label="Descrição" id="d_${e.id}"></div>
+        <input data-k="ref" class="num" value="${e.ref ?? ''}" aria-label="Referência" id="r_${e.id}" inputmode="decimal">
+        ${refEd ? `<span class="lock" title="Calculado pela referência">${brl(l.valor)}</span>` : `<input data-k="valor" class="num" value="${brl(e.valor)}" aria-label="Valor" id="v_${e.id}" inputmode="decimal">`}
+        <button class="x" data-del="${e.id}" aria-label="Remover evento">×</button></div>`);
+    }
+  }
+  $('evList').innerHTML = rows.join('');
+  $('sV').textContent = brl(R.tv); $('sD').textContent = brl(R.td); $('sL').textContent = brl(R.liq);
+  renderPaper(R, emp);
+}
+$('evPreset').innerHTML = PRESETS.map((p,i)=>`<option value="${i}">${p.tipo==='V'?'Provento':'Desconto'} · ${esc(p.rot)}</option>`).join('');
+$('evAdd').onclick = () => { const p = PRESETS[+$('evPreset').value]; const {rot, ...e} = p; S.cur.eventos.push({...e, id:uid(), ref:e.ref??'', valor:e.valor??0}); persist(); renderEventos(); };
+$('evList').addEventListener('change', ev => {
+  const row = ev.target.closest('.ev'); if (!row || !row.dataset.id) return;
+  const e = S.cur.eventos.find(x=>x.id===row.dataset.id), k = ev.target.dataset.k;
+  if (k==='valor') e.valor = num(ev.target.value); else if (k==='ref') e.ref = num(ev.target.value); else e[k] = ev.target.value.toUpperCase();
+  persist(); renderEventos();
+});
+$('evList').addEventListener('click', ev => { const id = ev.target.dataset.del; if (!id) return; S.cur.eventos = S.cur.eventos.filter(x=>x.id!==id); persist(); renderEventos(); });
+$('hEmp').onchange = () => { const f = empFor($('hEmp').value); if (f && !f.temPag) toast('Cadastre o salário deste funcionário na aba Funcionários'); const keep = {comp:S.cur.comp, pag:S.cur.pag}; S.cur = {...novoHolerite(f), ...keep}; persist(); renderHoleriteForm(); };
+$('hComp').onchange = () => { S.cur.comp = $('hComp').value; persist(); renderEventos(); };
+$('hDias').onchange = () => { S.cur.dias = Math.min(30,Math.max(0,+$('hDias').value||0)); $('hDias').value=S.cur.dias; persist(); renderEventos(); };
+$('hPag').onchange = () => { S.cur.pag = $('hPag').value; persist(); renderEventos(); };
+$('hMsg').oninput = () => { S.cur.msg = $('hMsg').value; persist(); renderEventos(); };
+$('hVias').onchange = () => { S.cur.vias = $('hVias').checked; persist(); renderEventos(); };
+
+function viaHTML(R, emp, label){
+  const E = S.empresa, h = S.cur;
+  const minRows = h.vias!==false ? 9 : 16;
+  const linhas = R.linhas.map(l => `<tr><td class="m">${esc(l.cod)}</td><td>${esc(l.desc)}</td><td class="n m">${l.ref}</td><td class="n m">${l.tipo==='V'?brl(l.valor):''}</td><td class="n m">${l.tipo==='D'?brl(l.valor):''}</td></tr>`);
+  while (linhas.length < minRows) linhas.push('<tr class="fill"><td></td><td></td><td></td><td></td><td></td></tr>');
+  const banco = [emp.banco, emp.ag && 'Ag. '+emp.ag, emp.cc && 'C/C '+emp.cc].filter(Boolean).join(' · ');
+  return `<div class="via">
+    <div class="p-head">
+      <img src="${logoSrc()}" alt="">
+      <div class="p-emp"><b>${esc(E.nome)}</b><span>CNPJ ${esc(E.cnpj)}</span><span>${esc(E.end)}${E.tel?' · '+esc(E.tel):''}</span></div>
+      <div class="p-doc"><div class="t">Demonstrativo de pagamento</div><div class="c">${compTxt(h.comp)}</div><span class="v">${label}</span></div>
+    </div>
+    <div class="p-func">
+      <div><span class="l">Código</span><span class="v">${esc(emp.cod)}</span></div>
+      <div><span class="l">Nome do funcionário</span><span class="v">${esc(emp.nome)}</span></div>
+      <div><span class="l">Cargo · Função</span><span class="v">${esc(emp.cargo)}${emp.funcao?' · '+esc(emp.funcao):''}</span></div>
+      <div><span class="l">CBO</span><span class="v">${esc(emp.cbo)}</span></div>
+      <div><span class="l">Admissão</span><span class="v">${dataBR(emp.adm)}</span></div>
+      <div><span class="l">Pagamento</span><span class="v">${dataBR(h.pag)}</span></div>
+      <div class="wide"><span>CPF <b>${esc(emp.cpf)}</b></span>${emp.depto?`<span>Depto. <b>${esc(emp.depto)}</b></span>`:''}<span>Dias trabalhados <b>${h.dias}</b></span><span>Dep. IR <b>${emp.dep}</b></span>${banco?`<span>Crédito <b>${esc(banco)}</b></span>`:''}</div>
+    </div>
+    <table class="p-ev">
+      <thead><tr><th style="width:52px">Cód.</th><th>Descrição</th><th class="n" style="width:70px">Ref.</th><th class="n" style="width:110px">Vencimentos</th><th class="n" style="width:110px">Descontos</th></tr></thead>
+      <tbody>${linhas.join('')}</tbody>
+      <tfoot><tr><td></td><td class="lbl">Totais</td><td></td><td class="n m">${brl(R.tv)}</td><td class="n m">${brl(R.td)}</td></tr></tfoot>
+    </table>
+    <div class="p-liq">
+      <div class="ext"><b>Valor líquido por extenso</b>${extenso(R.liq)}</div>
+      <div class="val"><small>Valor líquido</small><b>R$ ${brl(R.liq)}</b></div>
+    </div>
+    <div class="p-bases">
+      <div><small>Salário base</small><b>${brl(R.sal)}</b></div>
+      <div><small>Sal. contr. INSS</small><b>${brl(R.bINSS)}</b></div>
+      <div><small>Base cálc. FGTS</small><b>${brl(R.bFGTS)}</b></div>
+      <div><small>FGTS do mês</small><b>${brl(R.fgts)}</b></div>
+      <div><small>Base cálc. IRRF</small><b>${brl(R.ir.base)}</b></div>
+      <div><small>Faixa IRRF</small><b>${fmtRef(R.ir.al*100)||'0,00'}%</b></div>
+      <div><small>Redução IR</small><b>${brl(R.ir.red)}</b></div>
+    </div>
+    <div class="p-note">Base IRRF por ${R.ir.usaSimpl?'desconto simplificado (R$ 607,20)':'deduções legais (INSS e dependentes)'}${R.ir.red>0?`; redução de R$ ${brl(R.ir.red)} conforme Lei 15.270/2025`:''}. Tabelas INSS e IRRF vigentes em 2026.</div>
+    ${h.msg?`<div class="p-msg"><b>Mensagem:</b> ${esc(h.msg)}</div>`:''}
+    <div class="p-sign">
+      <div class="decl">Declaro ter recebido a importância líquida discriminada neste recibo.</div>
+      <div class="ln">Data</div>
+      <div class="ln">Assinatura do funcionário</div>
+    </div>
+  </div>`;
+}
+function renderPaper(R, emp){
+  const two = S.cur.vias !== false;
+  $('paper').innerHTML = two ? viaHTML(R,emp,'Via do empregador') + '<div class="cut"><span>Destaque aqui</span></div>' + viaHTML(R,emp,'Via do funcionário') : viaHTML(R,emp,'Via do funcionário');
+}
+
+/* ---------- PDF / impressão ---------- */
+let DL = null;
+(async () => { try { DL = window.claude?.use ? await window.claude.use('downloads') : null; } catch(e){ DL = null; }
+  if (!DL){ $('bPrint').hidden = false; } })();
+async function saveFile(name, blob){
+  if (DL){ try { await DL.save({filename:name, data:blob}); toast('Arquivo salvo'); } catch(e){ if (e && e.code==='declined') toast('Download cancelado'); else toast('Não foi possível salvar o arquivo aqui'); } return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function slug(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\(.*?\)/g,'').trim().replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase(); }
+$('bPdf').onclick = async () => {
+  if (!window.html2canvas || !window.jspdf){ toast('Gerador de PDF ainda carregando, tente de novo'); return; }
+  const btn = $('bPdf'); btn.disabled = true; btn.textContent = 'Gerando PDF...';
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const host = $('renderHost'); host.innerHTML = ''; const clone = $('paper').cloneNode(true); clone.id=''; clone.style.boxShadow='none'; host.appendChild(clone);
+    const canvas = await html2canvas(clone, {scale:2, backgroundColor:'#ffffff', useCORS:true, windowWidth:900});
+    host.innerHTML = '';
+    const { jsPDF } = window.jspdf; const pdf = new jsPDF({unit:'mm', format:'a4'});
+    const w = 210, hgt = canvas.height * w / canvas.width;
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, w, Math.min(hgt, 297));
+    const emp = empFor(S.cur.empId);
+    await saveFile(`holerite-${slug(emp.nome)}-${S.cur.comp}.pdf`, pdf.output('blob'));
+  } catch(e){ toast('Falha ao gerar o PDF'); }
+  btn.disabled = false; btn.textContent = 'Baixar PDF';
+};
+$('bPrint').onclick = () => window.print();
+
+$('bSave').onclick = async () => {
+  const f = empFor(S.cur.empId); if (!f || !f.id){ toast('Escolha um funcionário'); return; }
+  const emp = empCalc(f), R = computar(emp, S.cur);
+  const dados = {...JSON.parse(JSON.stringify(S.cur)), empSnap:JSON.parse(JSON.stringify(f)), totais:{tv:R.tv, td:R.td, liq:R.liq, fgts:R.fgts}};
+  const btn = $('bSave'); btn.disabled = true;
+  const {data, error} = await sb.from('holerites').upsert({colaborador_id:f.id, competencia:S.cur.comp, dados, liquido:R.liq, salvo_em:new Date().toISOString()}, {onConflict:'colaborador_id,competencia'}).select('id,salvo_em').single();
+  btn.disabled = false;
+  if (error){ toast('Não foi possível salvar: '+error.message); return; }
+  S.hist = S.hist.filter(x => !(x.empId===f.id && x.comp===S.cur.comp));
+  S.hist.unshift({...dados, id:data.id, empId:f.id, comp:S.cur.comp, liq:R.liq, salvoEm:data.salvo_em, nome:f.nome});
+  toast(`Holerite de ${compTxt(S.cur.comp)} salvo no histórico`);
+};
+
+/* ---------- Funcionários ---------- */
+let fSel = null;
+const FF = ['cod','nome','cpf','cargo','funcao','cbo','depto','adm','sal','dep','adi','vt','aux','banco','ag','cc'];
+function renderFuncs(){
+  if (!fSel || !S.funcs.find(f=>f.id===fSel)) fSel = S.funcs[0]?.id || null;
+  const q = ($('fBusca').value||'').toLowerCase();
+  const lista = S.funcs.filter(f => !q || (f.nome+' '+f.cod+' '+f.cargo).toLowerCase().includes(q));
+  $('fCount').textContent = S.funcs.length+' ativos · '+S.funcs.filter(f=>f.temPag).length+' com salário cadastrado';
+  $('fList').innerHTML = lista.length ? lista.map(f => `<div class="item ${f.id===fSel?'sel':''}" data-id="${f.id}" role="button" tabindex="0"><div><b>${esc(f.nome)}</b><span>${esc(f.cod)} · ${esc(f.cargo)}${f.depto?' · '+esc(f.depto):''}</span></div><div class="r">${f.temPag?'R$ '+brl(num(f.sal)):'<span style="font-size:12px;color:var(--muted)">sem salário</span>'}</div></div>`).join('') : '<div class="empty">Nenhum funcionário encontrado.</div>';
+  fillForm(S.funcs.find(f=>f.id===fSel));
+}
+function fillForm(f){
+  $('fConfirm').innerHTML='';
+  FF.forEach(k => { $('f_'+k).value = f ? (k==='sal'||k==='vt'||k==='aux' ? brl(num(f[k])) : (f[k] ?? '')) : ''; });
+  $('f_fgts').checked = f ? !!f.fgts : true;
+}
+$('fBusca').addEventListener('input', renderFuncs);
+$('fList').addEventListener('click', e => { const it = e.target.closest('.item'); if (!it) return; fSel = it.dataset.id; renderFuncs(); });
+$('fList').addEventListener('keydown', e => { if (e.key==='Enter'){ const it = e.target.closest('.item'); if (it){ fSel = it.dataset.id; renderFuncs(); } } });
+$('fForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = S.funcs.find(x=>x.id===fSel); if (!f) return;
+  const btn = e.submitter || $('fForm').querySelector('[type=submit]'); btn.disabled = true;
+  try {
+    const row = {colaborador_id:f.id, funcao:$('f_funcao').value.trim().toUpperCase()||null, cbo:$('f_cbo').value.trim()||null, salario:num($('f_sal').value),
+      dependentes:Math.max(0,+$('f_dep').value||0), adiantamento_pct:Math.min(100,Math.max(0,+$('f_adi').value||0)), vale_transporte:num($('f_vt').value),
+      auxilio_alimentacao:num($('f_aux').value), fgts:$('f_fgts').checked, banco:$('f_banco').value.trim()||null, agencia:$('f_ag').value.trim()||null, conta:$('f_cc').value.trim()||null, atualizado_em:new Date().toISOString()};
+    const {error} = await sb.from('folha_dados').upsert(row); if (error) throw error;
+    const cpf = $('f_cpf').value.trim();
+    if (cpf !== f.cpf){ const r = await sb.from('colaboradores').update({cpf}).eq('id',f.id); if (r.error) throw r.error; }
+    Object.assign(f, {cpf, funcao:row.funcao||'', cbo:row.cbo||'', sal:row.salario, dep:row.dependentes, adi:row.adiantamento_pct, vt:row.vale_transporte, aux:row.auxilio_alimentacao, fgts:row.fgts, banco:row.banco||'', ag:row.agencia||'', cc:row.conta||'', temPag:true});
+    if (S.cur.empId === f.id){ const keep = {comp:S.cur.comp, pag:S.cur.pag, dias:S.cur.dias}; S.cur = {...novoHolerite(f), ...keep}; }
+    renderFuncs(); renderHoleriteForm(); toast('Dados de pagamento salvos');
+  } catch(err){ toast('Não foi possível salvar: '+(err.message||err)); }
+  btn.disabled = false;
+};
+
+/* ---------- Histórico ---------- */
+function renderHist(){
+  $('hList').innerHTML = S.hist.length ? S.hist.map(x => `<div class="item"><div><b>${esc(x.nome)}</b><span>${compTxt(x.comp)} · salvo em ${new Date(x.salvoEm).toLocaleDateString('pt-BR')}</span></div><div class="btns" style="align-items:center"><span class="r">R$ ${brl(x.liq)}</span><button class="btn sm" data-open="${x.id}">Abrir</button><button class="btn sm ghost danger" data-rm="${x.id}">Remover</button></div></div>`).join('') : '<div class="empty">Nenhum holerite salvo ainda. Gere um na aba Holerite e toque em “Salvar no histórico”.</div>';
+}
+$('hList').addEventListener('click', async e => {
+  const o = e.target.dataset.open, rm = e.target.dataset.rm;
+  if (o){ const x = S.hist.find(h=>h.id===o); if (!S.funcs.find(f=>f.id===x.empId) && x.empSnap) S.funcs.push({...x.empSnap, id:x.empId});
+    const {salvoEm, nome, liq, empSnap, ...h} = JSON.parse(JSON.stringify(x)); S.cur = {...h, id:uid()}; renderHoleriteForm(); document.querySelector('[data-tab="holerite"]').click(); toast(`Holerite de ${compTxt(h.comp)} aberto`); }
+  if (rm){ if (e.target.dataset.ok !== '1'){ e.target.dataset.ok='1'; e.target.textContent='Confirmar remoção'; return; }
+    const {error} = await sb.from('holerites').delete().eq('id',rm); if (error){ toast('Não foi possível remover: '+error.message); return; }
+    S.hist = S.hist.filter(h=>h.id!==rm); renderHist(); toast('Removido do histórico'); }
+});
+
+/* ---------- Empresa ---------- */
+function fillEmpresa(){ const E=S.empresa; $('e_nome').value=E.nome; $('e_cnpj').value=E.cnpj; $('e_end').value=E.end; $('e_tel').value=E.tel||''; $('e_msg').value=E.msg||''; $('hdrEmp').textContent=E.nome; $('hdrLogo').src=logoSrc(); }
+$('eForm').onsubmit = async e => { e.preventDefault(); Object.assign(S.empresa,{end:$('e_end').value.trim(), tel:$('e_tel').value.trim(), msg:$('e_msg').value.trim()});
+  const {error} = await sb.from('empresa').update({holerite_endereco:S.empresa.end, holerite_telefone:S.empresa.tel, holerite_mensagem:S.empresa.msg}).eq('id',1);
+  if (error){ toast('Não foi possível salvar: '+error.message); return; } fillEmpresa(); renderEventos(); toast('Dados da empresa salvos'); };
+$('e_logo').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > 600000){ toast('Use uma imagem de até 600 KB'); return; } const rd = new FileReader(); rd.onload = async () => { const {error} = await sb.from('empresa').update({holerite_logo:rd.result}).eq('id',1); if (error){ toast('Não foi possível salvar o logo'); return; } S.empresa.logo = rd.result; fillEmpresa(); renderEventos(); toast('Logotipo atualizado'); }; rd.readAsDataURL(f); };
+$('eLogoReset').onclick = async () => { await sb.from('empresa').update({holerite_logo:null}).eq('id',1); S.empresa.logo = null; fillEmpresa(); renderEventos(); toast('Logo FTVTEC restaurado'); };
+
+/* ---------- Tabelas ---------- */
+(function(){ let prev=0; $('tINSS').innerHTML = T.inss.map(([l,a]) => { const s=`<tr><td>${prev?'De R$ '+brl(prev+0.01)+' a ':'Até '}R$ ${brl(l)}</td><td class="n">${fmtRef(a*100)}%</td></tr>`; prev=l; return s; }).join('');
+  prev=0; $('tIRRF').innerHTML = T.irrf.map(([l,a,d]) => { const s=`<tr><td>${l===Infinity?'Acima de R$ '+brl(prev):(prev?'De R$ '+brl(prev+0.01)+' a ':'Até ')+'R$ '+brl(l)}</td><td class="n">${a?fmtRef(a*100)+'%':'Isento'}</td><td class="n">${d?brl(d):'-'}</td></tr>`; prev=l; return s; }).join(''); })();
+
+function renderAll(){ fillEmpresa(); renderHoleriteForm(); }
+carregar().then(ok => { if (ok) renderAll(); }).catch(err => { $('gate').innerHTML = '<div><b>Não foi possível carregar</b><span class="hint">'+esc(err.message||String(err))+'</span><a class="btn primary" href="./">Voltar</a></div>'; });
+</script>
+
+</body></html>
