@@ -757,7 +757,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||150,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||100,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -1469,7 +1469,7 @@ function rhConfig(){
     <div class="grid2"><div class="field"><label for="c-raz">Razão social</label><input class="input" id="c-raz" name="razao" value="${esc(co.razao)}" required></div><div class="field"><label for="c-cnpj">CNPJ</label><input class="input mono" id="c-cnpj" name="cnpj" value="${esc(co.cnpj)}" required></div><div class="field"><label for="c-loc">Nome do local principal</label><input class="input" id="c-loc" name="local" value="${esc(co.local)}" required></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Localização da sede</div><div class="grid2">
       <div class="field"><label for="c-at">Conferir se o registro foi feito na sede</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada (usa os locais de trabalho abaixo)</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
-      <div class="field"><label for="c-pre">Precisão mínima da localização</label><select class="input" id="c-pre" name="precisao">${[[50,'50 m (muito rigorosa, só GPS ao ar livre)'],[100,'100 m (rigorosa)'],[150,'150 m (recomendada)'],[300,'300 m (tolerante)']].map(([v,t])=>`<option value="${v}" ${+c.precisao===v?'selected':''}>${t}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Leituras com margem de erro maior são recusadas. Evita registros com posição aproximada pela internet, que pode cair em outra cidade.</span></div>
+      <div class="field"><label for="c-pre">Precisão mínima da localização</label><select class="input" id="c-pre" name="precisao">${[[50,'50 m (muito rigorosa, só GPS ao ar livre)'],[100,'100 m (recomendada)'],[150,'150 m (tolerante)']].map(([v,t])=>`<option value="${v}" ${+c.precisao===v?'selected':''}>${t}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Leituras com margem de erro maior são recusadas. Evita registros com posição aproximada pela internet, que pode cair em outra cidade.</span></div>
       <div class="field"><label for="c-blq">Registro fora da sede</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
       <div class="field"><label>Forma de registro</label><span>Assinatura com PIN de 6 números e localização obrigatória</span></div>
@@ -1547,13 +1547,15 @@ let CAP=null;
 function stopCam(){}
 /* Localização precisa: acompanha o GPS por alguns segundos e fica com a melhor leitura.
    Leituras aproximadas (rede, Wi-Fi ou IP) chegam a errar dezenas de km e não são aceitas. */
-const precisaoMax=()=>+(S.config&&S.config.precisao)||150;
+const precisaoMax=()=>+(S.config&&S.config.precisao)||100;
 function getGeo(onUpd,tempo){return new Promise(res=>{
   if(!navigator.geolocation)return res(null);
   let best=null,done=false,wid=null,erro=null;
   const fim=()=>{if(done)return;done=true;clearTimeout(t);if(wid!=null)navigator.geolocation.clearWatch(wid);res(best?best:(erro?{erro}:null))};
   const t=setTimeout(fim,tempo||20000);
   try{wid=navigator.geolocation.watchPosition(p=>{const g={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
+      // descarta posição antiga guardada no aparelho e leituras sem margem válida
+      if(!(g.acc>0)||!isFinite(g.lat)||!isFinite(g.lng)||(p.timestamp&&Math.abs(Date.now()-p.timestamp)>30000))return;
       if(!best||g.acc<best.acc)best=g;if(onUpd)onUpd(best);if(best.acc<=25)fim()},
     e=>{erro=e&&e.code===1?'negado':'falha';if(e&&e.code===1)fim()},
     {enableHighAccuracy:true,maximumAge:0,timeout:20000})}catch(e){fim()}
@@ -2178,7 +2180,7 @@ document.addEventListener('submit',async ev=>{
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(2000,Math.max(20,+fd.precisao||150)),atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(150,Math.max(20,+fd.precisao||100)),atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
