@@ -524,6 +524,11 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
   .m-bell-n{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:.68rem;font-weight:700;display:grid;place-items:center;line-height:1}
   .side .nav .nav-sep{margin:6px 4px}
 }
+.g-obs textarea{min-height:60px}
+.g-obs-v{border-left-color:var(--info);background:var(--info-bg)}
+.g-obs-v b{color:var(--info)}
+.g-obs-box{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);margin-bottom:12px}
+.rev-acts{flex-wrap:wrap;justify-content:flex-end}
 </style>
 </head><body>
 <div id="app"></div>
@@ -633,11 +638,11 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
 
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
 const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin,abonada:c.direito_abonada!==false});
-const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
+const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,gObs:p.revisao_obs||'',gObsEm:p.revisao_obs_em||null,gObsPor:p.revisao_obs_por||'',revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
 
 let LOADED_FROM=null;
-const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco,motivo_revisao,justificativa,justificado_em,revisado_em';
+const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco,motivo_revisao,justificativa,justificado_em,revisado_em,revisao_obs,revisao_obs_em,revisao_obs_por';
 const MOTIVO={externo:'Registro fora da sede',extra:'Jornada extra'};
 const motivoTxt=p=>{const t=(p.motivo&&p.motivo.length?p.motivo:(p.foraCerca?['externo']:[])).map(m=>(MOTIVO[m]||m).toLowerCase()).join(' e ');return t?t.charAt(0).toUpperCase()+t.slice(1):'Revisão'};
 const idxDia=p=>marksOf(p.empId,p.ts.slice(0,10)).findIndex(x=>x.id===p.id);
@@ -659,8 +664,12 @@ function revCard(p){const e=emp(p.empId)||{nome:'Colaborador'};
     <div class="muted mono" style="font-size:.85rem">${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,19)} · NSR ${String(p.nsr).padStart(9,'0')}</div>
     ${p.foraCerca?`<div style="font-size:.85rem">${esc(p.local)}</div>`:''}
     <div class="rev-just ${p.just?'':'vazio'}"><b>Justificativa do colaborador</b>${p.just?`<span>${esc(p.just)}</span>`:'<span>Ainda não enviada. O colaborador foi avisado para justificar.</span>'}</div>
-    ${geoBloco(p)}</div>
-    <div class="row"><button class="btn sm danger" data-act="pun-dec" data-id="${p.id}" data-v="desconsiderada">Desconsiderar</button><button class="btn sm primary" data-act="pun-dec" data-id="${p.id}" data-v="aceita">Aceitar</button></div></div>`}
+    ${geoBloco(p)}
+    ${gObsHTML(p)}
+    <div class="field g-obs"><label for="go-${p.id}">Comentário do gestor (opcional)</label><textarea class="input" id="go-${p.id}" rows="2" maxlength="500" placeholder="Ex.: confirmado com a produção"></textarea><span class="muted" style="font-size:.76rem">O colaborador recebe o comentário junto com a decisão. Para desconsiderar, o comentário é obrigatório.</span></div></div>
+    <div class="row rev-acts"><button class="btn sm ghost" data-act="pun-obs" data-id="${p.id}" title="Envia só o comentário, sem decidir agora">Só comentar</button><button class="btn sm danger" data-act="pun-dec" data-id="${p.id}" data-v="desconsiderada">Desconsiderar</button><button class="btn sm primary" data-act="pun-dec" data-id="${p.id}" data-v="aceita">Aceitar</button></div></div>`}
+const gObsHTML=p=>p.gObs?`<div class="rev-just g-obs-v"><b>Comentário do gestor${p.gObsPor?' · '+esc(p.gObsPor):''}${p.gObsEm?' · '+fmtDate(localTs(p.gObsEm).slice(0,10))+' às '+localTs(p.gObsEm).slice(11,16):''}</b><span>${esc(p.gObs)}</span></div>`:'';
+function gObsForm(p){return `<div class="g-obs-box">${gObsHTML(p)}<div class="field g-obs"><label for="go-${p.id}">${p.gObs?'Novo comentário do gestor':'Comentário do gestor'}</label><textarea class="input" id="go-${p.id}" rows="2" maxlength="500" placeholder="Observação sobre a justificativa ou o registro"></textarea></div><div class="row" style="justify-content:flex-end"><button class="btn sm primary" data-act="pun-obs" data-id="${p.id}">Enviar comentário</button></div></div>`}
 /* Localização exata das marcações: endereço (rua, número, bairro, cidade) e link para o mapa */
 const mapsUrl=g=>`https://www.google.com/maps/search/?api=1&query=${g.lat},${g.lng}`;
 const GEO_PED={};
@@ -1175,7 +1184,7 @@ function reqLine(r,showEmp){
   return `<div class="li"><div class="grow"><div class="ttl">${showEmp?esc(e.nome)+' · ':''}${esc(reqTit(r))}</div>
   <div class="sub">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · '+r.hora:''} · ${esc(r.motivo)}</div>
   ${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}
-  ${r.resposta&&r.status!=='cancelado'?`<div class="sub">Resposta: ${esc(r.resposta)}</div>`:''}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${!showEmp&&r.status==='pendente'&&ME&&r.empId===ME.id?`<button class="btn sm ghost" data-act="req-cancel" data-id="${r.id}">Cancelar</button>`:''}<span class="chip ${REQS[r.status][1]}">${REQS[r.status][0]}</span></div></div>`;
+  ${r.resposta&&r.status!=='cancelado'?`<div class="sub"><b>Comentário do gestor:</b> ${esc(r.resposta)}</div>`:''}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${!showEmp&&r.status==='pendente'&&ME&&r.empId===ME.id?`<button class="btn sm ghost" data-act="req-cancel" data-id="${r.id}">Cancelar</button>`:''}<span class="chip ${REQS[r.status][1]}">${REQS[r.status][0]}</span></div></div>`;
 }
 function empSolic(e){
   const mine=S.requests.filter(r=>r.empId===e.id).sort((a,b)=>a.criado<b.criado?1:-1);
@@ -1534,13 +1543,13 @@ function receiptHTML(p){
     <div class="rl"><span>NSR</span><span>${String(p.nsr).padStart(9,'0')}</span></div>
     <div class="rl"><span>Local</span><span>${esc(p.local)}</span></div>
     <div class="rl"><span>Validação</span><span>${p.metodo==='facial'?`Facial · ${Math.round((p.score||0)*100)}%`:p.metodo==='cadastro'?'Cadastro facial inicial':p.metodo==='pin'?'Assinatura com PIN':p.metodo==='senha'?'Senha pessoal':p.metodo==='ajuste-rh'?'Inclusão pelo RH':'Sem biometria'}</span></div>
-    ${(p.motivo&&p.motivo.length)||p.foraCerca?`<div class="rl"><span>Análise</span><span>${esc(motivoTxt(p))} · ${({pendente:'aguardando gestor',aceita:'aceita',desconsiderada:'desconsiderada'})[p.revisao]||'registrada'}</span></div>${p.just?`<div class="rl"><span>Justificativa</span><span data-end="j">${esc(p.just)}</span></div>`:''}`:''}
+    ${(p.motivo&&p.motivo.length)||p.foraCerca?`<div class="rl"><span>Análise</span><span>${esc(motivoTxt(p))} · ${({pendente:'aguardando gestor',aceita:'aceita',desconsiderada:'desconsiderada'})[p.revisao]||'registrada'}</span></div>${p.just?`<div class="rl"><span>Justificativa</span><span data-end="j">${esc(p.just)}</span></div>`:''}`:''}${p.gObs?`<div class="rl"><span>Gestor</span><span data-end="j">${esc(p.gObs)}</span></div>`:''}
     ${p.geo?`<div class="rl"><span>Endereço</span><span data-end="${p.id}">${esc(p.endereco||'Buscando o endereço…')}</span></div>`:''}
     ${p.geo?`<div class="rl"><span>Coordenadas</span><span>${p.geo.lat.toFixed(5)}, ${p.geo.lng.toFixed(5)} ±${Math.round(p.geo.acc)}m</span></div><div class="rl"><span>Mapa</span><span><a href="https://www.google.com/maps?q=${p.geo.lat},${p.geo.lng}" target="_blank" rel="noopener noreferrer">Ver no mapa</a></span></div>`:'<div class="rl"><span>Coordenadas</span><span>Não informadas</span></div>'}
     <hr><div style="color:var(--muted)">Código de verificação (SHA-256)</div><div class="hash">${esc(p.hash)}</div>
   </div>`;
 }
-function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.geo&&!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);const meu=ME&&p.empId===ME.id;openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${meu&&precisaJust(p)?justMarcHTML(p):''}${!meu&&p.revisao==='pendente'&&(isRHsession()||(ME&&minhaEquipe().some(x=>x.id===p.empId)))?revCard(p):''}${receiptHTML(p)}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`)}
+function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.geo&&!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);const meu=ME&&p.empId===ME.id;openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${meu&&precisaJust(p)?justMarcHTML(p):''}${!meu&&(isRHsession()||(ME&&minhaEquipe().some(x=>x.id===p.empId)))?(p.revisao==='pendente'?revCard(p):((p.motivo&&p.motivo.length)||p.foraCerca||p.just||p.gObs?gObsForm(p):'')):''}${receiptHTML(p)}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`)}
 
 /* ---------- Captura facial ---------- */
 let CAP=null;
@@ -1658,7 +1667,8 @@ function decideForm(id,v){
     <div>${esc(e.nome)} · ${esc(reqTit(r))} · ${fmtDate(r.data)}${r.hora?' às '+r.hora:''}</div>
     ${r.tipo==='ajuste'?`<div class="notice"><b>Justificativa:</b> ${esc(r.motivo)}</div>`:''}
     ${r.tipo==='ajuste'&&v==='aprovado'?`<div class="notice">Uma marcação às <b class="mono">${r.hora}</b> será incluída em ${fmtDate(r.data)}, identificada como marcação manual aprovada.</div>`:''}
-    <div class="field"><label for="d-r">Mensagem ao colaborador</label><input class="input" id="d-r" name="resposta" ${v==='recusado'?'required':''} placeholder="${v==='aprovado'?'Opcional':'Explique o motivo da recusa'}"></div>
+    ${r.tipo!=='ajuste'&&r.motivo?`<div class="notice"><b>Justificativa do colaborador:</b> ${esc(r.motivo)}</div>`:''}
+    <div class="field"><label for="d-r">Comentário do gestor${v==='recusado'?' (obrigatório)':' (opcional)'}</label><textarea class="input" id="d-r" name="resposta" rows="3" maxlength="1000" ${v==='recusado'?'required':''} placeholder="${v==='aprovado'?'Ex.: ciente, combinado com a coordenação':'Explique o motivo da recusa'}"></textarea><span class="muted" style="font-size:.76rem">O colaborador vê o comentário na solicitação e recebe um aviso.</span></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='aprovado'?'primary':'danger'}" type="submit">${v==='aprovado'?'Aprovar':'Recusar'}</button></div></form>`);
 }
 
@@ -1956,9 +1966,10 @@ document.addEventListener('click',async ev=>{
     case 'notif-lidas':await marcarLidas((S.notif||[]).filter(n=>!n.lida_em).map(n=>n.id));notifModal();render();break;
     case 'notif-perm':{try{await Notification.requestPermission()}catch(e){}notifModal();break}
     case 'notif-go':{const n=(S.notif||[]).find(x=>x.id===t.dataset.id);if(!n)break;await marcarLidas([n.id]);closeModal();
-      if(MODE==='rh'){UI.rhTab='aprov'}else if(n.destino==='equipe'&&isGestor()){UI.empTab='equipe';UI.teamEmp=null}else{UI.empTab='solic'}render();window.scrollTo(0,0);break}
+      if(n.destino==='ponto'&&n.marcacao_id&&S.punches.some(x=>x.id===n.marcacao_id)){showReceipt(n.marcacao_id);break}if(MODE==='rh'){UI.rhTab='aprov'}else if(n.destino==='equipe'&&isGestor()){UI.empTab='equipe';UI.teamEmp=null}else if(n.destino==='ponto'){UI.empTab='espelho'}else{UI.empTab='solic'}render();window.scrollTo(0,0);break}
     case 'anexo':{const {data,error}=await sb.storage.from('anexos').createSignedUrl(t.dataset.path,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');break}
-    case 'pun-dec':{t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v});if(error)throw error;await loadAll({punches:true});if($('#modal-root').innerHTML)closeModal();else render();toast(t.dataset.v==='aceita'?'Registro aceito':'Registro desconsiderado: não conta nas horas');break}
+    case 'pun-obs':{const ta=$('#go-'+t.dataset.id);const v=ta?ta.value.trim():'';if(v.length<3){toast('Escreva o comentário antes de enviar');if(ta)ta.focus();break}t.disabled=true;const {error}=await sb.rpc('comentar_marcacao',{p_id:t.dataset.id,p_obs:v});if(error){t.disabled=false;throw error}await loadAll({punches:true});if($('#modal-root').innerHTML)closeModal();else render();toast('Comentário enviado ao colaborador');break}
+    case 'pun-dec':{const ta=$('#go-'+t.dataset.id);const obs=ta?ta.value.trim():'';if(t.dataset.v==='desconsiderada'&&!obs){toast('Escreva um comentário explicando por que vai desconsiderar');if(ta)ta.focus();break}t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v,p_obs:obs||null});if(error)throw error;await loadAll({punches:true});if($('#modal-root').innerHTML)closeModal();else render();toast(t.dataset.v==='aceita'?'Registro aceito':'Registro desconsiderado: não conta nas horas');break}
   }}catch(err){toast(errMsg(err));t.disabled=false}
 });
 document.addEventListener('change',ev=>{
