@@ -487,6 +487,8 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .rev-just.vazio{border-left-color:var(--warn);background:var(--warn-bg)}
 .rev-just.vazio b{color:var(--warn)}
 .req.rev{align-items:flex-start}
+.extra-card{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.extra-card .timeline{padding:12px 16px 0}
 </style>
 </head><body>
 <div id="app"></div>
@@ -602,10 +604,14 @@ let LOADED_FROM=null;
 const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco,motivo_revisao,justificativa,justificado_em,revisado_em';
 const MOTIVO={externo:'Registro fora da sede',extra:'Jornada extra'};
 const motivoTxt=p=>{const t=(p.motivo&&p.motivo.length?p.motivo:(p.foraCerca?['externo']:[])).map(m=>(MOTIVO[m]||m).toLowerCase()).join(' e ');return t?t.charAt(0).toUpperCase()+t.slice(1):'Revisão'};
-const precisaJust=p=>p.revisao==='pendente'&&(p.motivo.length||p.foraCerca)&&!p.just;
+const idxDia=p=>marksOf(p.empId,p.ts.slice(0,10)).findIndex(x=>x.id===p.id);
+const parDe=p=>{const ms=marksOf(p.empId,p.ts.slice(0,10)),i=ms.findIndex(x=>x.id===p.id);return i>0&&i%2===1?ms[i-1]:null};
+const marcado=p=>!!p&&p.revisao==='pendente'&&(p.motivo.length>0||p.foraCerca);
+const motivoPeriodo=p=>{const q=parDe(p);const m=new Set([...(p.motivo||[]),...(p.foraCerca?['externo']:[]),...(q?(q.motivo||[]):[]),...(q&&q.foraCerca?['externo']:[])]);return {motivo:[...m],foraCerca:m.has('externo')}};
+const precisaJust=p=>{if(idxDia(p)%2!==1)return false;const q=parDe(p);return (marcado(p)||marcado(q))&&!p.just&&!(q&&q.just)};
 function justMarcHTML(p){
-  const ext=p.motivo.includes('externo')||p.foraCerca,ex=p.motivo.includes('extra');
-  return `<form data-form="just-marc" data-id="${p.id}" class="just-marc"><div class="jm-h">${IC.pin}<div><b>${esc(motivoTxt(p))}: justifique este registro</b><span>${ext&&ex?'Você registrou o ponto fora da sede e fora do horário da sua jornada.':ext?'Você registrou o ponto fora da sede da emissora.':'Você registrou o ponto fora do horário da sua jornada.'} O seu gestor vai analisar a justificativa${ext?' junto com a localização':''}.</span></div></div>
+  const mp=motivoPeriodo(p),q=parDe(p),ext=mp.motivo.includes('externo'),ex=mp.motivo.includes('extra');
+  return `<form data-form="just-marc" data-id="${p.id}" class="just-marc"><div class="jm-h">${IC.pin}<div><b>${esc(motivoTxt(mp))}: justifique este período${q?` (${q.ts.slice(11,16)} às ${p.ts.slice(11,16)})`:''}</b><span>${ext&&ex?'Você registrou o ponto fora da sede e fora do horário da sua jornada.':ext?'Você registrou o ponto fora da sede da emissora.':'Você registrou o ponto fora do horário da sua jornada.'} O seu gestor vai analisar a justificativa${ext?' junto com a localização':''}.</span></div></div>
     <div class="field"><label for="jm-${p.id}">Justificativa</label><textarea class="input" id="jm-${p.id}" name="texto" rows="3" minlength="10" maxlength="1000" required placeholder="${ext?'Ex.: gravação externa na Câmara Municipal, pauta da manhã':'Ex.: cobertura do evento da prefeitura, autorizada pela chefia'}"></textarea></div>
     <div class="err"></div><button class="btn primary" type="submit">Enviar justificativa</button></form>`;
 }
@@ -924,9 +930,15 @@ function empPonto(e){
     <div class="row"><h2>Marcações de hoje</h2><div class="spacer"></div>${n?`<button class="btn sm ghost" data-act="receipt" data-id="${di.marks[n-1].id}">Último comprovante</button>`:''}</div>
     <div class="timeline">${slots}</div>
     <button class="folha-cta" data-act="etab" data-v="espelho">${IC.table}<span class="grow"><b>Ver marcações e folha de ponto</b><span>Todos os dias do mês, horas trabalhadas, saldo e ocorrências</span></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
-    ${extras.length?`<div class="notice">Marcações extras: ${extras.map(m=>`<b class="mono">${m.ts.slice(11,16)}</b>`).join(', ')}</div>`:''}
+    ${(()=>{const ex=di.marks.slice(4);const pares=[];for(let i=0;i<ex.length;i+=2)pares.push([ex[i],ex[i+1]]);
+      const minEx=pares.reduce((t,[a,b])=>t+(b?tsMin(b.ts)-tsMin(a.ts):(di.ds===today()?Math.max(0,nowMin()-tsMin(a.ts)):0)),0);
+      const fora=Math.max(0,di.worked-di.exp);
+      if(!pares.length&&!(fora>j.tol&&di.marks.length>=4))return '';
+      return `<section class="card extra-card"><div class="card-h"><h3>Jornada extra de hoje</h3><span class="chip acc">${dur(Math.max(minEx,fora))}</span></div>
+        ${pares.length?`<div class="timeline">${pares.map(([a,b])=>`<div class="slot done"><span class="lbl">Entrada extra</span><span class="t">${a.ts.slice(11,16)}${extPin(a)}</span><span class="e">${a.foraCerca?'fora da sede':'na sede'}</span></div><div class="slot ${b?'done':'next'}"><span class="lbl">Saída extra</span><span class="t">${b?b.ts.slice(11,16)+extPin(b):'--:--'}</span><span class="e">${b?(b.just||(parDe(b)&&parDe(b).just)?'justificada':precisaJust(b)?'falta justificar':'registrada'):'em andamento'}</span></div>`).join('')}</div>`:''}
+        <div class="card-b muted" style="font-size:.85rem">Horas além da jornada prevista (${dur(di.exp)}). Registros fora do horário são analisados pelo seu gestor.</div></section>`})()}
   </section>
-  ${(()=>{const pj=S.punches.filter(p=>p.empId===e.id&&precisaJust(p)).sort((a,b)=>a.ts<b.ts?1:-1);return pj.length?`<section class="card pend-box"><div class="pend-h"><span class="pend-ico">!</span><div class="grow"><b>${pj.length} ${pj.length>1?'registros precisam':'registro precisa'} de justificativa</b><span>Registros fora da sede ou fora do horário da jornada são analisados pelo seu gestor.</span></div></div><div class="pend-list">${pj.slice(0,5).map(p=>`<div class="pend-i"><div class="grow"><b class="mono">${p.ts.slice(8,10)}/${p.ts.slice(5,7)} ${p.ts.slice(11,16)}</b> · ${esc(motivoTxt(p))}</div><button class="btn sm primary" data-act="just-marc" data-id="${p.id}">Justificar</button></div>`).join('')}</div></section>`:''})()}
+  ${(()=>{const pj=S.punches.filter(p=>p.empId===e.id&&precisaJust(p)).sort((a,b)=>a.ts<b.ts?1:-1);return pj.length?`<section class="card pend-box"><div class="pend-h"><span class="pend-ico">!</span><div class="grow"><b>${pj.length} ${pj.length>1?'registros precisam':'registro precisa'} de justificativa</b><span>Registros fora da sede ou fora do horário da jornada são analisados pelo seu gestor.</span></div></div><div class="pend-list">${pj.slice(0,5).map(p=>`<div class="pend-i"><div class="grow"><b class="mono">${p.ts.slice(8,10)}/${p.ts.slice(5,7)} ${p.ts.slice(11,16)}</b> · ${esc(motivoTxt(motivoPeriodo(p)))}</div><button class="btn sm primary" data-act="just-marc" data-id="${p.id}">Justificar</button></div>`).join('')}</div></section>`:''})()}
   ${pendBox(e,null,true)}
   <section class="card just-card"><div class="grow"><b>Precisa justificar uma ausência?</b><span class="muted">Falta, atraso, saída antecipada, atestado ou licença. Anexe os documentos e o RH analisa.</span></div>
     <div class="just-acts"><button class="btn primary sm" data-act="new-req" data-tipo="justificativa">Justificar</button><button class="btn sm" data-act="new-req" data-tipo="atestado">Enviar atestado ou licença</button></div></section>
@@ -1860,14 +1872,14 @@ document.addEventListener('submit',async ev=>{
     const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null});
     if(error||!data||!data.ok){errEl.textContent=error?errMsg(error):(data&&data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const p=mapPunch(data.marcacao);S.punches.push(p);setTimeout(()=>pedirEnderecos([p]),300);
-    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${p.revisao==='pendente'&&!precisaJust(p)?'<div class="notice">Esta marcação foi enviada para análise.</div>':''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
+    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${marcado(p)&&idxDia(p)%2===0?`<div class="notice"><b>${esc(motivoTxt(p))}.</b> Ao registrar a saída deste período, você vai justificar o motivo para o seu gestor.</div>`:''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
     return;
   }
   if(k==='convite'){const g=f.querySelector('[data-act="google-convite"]');if(g)g.click();if(btn)btn.disabled=false;return}
   if(k==='just-marc'){
     const id=f.dataset.id;const txt=(fd.texto||'').trim();if(txt.length<10)throw new Error('Explique o motivo com pelo menos 10 caracteres.');
     const {error}=await sb.rpc('justificar_marcacao',{p_id:id,p_texto:txt});if(error)throw error;
-    const p=S.punches.find(x=>x.id===id);if(p){p.just=txt;p.justEm=new Date().toISOString()}
+    const p=S.punches.find(x=>x.id===id);if(p){const q=parDe(p);[p,q].forEach(x=>{if(x&&(x===p||x.revisao==='pendente')){x.just=txt;x.justEm=new Date().toISOString()}})}
     f.outerHTML='<div class="notice" style="border-color:var(--ok)"><b>Justificativa enviada.</b> O seu gestor vai analisar o registro.</div>';toast('Justificativa enviada');if(!$('.modal .just-marc')&&$('#modal-root').innerHTML&&!$('.modal .receipt'))closeModal();return;
   }
   if(k==='termos'){
