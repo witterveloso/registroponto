@@ -473,6 +473,9 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .kpi-more{font-size:.75rem;color:var(--accent);margin-top:2px}
 .kpi-li{width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;cursor:pointer}
 .kpi-li:hover{background:var(--surface-2)}
+.opt-card{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);margin-bottom:10px}
+.opt-card span{font-size:.86rem;color:var(--muted)}
+.opt-card .btn{align-self:flex-start;margin-top:4px}
 </style>
 </head><body>
 <div id="app"></div>
@@ -975,13 +978,17 @@ function empEquipe(){
   }
   const rows=team.map(e=>({e,ms:monthSummary(e,ym),a:aprovDe(e.id,ym)}));
   const ids=new Set(minhaEquipe().map(x=>x.id));
-  const manuais=S.requests.filter(r=>r.tipo==='ajuste'&&r.status==='pendente'&&ids.has(r.empId)).sort((a,b)=>a.criado<b.criado?-1:1);
-  const boxMan=manuais.length?`<section class="card"><div class="card-h"><h3>Marcações manuais aguardando sua aprovação</h3><span class="chip warn">${manuais.length}</span></div>
-    ${manuais.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)} · horário informado <b class="mono">${esc(r.hora||'')}</b></div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}</div>
+  const manuais=S.requests.filter(r=>['ajuste','justificativa','abono'].includes(r.tipo)&&r.status==='pendente'&&ids.has(r.empId)).sort((a,b)=>a.criado<b.criado?-1:1);
+  const soRH=S.requests.filter(r=>['atestado','licenca','ferias'].includes(r.tipo)&&r.status==='pendente'&&ids.has(r.empId));
+  const boxMan=manuais.length?`<section class="card"><div class="card-h"><h3>Solicitações da equipe aguardando sua decisão</h3><span class="chip warn">${manuais.length}</span></div>
+    ${manuais.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário informado <b class="mono">'+esc(r.hora)+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}</div>
     <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join('')}</section>`:'';
+  const boxRH=soRH.length?`<div class="notice">${soRH.length} ${soRH.length>1?'atestados, licenças ou pedidos de férias da equipe estão':'atestado, licença ou pedido de férias da equipe está'} com o RH. Esses documentos são analisados só pelo RH.</div>`:'';
+  const ocorr=team.map(e=>({e,n:pendencias(e).length})).filter(x=>x.n);
+  const boxOc=ocorr.length?`<section class="card"><div class="card-h"><h3>Ocorrências sem justificativa</h3><span class="chip bad">${ocorr.reduce((t,x)=>t+x.n,0)}</span></div><div class="list">${ocorr.map(x=>`<button class="li kpi-li" data-act="team-open" data-id="${x.e.id}"><div class="avatar">${initials(x.e.nome)}</div><div class="grow"><div class="ttl">${esc(x.e.nome)}</div><div class="sub">${pendencias(x.e).slice(0,4).map(o=>o.di.ds.slice(8)+'/'+o.di.ds.slice(5,7)+' '+ANOM[o.a].toLowerCase()).join(' · ')}${x.n>4?' …':''}</div></div><span class="chip warn">${x.n}</span></button>`).join('')}</div></section>`:'';
   const cnt={ok:rows.filter(r=>r.a&&r.a.status==='aprovado').length,dev:rows.filter(r=>r.a&&r.a.status==='devolvido').length};cnt.pend=rows.length-cnt.ok-cnt.dev;
   return `<div class="row"><div><div class="eyebrow">${meusSetores().map(s=>esc(s.nome)).join(' · ')}</div><h2>Minha equipe</h2></div><div class="spacer"></div><select class="input" style="width:auto" id="tm" data-change="team-month">${monthOpts(ym)}</select></div>
-  ${boxMan}
+  ${boxMan}${boxRH}${boxOc}
   <section class="kpis">
     <div class="card kpi"><span class="l">Colaboradores</span><span class="v">${rows.length}</span></div>
     <div class="card kpi"><span class="l">Aguardando aprovação</span><span class="v" style="color:${cnt.pend?'var(--warn)':'inherit'}">${cnt.pend}</span></div>
@@ -1003,7 +1010,8 @@ function rhSetores(){
   ${S.setores.map(s=>{const g=s.gestor_id?emp(s.gestor_id):null;const mem=S.emps.filter(e=>e.setorId===s.id&&e.id!==s.gestor_id);return `<section class="card" style="display:flex;flex-direction:column">
     <div class="card-h" style="flex-wrap:nowrap"><h3 style="flex:1;min-width:0">${esc(s.nome)}</h3><button class="btn sm" data-act="setor-form" data-id="${s.id}">Editar</button></div>
     <div class="card-b" style="display:flex;flex-direction:column;gap:12px;flex:1">
-      <div><div class="eyebrow">Gestor</div>${g?`<div class="row" style="margin-top:6px"><div class="avatar" style="width:30px;height:30px;font-size:.72rem">${initials(g.nome)}</div><div><div style="font-weight:600">${esc(g.nome)}</div><div class="muted" style="font-size:.78rem">${esc(g.cargo)}${g.vinculo?' · '+esc(g.vinculo):''}</div></div></div>`:'<div class="chip bad" style="margin-top:6px">Sem gestor</div>'}</div>
+      <div><div class="eyebrow">Gestor</div>${g?`<div class="row" style="margin-top:6px"><div class="avatar" style="width:30px;height:30px;font-size:.72rem">${initials(g.nome)}</div><div style="flex:1;min-width:0"><div style="font-weight:600">${esc(g.nome)}</div><div class="muted" style="font-size:.78rem">${esc(g.cargo)}${g.vinculo?' · '+esc(g.vinculo):''}</div></div></div>
+        <div class="row" style="margin-top:8px;gap:6px"><button class="btn sm" data-act="setor-form" data-id="${s.id}">Trocar gestor</button><button class="btn sm danger" data-act="gestor-del" data-id="${s.id}">Remover gestor</button></div>`:'<div class="row" style="margin-top:6px;gap:8px"><span class="chip bad">Sem gestor</span><button class="btn sm primary" data-act="setor-form" data-id="'+s.id+'">Definir gestor</button></div>'}</div>
       <div><div class="eyebrow">Equipe · ${mem.length}</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${mem.map(e=>`<span class="chip plain">${esc(e.nome.split(' ')[0])} ${esc(e.nome.split(' ').slice(-1)[0])}</span>`).join('')||'<span class="muted" style="font-size:.85rem">Nenhum colaborador</span>'}</div></div>
     </div></section>`}).join('')||'<div class="card card-b empty">Nenhum setor criado. Crie o primeiro setor, escolha o gestor e marque quem responde a ele.</div>'}
   </div>`;
@@ -1439,7 +1447,7 @@ function pwForm(){
 function reqForm(tipo,keep){
   const td=today(),k=keep||{};tipo=REQT[tipo]?tipo:'justificativa';
   const precisa=tipo==='atestado'||tipo==='licenca';
-  openModal(`<form data-form="req"><div class="modal-h"><div><div class="eyebrow">${tipo==='ajuste'?'Aprovação do gestor':'Enviar ao RH'}</div><h3>${tipo==='ajuste'?'Marcação manual':'Nova solicitação'}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+  openModal(`<form data-form="req"><div class="modal-h"><div><div class="eyebrow">${['ajuste','justificativa','abono'].includes(tipo)?'Aprovação do gestor':'Enviar ao RH'}</div><h3>${tipo==='ajuste'?'Marcação manual':'Nova solicitação'}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="field"><label for="r-t">Tipo</label><select class="input" id="r-t" name="tipo" data-change="reqtipo">${Object.entries(REQT).map(([x,v])=>`<option value="${x}" ${x===tipo?'selected':''}>${v}</option>`).join('')}</select><span class="muted" style="font-size:.8rem">${REQD[tipo]}</span></div>
     ${tipo==='licenca'?`<div class="field"><label for="r-s">Tipo de licença</label><select class="input" id="r-s" name="subtipo" required>${LICT.map(x=>`<option ${x===k.subtipo?'selected':''}>${x}</option>`).join('')}</select></div>`:''}
     <div class="grid2"><div class="field"><label for="r-d">${tipo==='ajuste'?'Data':'Início'}</label><input class="input" type="date" id="r-d" name="data" value="${esc(k.data||td)}" required></div>
@@ -1457,16 +1465,17 @@ function empForm(id){
   const e=id?emp(id):{nome:'',cargo:'',depto:'',jornadaId:(S.jornadas[0]||{}).id,cpf:'',login:'',email:'',admissao:today(),ativo:true,papel:'colaborador'};
   openModal(`<form data-form="emp" data-id="${id||''}"><div class="modal-h"><h3>${id?'Editar colaborador':'Novo colaborador'}</h3><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="grid2">
-    ${[['nome','Nome completo',e.nome],['cargo','Cargo',e.cargo],['vinculo','Vínculo',e.vinculo||''],['depto','Setor',e.depto],['email','E-mail',e.email],['cpf','CPF',e.cpf]].map(f=>`<div class="field"><label for="f-${f[0]}">${f[1]}</label><input class="input ${f[0]==='cpf'?'mono':''}" id="f-${f[0]}" name="${f[0]}" ${f[0]==='email'?'type="email"':''} value="${esc(f[2])}" ${f[0]==='nome'?`required ${id?'':'data-input="sug-login" data-target="f-login"'}`:''}></div>`).join('')}
+    ${[['nome','Nome completo',e.nome],['cargo','Cargo',e.cargo],['vinculo','Vínculo',e.vinculo||''],['email','E-mail',e.email],['cpf','CPF',e.cpf]].map(f=>`<div class="field"><label for="f-${f[0]}">${f[1]}</label><input class="input ${f[0]==='cpf'?'mono':''}" id="f-${f[0]}" name="${f[0]}" ${f[0]==='email'?'type="email"':''} value="${esc(f[2])}" ${f[0]==='nome'?`required ${id?'':'data-input="sug-login" data-target="f-login"'}`:''}></div>`).join('')}
     <div class="field"><label for="f-login">Login (e-mail)</label><input class="input mono" id="f-login" name="login" value="${esc(e.login)}" autocapitalize="none" spellcheck="false" placeholder="nome@tvtecjundiai.com.br" required></div>
     <div class="field"><label for="f-admissao">Admissão</label><input class="input" type="date" id="f-admissao" name="admissao" value="${esc(e.admissao)}"></div>
+    <div class="field"><label for="f-s">Setor</label><select class="input" id="f-s" name="setorId"><option value="">Sem setor (o RH aprova o ponto)</option>${S.setores.map(st=>`<option value="${st.id}" ${st.id===e.setorId?'selected':''}>${esc(st.nome)}</option>`).join('')}</select></div>
     <div class="field"><label for="f-j">Jornada</label><select class="input" id="f-j" name="jornadaId">${S.jornadas.map(j=>`<option value="${j.id}" ${j.id===e.jornadaId?'selected':''}>${esc(j.nome)}</option>`).join('')}</select></div>
     <div class="field"><label for="f-p">Perfil de acesso</label><select class="input" id="f-p" name="papel"><option value="colaborador" ${e.papel!=='rh'?'selected':''}>Colaborador</option><option value="rh" ${e.papel==='rh'?'selected':''}>RH (administrador)</option></select></div>
     <div class="field"><label for="f-at">Situação</label><select class="input" id="f-at" name="ativo"><option value="1" ${e.ativo?'selected':''}>Ativo</option><option value="0" ${!e.ativo?'selected':''}>Desligado (bloqueia o acesso)</option></select></div>
     <div class="field"><label for="f-s">${id?(e.temAcesso?'Nova senha (deixe em branco para manter)':'Senha inicial para criar o acesso'):'Senha inicial (mínimo 8 caracteres, com letras e números)'}</label><input class="input" id="f-s" name="senha" type="text" minlength="8" autocomplete="off" ${id?'':'required'}></div></div>
     <div class="notice">${id?'Ao mudar o login, a pessoa passa a entrar com o novo login e a mesma senha.':'A pessoa entra com o login e a senha provisória, e cria a própria senha no primeiro acesso.'}</div>
     ${id&&e.face?`<div class="notice">Biometria cadastrada · <button type="button" class="btn sm ghost" data-act="clear-face" data-id="${id}">Apagar referência facial</button></div>`:''}
-  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></form>`,true);
+  </div><div class="modal-f">${id&&id!==ME.id?(e.ativo?`<button type="button" class="btn danger" data-act="emp-remover" data-id="${id}" style="margin-right:auto">Remover colaborador</button>`:`<button type="button" class="btn" data-act="emp-reativar" data-id="${id}" style="margin-right:auto">Reativar colaborador</button>`):''}<button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></form>`,true);
 }
 function jorForm(id){
   const j=id?jor(id):{nome:'',ini:'08:00',intIni:'12:00',intFim:'13:00',fim:'17:00',dias:[1,2,3,4,5],tol:10};
@@ -1748,6 +1757,15 @@ document.addEventListener('click',async ev=>{
     case 'ap-lote-ok':{t.disabled=true;const ym=t.dataset.ym;let n=0;for(const e of minhaEquipe(ym).filter(e=>!aprovDe(e.id,ym))){const ms=monthSummary(e,ym);if(ms.faltas||ms.days.some(d=>d.status==='incompleto'))continue;const {error}=await sb.rpc('aprovar_ponto',{p_colab:e.id,p_comp:ym,p_status:'aprovado',p_obs:null,p_resumo:{trabalhado:ms.worked,previsto:ms.exp,saldo:ms.saldo,extras:ms.extra,atrasos:ms.atrasos,faltas:ms.faltas}});if(error)throw error;n++}
       await loadAll();closeModal();toast(`${n} espelho(s) aprovado(s)`);break}
     case 'setor-form':setorForm(t.dataset.id);break;
+    case 'gestor-del':{const st=S.setores.find(x=>x.id===t.dataset.id);const g=st&&emp(st.gestor_id);confirmar('Remover gestor',`<b>${esc(g?g.nome:'O gestor')}</b> deixa de aprovar o ponto do setor <b>${esc(st.nome)}</b>. Até você definir outro gestor, o RH aprova. O histórico de aprovações continua guardado.`,'gestor-del-ok',st.id);break}
+    case 'gestor-del-ok':{t.disabled=true;const {error}=await sb.from('setores').update({gestor_id:null}).eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Gestor removido do setor');break}
+    case 'emp-remover':{const e=emp(t.dataset.id);openModal(`<div class="modal-h"><h3>Remover ${esc(e.nome)}</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+      <div class="opt-card"><b>Desligar</b><span>Bloqueia o acesso na hora e tira a pessoa das listas e equipes. Os registros de ponto, justificativas e aprovações continuam guardados, como a lei exige. Pode ser desfeito.</span><button class="btn primary" data-act="emp-desligar" data-id="${e.id}">Desligar colaborador</button></div>
+      <div class="opt-card"><b>Excluir cadastro</b><span>Apaga o cadastro de vez. Só funciona para quem nunca registrou ponto nem enviou solicitações, como um cadastro feito por engano. Não pode ser desfeito.</span><button class="btn danger" data-act="emp-excluir" data-id="${e.id}">Excluir definitivamente</button></div>
+      </div><div class="modal-f"><button class="btn ghost" data-act="close">Cancelar</button></div>`);break}
+    case 'emp-desligar':{t.disabled=true;await invoke({acao:'acesso',colaborador_id:t.dataset.id,ativo:false});await sb.from('colaboradores').update({setor_id:null}).eq('id',t.dataset.id);await sb.from('setores').update({gestor_id:null}).eq('gestor_id',t.dataset.id);await loadAll();closeModal();toast('Colaborador desligado');break}
+    case 'emp-reativar':{t.disabled=true;await invoke({acao:'acesso',colaborador_id:t.dataset.id,ativo:true});await loadAll();closeModal();toast('Colaborador reativado');break}
+    case 'emp-excluir':{t.disabled=true;await invoke({acao:'excluir',colaborador_id:t.dataset.id});await loadAll();closeModal();toast('Cadastro excluído');break}
     case 'setor-del':{const s=S.setores.find(x=>x.id===t.dataset.id);openModal(`<div class="modal-h"><h3>Excluir setor</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b"><p>O setor <b>${esc(s.nome)}</b> será excluído. Os colaboradores dele ficam sem setor, e o ponto deles passa a ser aprovado pelo RH. As aprovações já feitas continuam guardadas.</p></div><div class="modal-f"><button class="btn ghost" data-act="close">Cancelar</button><button class="btn danger" data-act="setor-del-ok" data-id="${s.id}">Excluir</button></div>`);break}
     case 'setor-del-ok':{t.disabled=true;const {error}=await sb.from('setores').delete().eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Setor excluído');break}
     case 'u-filter':UI.uf=t.dataset.v;render();break;
@@ -1939,7 +1957,7 @@ document.addEventListener('submit',async ev=>{
     const login=fd.login.trim().toLowerCase();
     if(!loginOk(login))throw new Error('Login inválido. Use letras minúsculas, números, ponto, hífen ou sublinhado (3 a 40 caracteres), sem espaços nem acentos.');
     if(S.emps.some(x=>x.id!==id&&x.login.toLowerCase()===login))throw new Error('Esse login já está em uso.');
-    const dados={nome:fd.nome.trim(),cargo:fd.cargo.trim(),vinculo:fd.vinculo.trim(),depto:fd.depto.trim(),email:fd.email.trim().toLowerCase(),cpf:fd.cpf.trim(),admissao:fd.admissao||null,jornada_id:fd.jornadaId,papel:fd.papel};
+    const dados={nome:fd.nome.trim(),cargo:fd.cargo.trim(),vinculo:fd.vinculo.trim(),setor_id:fd.setorId||null,email:fd.email.trim().toLowerCase(),cpf:fd.cpf.trim(),admissao:fd.admissao||null,jornada_id:fd.jornadaId,papel:fd.papel};
     if(!id){
       await invoke({acao:'criar',senha:fd.senha,dados:Object.assign({login},dados)});
       await loadAll();closeModal();credModal(dados.nome,login,fd.senha);return;
