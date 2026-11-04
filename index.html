@@ -757,7 +757,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||150,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -1469,6 +1469,7 @@ function rhConfig(){
     <div class="grid2"><div class="field"><label for="c-raz">Razão social</label><input class="input" id="c-raz" name="razao" value="${esc(co.razao)}" required></div><div class="field"><label for="c-cnpj">CNPJ</label><input class="input mono" id="c-cnpj" name="cnpj" value="${esc(co.cnpj)}" required></div><div class="field"><label for="c-loc">Nome do local principal</label><input class="input" id="c-loc" name="local" value="${esc(co.local)}" required></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Localização da sede</div><div class="grid2">
       <div class="field"><label for="c-at">Conferir se o registro foi feito na sede</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada (usa os locais de trabalho abaixo)</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
+      <div class="field"><label for="c-pre">Precisão mínima da localização</label><select class="input" id="c-pre" name="precisao">${[[50,'50 m (muito rigorosa, só GPS ao ar livre)'],[100,'100 m (rigorosa)'],[150,'150 m (recomendada)'],[300,'300 m (tolerante)']].map(([v,t])=>`<option value="${v}" ${+c.precisao===v?'selected':''}>${t}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Leituras com margem de erro maior são recusadas. Evita registros com posição aproximada pela internet, que pode cair em outra cidade.</span></div>
       <div class="field"><label for="c-blq">Registro fora da sede</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
       <div class="field"><label>Forma de registro</label><span>Assinatura com PIN de 6 números e localização obrigatória</span></div>
@@ -1544,7 +1545,27 @@ function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.
 /* ---------- Captura facial ---------- */
 let CAP=null;
 function stopCam(){}
-function getGeo(){return new Promise(res=>{if(!navigator.geolocation)return res(null);let done=false;const t=setTimeout(()=>{if(!done){done=true;res(null)}},8000);try{navigator.geolocation.getCurrentPosition(p=>{if(done)return;done=true;clearTimeout(t);res({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy})},()=>{if(done)return;done=true;clearTimeout(t);res(null)},{enableHighAccuracy:true,timeout:7500,maximumAge:30000})}catch(e){done=true;clearTimeout(t);res(null)}})}
+/* Localização precisa: acompanha o GPS por alguns segundos e fica com a melhor leitura.
+   Leituras aproximadas (rede, Wi-Fi ou IP) chegam a errar dezenas de km e não são aceitas. */
+const precisaoMax=()=>+(S.config&&S.config.precisao)||150;
+function getGeo(onUpd,tempo){return new Promise(res=>{
+  if(!navigator.geolocation)return res(null);
+  let best=null,done=false,wid=null,erro=null;
+  const fim=()=>{if(done)return;done=true;clearTimeout(t);if(wid!=null)navigator.geolocation.clearWatch(wid);res(best?best:(erro?{erro}:null))};
+  const t=setTimeout(fim,tempo||20000);
+  try{wid=navigator.geolocation.watchPosition(p=>{const g={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
+      if(!best||g.acc<best.acc)best=g;if(onUpd)onUpd(best);if(best.acc<=25)fim()},
+    e=>{erro=e&&e.code===1?'negado':'falha';if(e&&e.code===1)fim()},
+    {enableHighAccuracy:true,maximumAge:0,timeout:20000})}catch(e){fim()}
+})}
+function geoStatus(g,final){const el=$('#geo-st');if(!el)return;const lim=precisaoMax();const sp=el.querySelector('span');
+  if(!g||g.erro){el.dataset.st=final?'erro':'busca';sp.textContent=g&&g.erro==='negado'?'A localização está bloqueada. Toque no cadeado ao lado do endereço do site e permita a localização.':(final?'Não foi possível obter a localização. Ative o GPS do aparelho e tente de novo.':'Obtendo a sua localização pelo GPS…');return}
+  const a=Math.round(g.acc);
+  if(a<=lim){el.dataset.st='ok';sp.textContent=`Localização precisa capturada (margem de ${a} m)`}
+  else{el.dataset.st=final?'erro':'busca';sp.textContent=final?`Localização imprecisa (margem de ${a>=1000?(a/1000).toFixed(1).replace('.',',')+' km':a+' m'}). Ative o GPS e a "localização precisa" do aparelho, vá para perto de uma janela e toque em Tentar de novo.`:`Melhorando a precisão… margem atual de ${a>=1000?(a/1000).toFixed(1).replace('.',',')+' km':a+' m'}`}
+  const b=$('#geo-retry');if(b)b.hidden=!(final&&(!g||g.erro||a>lim))}
+function iniciarGeo(){UI.geoBest=null;const el=$('#geo-st');if(el){el.dataset.st='busca';el.querySelector('span').textContent='Obtendo a sua localização pelo GPS…'}const b=$('#geo-retry');if(b)b.hidden=true;
+  UI.geoP=getGeo(g=>{UI.geoBest=g;geoStatus(g,false)}).then(g=>{geoStatus(g,true);return g});}
 
 function pwForm(){
   stopCam();CAP=null;
@@ -1553,13 +1574,14 @@ function pwForm(){
   openModal(`<form data-form="punch-pw"><div class="modal-h"><div><div class="eyebrow">Assinatura com PIN</div><h3>${esc(tipoN(n))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div>
   <div class="modal-b">
     <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)}</div></div>
-    <div class="geo-st" id="geo-st" data-st="busca">${IC.pin.replace('<svg','<svg width="16" height="16"')}<span>Obtendo a sua localização…</span></div>
+    <div class="geo-st" id="geo-st" data-st="busca">${IC.pin.replace('<svg','<svg width="16" height="16"')}<span>Obtendo a sua localização pelo GPS…</span></div>
+    <button type="button" class="btn sm" id="geo-retry" data-act="geo-retry" hidden>Tentar de novo</button>
     <div class="field"><label for="pw-s">Seu PIN de ponto (6 números)</label><input class="input mono pin-in" id="pw-s" name="senha" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="off" required autofocus></div>
     <div class="err" id="pw-err"></div>
     <div class="notice">O horário oficial é definido pelo servidor e a localização do aparelho fica gravada junto com o registro.</div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Registrar ponto</button></div></form>`);
   setTimeout(()=>{const i=$('#pw-s');if(i)i.focus()},50);
-  UI.geoP=getGeo().then(g=>{const el=$('#geo-st');if(el){if(g){el.dataset.st='ok';el.querySelector('span').textContent=`Localização capturada (precisão de ${Math.round(g.acc)} m)`}else{el.dataset.st='erro';el.querySelector('span').textContent='Localização indisponível. Permita o acesso à localização no navegador.'}}return g});
+  iniciarGeo();
 }
 
 /* ---------- Formulários ---------- */
@@ -1880,7 +1902,7 @@ document.addEventListener('click',async ev=>{
     case 'dom-del':confirmar('Excluir domínio','Novos convites deixam de aceitar e-mails @'+esc(t.dataset.v)+'. Quem já tem acesso não é afetado.','dom-del-ok','',t.dataset.v);break;
     case 'dom-del-ok':{t.disabled=true;const nv=(S.config.dominios||[]).filter(d=>d!==t.dataset.v);const {error}=await sb.from('empresa').update({dominios_google:nv}).eq('id',1);if(error)throw error;await loadAll();closeModal();toast('Domínio excluído');break}
     case 'local-form':localForm(t.dataset.id);break;
-    case 'lo-geo':{toast('Buscando sua localização…');const g=await getGeo();if(!g){toast('Não foi possível obter a localização. Permita o acesso no navegador.');break}$('#lo-lat').value=g.lat.toFixed(6);$('#lo-lng').value=g.lng.toFixed(6);toast('Localização preenchida');break}
+    case 'lo-geo':{toast('Buscando sua localização…');const g=await getGeo(null,15000);if(!g||g.erro){toast('Não foi possível obter a localização. Permita o acesso no navegador.');break}$('#lo-lat').value=g.lat.toFixed(6);$('#lo-lng').value=g.lng.toFixed(6);toast(`Localização preenchida (margem de ${Math.round(g.acc)} m)${g.acc>50?'. Para mais precisão, use o celular no local':''}`);break}
     case 'local-del':{const l=S.locais.find(x=>x.id===t.dataset.id);confirmar('Excluir local',`O local <b>${esc(l.nome)}</b> deixa de valer para a cerca virtual.${S.locais.length===1&&S.config.cerca.ativa?' Como é o único local, a cerca virtual deixa de bloquear ou revisar marcações até você cadastrar outro.':''}`,'local-del-ok',l.id);break}
     case 'local-del-ok':{t.disabled=true;const {error}=await sb.from('locais').delete().eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Local excluído');break}
     case 'jor-del':{const j=jor(t.dataset.id);const uso=S.emps.filter(e=>e.jornadaId===j.id).length;if(uso){toast(`Essa jornada está em uso por ${uso} colaborador(es). Troque a jornada deles antes de excluir.`);break}confirmar('Excluir jornada',`A jornada <b>${esc(j.nome)}</b> será excluída.`,'jor-del-ok',j.id);break}
@@ -1928,6 +1950,7 @@ document.addEventListener('click',async ev=>{
     case 'req-dec':decideForm(t.dataset.id,t.dataset.v);break;
     case 'req-cancel':{if(t.dataset.ok!=='1'){t.dataset.ok='1';t.textContent='Confirmar cancelamento';break}const {error}=await sb.rpc('cancelar_solicitacao',{p_id:t.dataset.id});if(error)throw error;await loadReqs();render();toast('Pedido cancelado');break}
     case 'notif-open':notifModal();break;
+    case 'geo-retry':iniciarGeo();break;
     case 'notif-lidas':await marcarLidas((S.notif||[]).filter(n=>!n.lida_em).map(n=>n.id));notifModal();render();break;
     case 'notif-perm':{try{await Notification.requestPermission()}catch(e){}notifModal();break}
     case 'notif-go':{const n=(S.notif||[]).find(x=>x.id===t.dataset.id);if(!n)break;await marcarLidas([n.id]);closeModal();
@@ -1969,8 +1992,14 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='punch-pw'){
     const errEl=$('#pw-err');errEl.textContent='';if(btn)btn.textContent='Registrando…';
-    const geo=await (UI.geoP||getGeo());UI.geoP=null;
-    if(!geo){errEl.textContent='Não foi possível obter a sua localização. Permita o acesso à localização no navegador (ícone ao lado do endereço do site) e tente de novo.';if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
+    const lim=precisaoMax();
+    // Se já houver leitura precisa, registra na hora; senão espera o GPS terminar de afinar
+    let geo=UI.geoBest&&UI.geoBest.acc<=lim?UI.geoBest:null;
+    if(!geo){if(btn)btn.textContent='Aguardando o GPS…';if(!UI.geoP)iniciarGeo();geo=await UI.geoP;}
+    const volta=m=>{errEl.textContent=m;if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}};
+    if(!geo||geo.erro){UI.geoP=null;volta(geo&&geo.erro==='negado'?'A localização está bloqueada neste navegador. Toque no cadeado ao lado do endereço do site, permita a localização e tente de novo.':'Não foi possível obter a sua localização. Ative o GPS do aparelho e toque em Tentar de novo.');return}
+    if(geo.acc>lim){UI.geoP=null;geoStatus(geo,true);volta('Ponto não registrado: a localização está imprecisa. Computadores sem GPS costumam errar a posição, prefira registrar pelo celular.');return}
+    if(btn)btn.textContent='Registrando…';
     const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null});
     if(error||!data||!data.ok){errEl.textContent=error?errMsg(error):(data&&data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const p=mapPunch(data.marcacao);S.punches.push(p);setTimeout(()=>pedirEnderecos([p]),300);
@@ -2149,7 +2178,7 @@ document.addEventListener('submit',async ev=>{
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(2000,Math.max(20,+fd.precisao||150)),atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
