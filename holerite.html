@@ -69,7 +69,7 @@ input.num{font-family:var(--f-mono);text-align:right}
 
 /* eventos */
 .ev-list{display:flex;flex-direction:column;gap:6px}
-.ev{display:grid;grid-template-columns:52px minmax(0,1fr) 64px 96px 28px;gap:6px;align-items:center}
+.ev{display:grid;grid-template-columns:52px minmax(0,1fr) 64px 96px 44px;gap:6px;align-items:center}
 .ev input{padding:6px 7px;font-size:13px}
 .ev .lock{font:500 13px var(--f-mono);text-align:right;padding:6px 7px;color:var(--muted)}
 .ev .descwrap{display:flex;align-items:center;gap:6px;min-width:0}
@@ -78,7 +78,7 @@ input.num{font-family:var(--f-mono);text-align:right}
 .chip.V{background:var(--chip-v);color:var(--chip-v-fg)}
 .chip.D{background:var(--chip-d);color:var(--chip-d-fg)}
 .ev .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0}
-.ev-head{display:grid;grid-template-columns:52px minmax(0,1fr) 64px 96px 28px;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ev-head{display:grid;grid-template-columns:52px minmax(0,1fr) 64px 96px 44px;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .ev-head span:nth-child(3),.ev-head span:nth-child(4){text-align:right}
 .add{display:flex;gap:8px}
 .add select{flex:1}
@@ -174,6 +174,26 @@ body{margin:0}
 input[readonly]{background:var(--surface-2);color:var(--muted)}
 .lock-note{font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:8px 10px}
 .srch{width:100%}
+.ev .chip{border:0;cursor:pointer}
+.ev .gear{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0}
+.ev .gear[aria-expanded="true"]{color:var(--accent)}
+.ev-opt{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--surface-2);border-radius:8px;padding:8px 10px;margin:-2px 0 4px;font-size:12.5px}
+.ev-opt select,.ev-opt input{padding:5px 7px;font-size:12.5px;width:auto}
+.ev-opt .check{font-size:12.5px}
+.ev-opt .grow{flex:1}
+.ev.auto input{border-style:dashed}
+.ev.auto.ov input{border-style:solid;border-color:var(--accent)}
+.kv{display:flex;flex-direction:column;gap:6px}
+.kv-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) 28px;gap:6px;align-items:center}
+.kv-row input{padding:6px 7px;font-size:13px}
+.kv-row .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0}
+details.panel>summary{cursor:pointer;font:600 15px var(--f-body);list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary::after{content:'+';color:var(--muted);font-size:18px}
+details.panel[open]>summary::after{content:'−'}
+details.panel[open]>summary{margin-bottom:12px}
+.ovr input::placeholder{color:var(--muted);opacity:.8}
+.cust{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
 </style>
 </head><body>
 
@@ -219,13 +239,65 @@ input[readonly]{background:var(--surface-2);color:var(--muted)}
             <select id="evPreset" aria-label="Escolher evento"></select>
             <button class="btn sm" id="evAdd">Adicionar</button>
           </div>
-          <p class="hint">Salário, INSS, IRRF e FGTS são calculados automaticamente pelas tabelas de 2026, com a redução do IR da Lei 15.270/2025. Horas extras, faltas e percentuais calculam o valor pela referência.</p>
+          <p class="hint">Salário, INSS e IRRF vêm calculados pelas tabelas de 2026 (com a redução do IR da Lei 15.270/2025), mas todos os campos podem ser editados. Um valor digitado numa linha automática fica fixo; toque em ↺ para voltar ao cálculo. Toque no selo PROV/DESC para inverter o tipo e em ⚙ para ver forma de cálculo e incidências.</p>
+          <details class="sub-d" id="cDet">
+            <summary class="btn sm ghost" style="display:inline-block">+ Criar evento personalizado</summary>
+            <div class="stack" style="gap:10px;margin-top:10px">
+              <div class="cust">
+                <label class="f">Código<input id="c_cod" maxlength="8" placeholder="Ex.: 410"></label>
+                <label class="f" style="grid-column:span 2">Descrição<input id="c_desc" maxlength="60" placeholder="Ex.: ADICIONAL DE FUNÇÃO"></label>
+              </div>
+              <div class="cust">
+                <label class="f">Tipo<select id="c_tipo"><option value="V">Provento</option><option value="D">Desconto</option></select></label>
+                <label class="f">Forma de cálculo<select id="c_kind"></select></label>
+                <label class="f" id="c_pctL" hidden>Adicional da hora (%)<input id="c_pct" type="number" min="0" step="1" class="num" value="50"></label>
+                <label class="f">Referência<input id="c_ref" class="num" inputmode="decimal" placeholder="0"></label>
+                <label class="f" id="c_valL">Valor (R$)<input id="c_val" class="num" inputmode="decimal" placeholder="0,00"></label>
+              </div>
+              <div class="btns" style="gap:14px">
+                <label class="check"><input type="checkbox" id="c_iINSS" checked> Incide INSS</label>
+                <label class="check"><input type="checkbox" id="c_iIR" checked> Incide IRRF</label>
+                <label class="check"><input type="checkbox" id="c_iFGTS" checked> Incide FGTS</label>
+              </div>
+              <label class="check"><input type="checkbox" id="c_salvar"> Guardar na lista de eventos para usar de novo</label>
+              <div class="btns"><button class="btn sm primary" id="c_add" type="button">Adicionar ao holerite</button></div>
+            </div>
+          </details>
           <div class="sum">
             <div><small>Vencimentos</small><b id="sV">0,00</b></div>
             <div><small>Descontos</small><b id="sD">0,00</b></div>
             <div class="liq"><small>Líquido</small><b id="sL">0,00</b></div>
           </div>
         </div>
+
+        <details class="panel" id="pInfo">
+          <summary>Campos personalizados</summary>
+          <p class="hint">Informações extras que aparecem no quadro do funcionário, só neste holerite (ex.: Centro de custo, Turno, Nº do contrato). Os campos fixos do funcionário ficam na aba Funcionários.</p>
+          <div class="kv" id="infoList"></div>
+          <div class="btns"><button class="btn sm" id="infoAdd" type="button">+ Adicionar campo</button></div>
+        </details>
+
+        <details class="panel ovr" id="pAj">
+          <summary>Ajustes do demonstrativo</summary>
+          <p class="hint">Deixe em branco para usar o cálculo automático (mostrado em cinza). O que for digitado aqui vale só para este holerite.</p>
+          <div class="cust">
+            <label class="f">Título do documento<input id="a_titulo" maxlength="60"></label>
+            <label class="f">Rótulo da competência<input id="a_comp" maxlength="40"></label>
+          </div>
+          <div class="cust">
+            <label class="f">Salário base<input id="a_sal" class="num" inputmode="decimal"></label>
+            <label class="f">Sal. contr. INSS<input id="a_bINSS" class="num" inputmode="decimal"></label>
+            <label class="f">Base cálc. FGTS<input id="a_bFGTS" class="num" inputmode="decimal"></label>
+            <label class="f">FGTS do mês<input id="a_fgts" class="num" inputmode="decimal"></label>
+            <label class="f">Base cálc. IRRF<input id="a_bIR" class="num" inputmode="decimal"></label>
+            <label class="f">Faixa IRRF (%)<input id="a_faixa" class="num" inputmode="decimal"></label>
+            <label class="f">Redução IR<input id="a_red" class="num" inputmode="decimal"></label>
+            <label class="f">Valor líquido<input id="a_liq" class="num" inputmode="decimal"></label>
+          </div>
+          <label class="f">Nota de rodapé<textarea id="a_nota" maxlength="300"></textarea></label>
+          <label class="f">Texto da declaração<textarea id="a_decl" maxlength="200"></textarea></label>
+          <div class="btns"><button class="btn sm ghost" id="a_reset" type="button">Limpar ajustes</button></div>
+        </details>
 
         <div class="panel">
           <h2>Mensagem e layout</h2>
@@ -255,20 +327,20 @@ input[readonly]{background:var(--surface-2);color:var(--muted)}
       </div>
       <form class="panel" id="fForm" autocomplete="off">
         <h2 id="fTitle">Dados de pagamento</h2>
-        <p class="lock-note">Nome, cargo, setor e admissão vêm do cadastro do Registro de Ponto. Aqui ficam só os dados de pagamento, visíveis apenas para o RH.</p>
+        <p class="lock-note">Todos os campos são editáveis e valem só para o holerite. Matrícula, nome, cargo, departamento e admissão começam com os dados do Registro de Ponto; o que for alterado aqui não muda o cadastro do ponto. Visível apenas para o RH.</p>
         <div class="row">
-          <label class="f">Matrícula<input id="f_cod" class="num" readonly></label>
-          <label class="f" style="grid-column:span 2">Nome completo<input id="f_nome" readonly></label>
+          <label class="f">Matrícula<input id="f_cod" class="num" maxlength="20"></label>
+          <label class="f" style="grid-column:span 2">Nome completo<input id="f_nome" maxlength="160"></label>
         </div>
         <div class="row">
           <label class="f">CPF<input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></label>
-          <label class="f">Cargo<input id="f_cargo" readonly></label>
+          <label class="f">Cargo<input id="f_cargo" maxlength="120"></label>
           <label class="f">Função<input id="f_funcao"></label>
         </div>
         <div class="row">
           <label class="f">CBO<input id="f_cbo" placeholder="0000-00"></label>
-          <label class="f">Departamento<input id="f_depto" readonly></label>
-          <label class="f">Admissão<input id="f_adm" type="date" readonly></label>
+          <label class="f">Departamento<input id="f_depto" maxlength="120"></label>
+          <label class="f">Admissão<input id="f_adm" type="date"></label>
         </div>
         <h3>Remuneração e descontos fixos</h3>
         <div class="row">
@@ -287,8 +359,13 @@ input[readonly]{background:var(--surface-2);color:var(--muted)}
           <label class="f">Agência<input id="f_ag"></label>
           <label class="f">Conta<input id="f_cc"></label>
         </div>
+        <h3>Campos personalizados do funcionário</h3>
+        <p class="hint">Aparecem em todos os holerites deste funcionário (ex.: PIS, Centro de custo, Chave Pix).</p>
+        <div class="kv" id="fxList"></div>
+        <div class="btns"><button class="btn sm" id="fxAdd" type="button">+ Adicionar campo</button></div>
         <div class="btns">
-          <button class="btn primary" type="submit">Salvar dados de pagamento</button>
+          <button class="btn primary" type="submit">Salvar dados do funcionário</button>
+          <button class="btn ghost" type="button" id="fRestaurar">Restaurar dados do ponto</button>
         </div>
         <div id="fConfirm"></div>
       </form>
@@ -309,20 +386,28 @@ input[readonly]{background:var(--surface-2);color:var(--muted)}
   <section id="tab-empresa" hidden>
     <form class="panel" id="eForm" style="max-width:720px">
       <h2>Dados da empresa</h2>
-      <p class="lock-note">Razão social e CNPJ vêm das Configurações do Registro de Ponto.</p>
-      <label class="f">Razão social<input id="e_nome" readonly></label>
+      <p class="lock-note">Razão social e CNPJ começam com os dados das Configurações do Registro de Ponto. Se forem alterados aqui, a mudança vale só para os holerites.</p>
+      <label class="f">Razão social<input id="e_nome" maxlength="160"></label>
       <div class="row">
-        <label class="f">CNPJ<input id="e_cnpj" readonly></label>
+        <label class="f">CNPJ<input id="e_cnpj" maxlength="20"></label>
         <label class="f">Telefone<input id="e_tel"></label>
       </div>
       <label class="f">Endereço<input id="e_end"></label>
       <label class="f">Mensagem padrão do holerite<textarea id="e_msg" maxlength="240"></textarea></label>
+      <label class="f">Título padrão do documento<input id="e_titulo" maxlength="60" placeholder="Demonstrativo de pagamento"></label>
+      <label class="f">Texto padrão da declaração<textarea id="e_decl" maxlength="200" placeholder="Declaro ter recebido a importância líquida discriminada neste recibo."></textarea></label>
+      <label class="f">Nota de rodapé padrão<textarea id="e_nota" maxlength="300" placeholder="Em branco: o sistema explica a base do IRRF e as tabelas usadas."></textarea></label>
       <label class="f">Logotipo (PNG ou JPG)<input type="file" id="e_logo" accept="image/png,image/jpeg"></label>
       <div class="btns">
         <button class="btn primary" type="submit">Salvar empresa</button>
         <button class="btn ghost" type="button" id="eLogoReset">Voltar ao logo FTVTEC</button>
       </div>
     </form>
+    <div class="panel" style="max-width:720px;margin-top:16px">
+      <h2>Eventos personalizados salvos</h2>
+      <p class="hint">Criados em Holerite, em “Criar evento personalizado”, com a opção de guardar marcada. Ficam disponíveis na lista de eventos para todos os holerites.</p>
+      <div class="list" id="pList"></div>
+    </div>
   </section>
 
   <!-- TABELAS -->
@@ -377,40 +462,57 @@ function calcIRRF(rend, inss, deps, pensao){
   const ir = Math.max(0, r2(bruto - red));
   return { base, al, bruto, red: Math.min(red,bruto), ir, usaSimpl };
 }
-function valorEvento(e, sal){
+const KINDS = {valor:'Valor fixo', pct:'% do salário', horas:'Horas com adicional', he50:'Horas extras 50%', he100:'Horas extras 100%', not:'Adicional noturno 20%', dias:'Dias do salário', falta:'Faltas (dias)', vt6:'Desconto VT (% do salário)', pensao:'Pensão (deduz do IRRF)'};
+const KIND_CUSTOM = ['valor','pct','horas','dias','pensao'];
+const porRef = k => k !== 'valor' && k !== 'pensao';
+function incs(e){ const d = e.inc !== false && e.inc !== undefined ? !!e.inc : false; return {inss: e.incINSS ?? d, ir: e.incIR ?? d, fgts: e.incFGTS ?? d}; }
+function calcEvento(e, sal){
   const ref = +e.ref || 0, h = sal/220;
   switch (e.kind){
     case 'pct':   return r2(sal*ref/100);
+    case 'horas': return r2(h*(1+(+e.pct||0)/100)*ref);
     case 'he50':  return r2(h*1.5*ref);
     case 'he100': return r2(h*2*ref);
     case 'not':   return r2(h*0.2*ref);
+    case 'dias':
     case 'falta': return r2(sal/30*ref);
     case 'vt6':   return r2(sal*ref/100);
     default:      return r2(+e.valor || 0);
   }
 }
+function valorEvento(e, sal){ return (porRef(e.kind) && e.vOv != null) ? r2(+e.vOv) : calcEvento(e, sal); }
+const AUTO = {sal:{cod:'1', desc:'SALÁRIO', tipo:'V'}, inss:{cod:'5001', desc:'INSS', tipo:'D'}, irrf:{cod:'5004', desc:'IRRF SOBRE SALÁRIO', tipo:'D'}};
 function computar(emp, h){
   const sal = +emp.sal || 0, dias = Math.min(30, Math.max(0, +h.dias || 0));
+  const O = h.over || {};
+  const auto = (key, ref, valor) => { const o = O[key] || {}, a = AUTO[key];
+    return {key, cod:o.cod ?? a.cod, desc:o.desc ?? a.desc, ref:o.ref ?? ref, tipo:a.tipo, valor:o.valor != null ? r2(+o.valor) : valor, calc:valor, calcRef:ref, auto:true, ov:o.valor != null || o.ref != null || o.desc != null || o.cod != null, oculto:!!o.oculto}; };
   const linhas = [];
-  const salMes = r2(sal*dias/30);
-  linhas.push({cod:'1', desc:'SALÁRIO', ref:fmtRef(dias), tipo:'V', valor:salMes, auto:true});
+  const lSal = auto('sal', fmtRef(dias), r2(sal*dias/30));
+  const salMes = lSal.oculto ? 0 : lSal.valor;
+  if (!lSal.oculto) linhas.push(lSal);
   let bINSS = salMes, rend = salMes, bFGTS = salMes, pensao = 0;
   for (const e of h.eventos){
-    const v = valorEvento(e, sal);
-    linhas.push({cod:e.cod, desc:e.desc, ref:e.kind==='valor' ? (e.ref?fmtRef(e.ref):'') : fmtRef(e.ref), tipo:e.tipo, valor:v, id:e.id});
+    const v = valorEvento(e, sal), I = incs(e);
+    linhas.push({cod:e.cod, desc:e.desc, ref:porRef(e.kind) ? fmtRef(e.ref) : (e.ref?fmtRef(e.ref):''), tipo:e.tipo, valor:v, calc:calcEvento(e, sal), id:e.id});
     const s = e.tipo === 'V' ? 1 : -1;
-    if (e.inc){ bINSS += s*v; rend += s*v; bFGTS += s*v; }
+    if (I.inss) bINSS += s*v; if (I.ir) rend += s*v; if (I.fgts) bFGTS += s*v;
     if (e.kind === 'pensao') pensao += v;
   }
   bINSS = r2(Math.max(0,bINSS)); rend = r2(Math.max(0,rend)); bFGTS = r2(Math.max(0,bFGTS));
-  const inss = calcINSS(bINSS);
+  const lInss = auto('inss', fmtRef(aliqEfetiva(calcINSS(bINSS),bINSS)), calcINSS(bINSS));
+  const inss = lInss.oculto ? 0 : lInss.valor;
+  if (!lInss.oculto) linhas.push(lInss);
   const ir = calcIRRF(rend, inss, +emp.dep || 0, pensao);
-  linhas.push({cod:'5001', desc:'INSS', ref:fmtRef(aliqEfetiva(inss,bINSS)), tipo:'D', valor:inss, auto:true});
-  if (ir.ir > 0) linhas.push({cod:'5004', desc:'IRRF SOBRE SALÁRIO', ref:fmtRef(ir.al*100), tipo:'D', valor:ir.ir, auto:true});
+  const lIr = auto('irrf', fmtRef(ir.al*100), ir.ir);
+  if (!lIr.oculto && (ir.ir > 0 || lIr.ov)) linhas.push(lIr);
   const tv = r2(linhas.filter(l=>l.tipo==='V').reduce((a,l)=>a+l.valor,0));
   const td = r2(linhas.filter(l=>l.tipo==='D').reduce((a,l)=>a+l.valor,0));
   const fgts = emp.fgts ? r2(bFGTS*T.fgts) : 0;
-  return { linhas, tv, td, liq:r2(tv-td), sal, bINSS:Math.min(bINSS,T.inss[3][0]), bFGTS: emp.fgts?bFGTS:0, fgts, ir, rend };
+  const calc = {sal, bINSS:Math.min(bINSS,T.inss[3][0]), bFGTS: emp.fgts?bFGTS:0, fgts, bIR:ir.base, faixa:r2(ir.al*100), red:ir.red, liq:r2(tv-td)};
+  const A = h.aj || {}, pk = k => (A[k] != null && A[k] !== '') ? +A[k] : calc[k];
+  const ocultas = ['sal','inss','irrf'].filter(k => (O[k]||{}).oculto);
+  return { linhas, tv, td, liq:pk('liq'), sal:pk('sal'), bINSS:pk('bINSS'), bFGTS:pk('bFGTS'), fgts:pk('fgts'), ir:{...ir, base:pk('bIR'), al:pk('faixa')/100, red:pk('red')}, rend, calc, ocultas, ajustado:Object.keys(A).some(k=>A[k]!=null&&A[k]!=='') };
 }
 function aliqEfetiva(v,b){ return b>0 ? r2(v/b*100) : 0; }
 function fmtRef(x){ const n = +x; if (!isFinite(n) || n===0) return ''; return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -454,11 +556,12 @@ const PRESETS = [
   {cod:'950', desc:'OUTRO DESCONTO', tipo:'D', kind:'valor', valor:0, inc:false, rot:'Outro desconto'}
 ];
 const uid = () => Math.random().toString(36).slice(2,9);
+const todosPresets = () => [...PRESETS.map((p,i)=>({...p, _v:'b'+i})), ...(S.custom||[]).map((p,i)=>({...p, _v:'c'+i}))];
 function hoje(){ const d=new Date(); return d.toISOString().slice(0,10); }
 function compAtual(){ const d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); }
 /* Dados: relação de funcionários do Registro de Ponto + dados de pagamento (somente RH, protegidos no servidor) */
 const sb = window.supabase.createClient('https://anotrdjomxzgyqvvdzbe.supabase.co','sb_publishable__JQhHNgikP7uGF-iVFCdsQ_Q6pOaU6C',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,flowType:'pkce'}});
-let S = {empresa:{nome:'',cnpj:'',end:'',tel:'',msg:'',logo:null}, funcs:[], hist:[], cur:null};
+let S = {empresa:{nome:'',cnpj:'',end:'',tel:'',msg:'',logo:null,orig:{}}, funcs:[], hist:[], cur:null, custom:[]};
 function persist(){}
 const num = s => { if (typeof s === 'number') return s; s = String(s||'').trim(); if(!s) return 0; if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.'); return parseFloat(s)||0; };
 const brl = v => (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -470,14 +573,15 @@ const empFor = id => S.funcs.find(f=>f.id===id) || S.funcs[0] || {nome:'',cod:''
 const empCalc = f => ({...f, sal:num(f.sal), dep:+f.dep||0, fgts:!!f.fgts});
 
 function novoHolerite(f){
-  if (!f) return {id:uid(), empId:null, comp:compAtual(), dias:30, pag:hoje(), eventos:[], msg:S.empresa.msg||'', vias:true};
+  const base = {id:uid(), comp:compAtual(), dias:30, pag:hoje(), eventos:[], msg:S.empresa.msg||'', vias:true, over:{}, aj:{}, info:[]};
+  if (!f) return {...base, empId:null};
   const ev = [];
   if (num(f.vt) > 0) ev.push({id:uid(), cod:'802', desc:'VALE TRANSPORTE', tipo:'V', kind:'valor', ref:1, valor:num(f.vt), inc:false});
   if (num(f.aux) > 0) ev.push({id:uid(), cod:'837', desc:'AUXÍLIO ALIMENTAÇÃO', tipo:'V', kind:'valor', ref:1, valor:num(f.aux), inc:false});
   if (+f.adi > 0) ev.push({id:uid(), cod:'5076', desc:'ADIANTAMENTO SALARIAL SEM IR', tipo:'D', kind:'pct', ref:+f.adi, inc:false});
-  return {id:uid(), empId:f.id, comp:compAtual(), dias:30, pag:hoje(), eventos:ev, msg:S.empresa.msg||'', vias:true};
+  return {...base, empId:f.id, eventos:ev};
 }
-
+const normH = h => ({over:{}, aj:{}, info:[], ...h});
 
 async function carregar(){
   const gate = msg => { $('gate').innerHTML = '<div>'+msg+'</div>'; $('gate').hidden=false; $('appArea').hidden=true; };
@@ -486,7 +590,7 @@ async function carregar(){
   const {data:rh} = await sb.rpc('is_rh');
   if (rh !== true){ gate('<b>Acesso restrito ao RH</b><span class="hint">Entre no Registro de Ponto escolhendo <b>RH · Gestão</b> e abra Holerites pelo menu.</span><a class="btn primary" href="./">Voltar</a>'); return false; }
   const [em, co, se, fd, hi, me] = await Promise.all([
-    sb.from('empresa').select('razao,cnpj,local,holerite_endereco,holerite_telefone,holerite_mensagem,holerite_logo').eq('id',1).single(),
+    sb.from('empresa').select('razao,cnpj,local,holerite_endereco,holerite_telefone,holerite_mensagem,holerite_logo,holerite_razao,holerite_cnpj,holerite_eventos,holerite_config').eq('id',1).single(),
     sb.from('colaboradores').select('id,matricula,nome,cargo,depto,vinculo,admissao,cpf,setor_id,ativo').eq('ativo',true).order('nome'),
     sb.from('setores').select('id,nome'),
     sb.from('folha_dados').select('*'),
@@ -494,14 +598,19 @@ async function carregar(){
     sb.from('colaboradores').select('nome').eq('user_id',session.user.id).maybeSingle()]);
   for (const r of [em,co,se,fd,hi]) if (r.error) throw r.error;
   const E = em.data;
-  S.empresa = {nome:E.razao||'', cnpj:E.cnpj||'', end:E.holerite_endereco||'', tel:E.holerite_telefone||'', msg:E.holerite_mensagem||'', logo:E.holerite_logo||null};
+  const C = E.holerite_config || {};
+  S.empresa = {nome:E.holerite_razao||E.razao||'', cnpj:E.holerite_cnpj||E.cnpj||'', orig:{nome:E.razao||'', cnpj:E.cnpj||''}, end:E.holerite_endereco||'', tel:E.holerite_telefone||'', msg:E.holerite_mensagem||'', logo:E.holerite_logo||null,
+    titulo:C.titulo||'', decl:C.decl||'', nota:C.nota||''};
+  S.custom = Array.isArray(E.holerite_eventos) ? E.holerite_eventos : [];
   const setor = Object.fromEntries((se.data||[]).map(s=>[s.id,s.nome]));
   const pag = Object.fromEntries((fd.data||[]).map(x=>[x.colaborador_id,x]));
-  S.funcs = (co.data||[]).map(c => { const p = pag[c.id] || {}; return {id:c.id, cod:c.matricula||'', nome:(c.nome||'').toUpperCase(), cpf:c.cpf||'', cargo:(c.cargo||'').toUpperCase(),
-    funcao:(p.funcao||'').toUpperCase(), cbo:p.cbo||'', depto:((c.setor_id&&setor[c.setor_id])||c.vinculo||c.depto||'').toUpperCase(), adm:c.admissao||'',
+  S.funcs = (co.data||[]).map(c => { const p = pag[c.id] || {};
+    const orig = {cod:c.matricula||'', nome:(c.nome||'').toUpperCase(), cargo:(c.cargo||'').toUpperCase(), depto:((c.setor_id&&setor[c.setor_id])||c.vinculo||c.depto||'').toUpperCase(), adm:c.admissao||''};
+    return {id:c.id, orig, cod:p.codigo||orig.cod, nome:p.nome||orig.nome, cpf:c.cpf||'', cargo:p.cargo||orig.cargo,
+    funcao:(p.funcao||'').toUpperCase(), cbo:p.cbo||'', depto:p.depto||orig.depto, adm:p.admissao||orig.adm,
     sal:+p.salario||0, dep:+p.dependentes||0, adi:+p.adiantamento_pct||0, vt:+p.vale_transporte||0, aux:+p.auxilio_alimentacao||0, fgts:p.fgts!==false,
-    banco:p.banco||'', ag:p.agencia||'', cc:p.conta||'', temPag:!!pag[c.id]}; });
-  S.hist = (hi.data||[]).map(h => ({...h.dados, id:h.id, empId:h.colaborador_id, comp:h.competencia, liq:+h.liquido, salvoEm:h.salvo_em, nome:(S.funcs.find(f=>f.id===h.colaborador_id)||h.dados.empSnap||{}).nome||'Funcionário'}));
+    banco:p.banco||'', ag:p.agencia||'', cc:p.conta||'', extras:Array.isArray(p.extras)?p.extras:[], temPag:!!pag[c.id]}; });
+  S.hist = (hi.data||[]).map(h => ({...normH(h.dados), id:h.id, empId:h.colaborador_id, comp:h.competencia, liq:+h.liquido, salvoEm:h.salvo_em, nome:(S.funcs.find(f=>f.id===h.colaborador_id)||h.dados.empSnap||{}).nome||'Funcionário'}));
   S.cur = novoHolerite(S.funcs[0]);
   $('hdrWho').textContent = me.data ? me.data.nome : '';
   $('gate').hidden = true; $('appArea').hidden = false;
@@ -521,50 +630,140 @@ document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('cl
 function logoSrc(){ return S.empresa.logo || LOGO_DEFAULT; }
 
 function renderHoleriteForm(){
-  const h = S.cur;
+  const h = S.cur = normH(S.cur);
   $('hEmp').innerHTML = S.funcs.map(f => `<option value="${f.id}" ${f.id===h.empId?'selected':''}>${esc(f.cod)} · ${esc(f.nome)}</option>`).join('');
   $('hComp').value = h.comp; $('hDias').value = h.dias; $('hPag').value = h.pag; $('hMsg').value = h.msg; $('hVias').checked = h.vias !== false;
-  renderEventos();
+  renderInfo(); renderEventos();
 }
+const abertos = new Set();
+const kindOpts = (sel, lista) => (lista||Object.keys(KINDS)).map(k => `<option value="${k}" ${k===sel?'selected':''}>${KINDS[k]}</option>`).join('');
 function renderEventos(){
   const h = S.cur, emp = empCalc(empFor(h.empId)), R = computar(emp, h);
   const rows = [];
   for (const l of R.linhas){
     if (l.auto){
-      rows.push(`<div class="ev"><span class="lock">${esc(l.cod)}</span><div class="descwrap"><span class="chip ${l.tipo}">${l.tipo==='V'?'PROV':'DESC'}</span><span style="font-size:13px">${esc(l.desc)} <small style="color:var(--muted)">· auto</small></span></div><span class="lock">${l.ref}</span><span class="lock">${brl(l.valor)}</span><span></span></div>`);
+      rows.push(`<div class="ev auto ${l.ov?'ov':''}" data-auto="${l.key}">
+        <input data-k="cod" value="${esc(l.cod)}" aria-label="Código">
+        <div class="descwrap"><span class="chip ${l.tipo}" title="Linha calculada">${l.tipo==='V'?'PROV':'DESC'}</span><input data-k="desc" value="${esc(l.desc)}" aria-label="Descrição"></div>
+        <input data-k="ref" class="num" value="${esc(l.ref)}" aria-label="Referência">
+        <input data-k="valor" class="num" value="${brl(l.valor)}" aria-label="Valor" inputmode="decimal" title="Calculado: ${brl(l.calc)}">
+        <span style="display:flex;gap:6px;justify-content:flex-end">${l.ov?`<button class="gear" data-restore="${l.key}" title="Voltar ao cálculo automático" aria-label="Voltar ao cálculo automático">↺</button>`:''}<button class="x" data-hide="${l.key}" title="Ocultar esta linha" aria-label="Ocultar linha">×</button></span></div>`);
     } else {
-      const e = h.eventos.find(x=>x.id===l.id);
-      const refEd = e.kind !== 'valor' && e.kind !== 'pensao';
+      const e = h.eventos.find(x=>x.id===l.id), I = incs(e), ab = abertos.has(e.id), ovV = porRef(e.kind) && e.vOv != null;
       rows.push(`<div class="ev" data-id="${e.id}">
-        <input data-k="cod" value="${esc(e.cod)}" aria-label="Código" id="c_${e.id}">
-        <div class="descwrap"><span class="chip ${e.tipo}">${e.tipo==='V'?'PROV':'DESC'}</span><input data-k="desc" value="${esc(e.desc)}" aria-label="Descrição" id="d_${e.id}"></div>
-        <input data-k="ref" class="num" value="${e.ref ?? ''}" aria-label="Referência" id="r_${e.id}" inputmode="decimal">
-        ${refEd ? `<span class="lock" title="Calculado pela referência">${brl(l.valor)}</span>` : `<input data-k="valor" class="num" value="${brl(e.valor)}" aria-label="Valor" id="v_${e.id}" inputmode="decimal">`}
-        <button class="x" data-del="${e.id}" aria-label="Remover evento">×</button></div>`);
+        <input data-k="cod" value="${esc(e.cod)}" aria-label="Código">
+        <div class="descwrap"><button type="button" class="chip ${e.tipo}" data-tipo="1" title="Tocar para inverter provento/desconto">${e.tipo==='V'?'PROV':'DESC'}</button><input data-k="desc" value="${esc(e.desc)}" aria-label="Descrição"></div>
+        <input data-k="ref" class="num" value="${e.ref ?? ''}" aria-label="Referência" inputmode="decimal">
+        <input data-k="valor" class="num" value="${brl(l.valor)}" aria-label="Valor" inputmode="decimal" ${porRef(e.kind)?`title="Calculado pela referência: ${brl(l.calc)}"`:''} ${ovV?'style="border-color:var(--accent)"':''}>
+        <span style="display:flex;gap:6px;justify-content:flex-end">${ovV?`<button class="gear" data-unfix="${e.id}" title="Voltar ao cálculo pela referência" aria-label="Voltar ao cálculo">↺</button>`:''}<button class="gear" data-opt="${e.id}" aria-expanded="${ab}" title="Forma de cálculo e incidências" aria-label="Opções do evento">⚙</button><button class="x" data-del="${e.id}" aria-label="Remover evento">×</button></span></div>
+        ${ab?`<div class="ev-opt" data-id="${e.id}">
+          <label>Tipo <select data-k="tipo"><option value="V" ${e.tipo==='V'?'selected':''}>Provento</option><option value="D" ${e.tipo==='D'?'selected':''}>Desconto</option></select></label>
+          <label>Cálculo <select data-k="kind">${kindOpts(e.kind)}</select></label>
+          ${e.kind==='horas'?`<label>Adicional <input data-k="pct" type="number" min="0" step="1" value="${+e.pct||0}" style="width:64px"> %</label>`:''}
+          <label class="check"><input type="checkbox" data-k="incINSS" ${I.inss?'checked':''}> INSS</label>
+          <label class="check"><input type="checkbox" data-k="incIR" ${I.ir?'checked':''}> IRRF</label>
+          <label class="check"><input type="checkbox" data-k="incFGTS" ${I.fgts?'checked':''}> FGTS</label>
+          <span class="grow"></span><button type="button" class="btn sm ghost" data-guardar="${e.id}">Guardar na lista</button>
+        </div>`:''}`);
     }
   }
+  if (R.ocultas.length) rows.push(`<div class="hint">Linhas ocultas: ${R.ocultas.map(k=>`<button type="button" class="btn sm ghost" data-restore="${k}">mostrar ${esc(AUTO[k].desc)}</button>`).join(' ')}</div>`);
   $('evList').innerHTML = rows.join('');
   $('sV').textContent = brl(R.tv); $('sD').textContent = brl(R.td); $('sL').textContent = brl(R.liq);
+  fillAjustes(R);
   renderPaper(R, emp);
 }
-$('evPreset').innerHTML = PRESETS.map((p,i)=>`<option value="${i}">${p.tipo==='V'?'Provento':'Desconto'} · ${esc(p.rot)}</option>`).join('');
-$('evAdd').onclick = () => { const p = PRESETS[+$('evPreset').value]; const {rot, ...e} = p; S.cur.eventos.push({...e, id:uid(), ref:e.ref??'', valor:e.valor??0}); persist(); renderEventos(); };
+function renderPresetSelect(){
+  const b = PRESETS.map((p,i)=>`<option value="b${i}">${p.tipo==='V'?'Provento':'Desconto'} · ${esc(p.rot)}</option>`).join('');
+  const c = (S.custom||[]).map((p,i)=>`<option value="c${i}">${p.tipo==='V'?'Provento':'Desconto'} · ${esc(p.rot||p.desc)}</option>`).join('');
+  $('evPreset').innerHTML = (c?`<optgroup label="Personalizados">${c}</optgroup>`:'') + `<optgroup label="Padrão">${b}</optgroup>`;
+  $('pList').innerHTML = (S.custom||[]).length ? S.custom.map((p,i)=>`<div class="item"><div><b>${esc(p.cod)} · ${esc(p.desc)}</b><span>${p.tipo==='V'?'Provento':'Desconto'} · ${KINDS[p.kind]||p.kind}${p.kind==='horas'?' '+(+p.pct||0)+'%':''} · incide ${['INSS','IRRF','FGTS'].filter((x,j)=>[incs(p).inss,incs(p).ir,incs(p).fgts][j]).join(', ')||'nada'}</span></div><button class="btn sm ghost danger" data-prm="${i}">Excluir</button></div>`).join('') : '<div class="empty">Nenhum evento personalizado salvo.</div>';
+}
+$('evAdd').onclick = () => { const v = $('evPreset').value, p = v[0]==='c' ? S.custom[+v.slice(1)] : PRESETS[+v.slice(1)]; if (!p) return; const {rot, _v, ...e} = p; S.cur.eventos.push({...e, id:uid(), ref:e.ref??'', valor:e.valor??0}); renderEventos(); };
 $('evList').addEventListener('change', ev => {
-  const row = ev.target.closest('.ev'); if (!row || !row.dataset.id) return;
-  const e = S.cur.eventos.find(x=>x.id===row.dataset.id), k = ev.target.dataset.k;
-  if (k==='valor') e.valor = num(ev.target.value); else if (k==='ref') e.ref = num(ev.target.value); else e[k] = ev.target.value.toUpperCase();
-  persist(); renderEventos();
+  const t = ev.target, k = t.dataset.k; if (!k) return;
+  const ar = t.closest('[data-auto]');
+  if (ar){ const key = ar.dataset.auto, o = S.cur.over[key] = {...(S.cur.over[key]||{})};
+    if (k==='valor') o.valor = num(t.value); else if (k==='ref') o.ref = t.value.trim(); else o[k] = t.value.trim().toUpperCase();
+    renderEventos(); return; }
+  const row = t.closest('[data-id]'); if (!row) return;
+  const e = S.cur.eventos.find(x=>x.id===row.dataset.id); if (!e) return;
+  if (k==='valor'){ if (porRef(e.kind)){ const v = num(t.value); e.vOv = (v === calcEvento(e, num(empFor(S.cur.empId).sal))) ? null : v; } else e.valor = num(t.value); }
+  else if (k==='ref') e.ref = num(t.value);
+  else if (k==='pct') e.pct = +t.value || 0;
+  else if (k==='tipo') e.tipo = t.value;
+  else if (k==='kind'){ const prev = valorEvento(e, num(empFor(S.cur.empId).sal)); e.kind = t.value; e.vOv = null; if (!porRef(e.kind)) e.valor = prev; if (e.kind==='horas' && e.pct==null) e.pct = 50; }
+  else if (k.startsWith('inc')){ const I = incs(e); e.incINSS = I.inss; e.incIR = I.ir; e.incFGTS = I.fgts; delete e.inc; e[k] = t.checked; }
+  else e[k] = t.value.toUpperCase();
+  renderEventos();
 });
-$('evList').addEventListener('click', ev => { const id = ev.target.dataset.del; if (!id) return; S.cur.eventos = S.cur.eventos.filter(x=>x.id!==id); persist(); renderEventos(); });
-$('hEmp').onchange = () => { const f = empFor($('hEmp').value); if (f && !f.temPag) toast('Cadastre o salário deste funcionário na aba Funcionários'); const keep = {comp:S.cur.comp, pag:S.cur.pag}; S.cur = {...novoHolerite(f), ...keep}; persist(); renderHoleriteForm(); };
-$('hComp').onchange = () => { S.cur.comp = $('hComp').value; persist(); renderEventos(); };
-$('hDias').onchange = () => { S.cur.dias = Math.min(30,Math.max(0,+$('hDias').value||0)); $('hDias').value=S.cur.dias; persist(); renderEventos(); };
-$('hPag').onchange = () => { S.cur.pag = $('hPag').value; persist(); renderEventos(); };
-$('hMsg').oninput = () => { S.cur.msg = $('hMsg').value; persist(); renderEventos(); };
-$('hVias').onchange = () => { S.cur.vias = $('hVias').checked; persist(); renderEventos(); };
+$('evList').addEventListener('click', async ev => {
+  const b = ev.target.closest('button'); if (!b) return; const d = b.dataset;
+  if (d.del){ S.cur.eventos = S.cur.eventos.filter(x=>x.id!==d.del); abertos.delete(d.del); renderEventos(); }
+  else if (d.opt){ abertos.has(d.opt) ? abertos.delete(d.opt) : abertos.add(d.opt); renderEventos(); }
+  else if (d.tipo){ const e = S.cur.eventos.find(x=>x.id===b.closest('[data-id]').dataset.id); e.tipo = e.tipo==='V'?'D':'V'; renderEventos(); }
+  else if (d.unfix){ const e = S.cur.eventos.find(x=>x.id===d.unfix); e.vOv = null; renderEventos(); }
+  else if (d.restore){ delete S.cur.over[d.restore]; renderEventos(); }
+  else if (d.hide){ S.cur.over[d.hide] = {...(S.cur.over[d.hide]||{}), oculto:true}; renderEventos(); }
+  else if (d.guardar){ const e = S.cur.eventos.find(x=>x.id===d.guardar); const {id, vOv, ...p} = e; const I = incs(e); await guardarPreset({...p, incINSS:I.inss, incIR:I.ir, incFGTS:I.fgts, inc:undefined}); }
+});
+async function guardarPreset(p){
+  const q = {cod:String(p.cod||'').slice(0,8), desc:String(p.desc||'').slice(0,60).toUpperCase(), tipo:p.tipo==='D'?'D':'V', kind:KINDS[p.kind]?p.kind:'valor', ref:p.ref===''||p.ref==null?'':+p.ref, valor:+p.valor||0, pct:+p.pct||0, incINSS:!!p.incINSS, incIR:!!p.incIR, incFGTS:!!p.incFGTS};
+  if (!q.desc){ toast('Dê uma descrição ao evento'); return false; }
+  const lista = (S.custom||[]).filter(x => !(x.cod===q.cod && x.desc===q.desc)).concat([q]);
+  const {error} = await sb.from('empresa').update({holerite_eventos:lista}).eq('id',1);
+  if (error){ toast('Não foi possível guardar: '+error.message); return false; }
+  S.custom = lista; renderPresetSelect(); toast('Evento guardado na lista'); return true;
+}
+$('pList').addEventListener('click', async e => { const i = e.target.dataset.prm; if (i==null) return;
+  if (e.target.dataset.ok !== '1'){ e.target.dataset.ok='1'; e.target.textContent='Confirmar exclusão'; return; }
+  const lista = S.custom.filter((_,j)=>j!==+i); const {error} = await sb.from('empresa').update({holerite_eventos:lista}).eq('id',1);
+  if (error){ toast('Não foi possível excluir: '+error.message); return; } S.custom = lista; renderPresetSelect(); toast('Evento excluído da lista'); });
 
+/* evento personalizado */
+$('c_kind').innerHTML = kindOpts('valor', KIND_CUSTOM);
+const cKindUI = () => { const k = $('c_kind').value; $('c_pctL').hidden = k !== 'horas'; $('c_valL').hidden = porRef(k); };
+$('c_kind').onchange = cKindUI; cKindUI();
+$('c_add').onclick = async () => {
+  const e = {cod:$('c_cod').value.trim().slice(0,8), desc:$('c_desc').value.trim().toUpperCase().slice(0,60), tipo:$('c_tipo').value, kind:$('c_kind').value,
+    ref:$('c_ref').value.trim()===''?'':num($('c_ref').value), valor:num($('c_val').value), pct:+$('c_pct').value||0,
+    incINSS:$('c_iINSS').checked, incIR:$('c_iIR').checked, incFGTS:$('c_iFGTS').checked};
+  if (!e.desc){ toast('Preencha a descrição do evento'); $('c_desc').focus(); return; }
+  if ($('c_salvar').checked && !(await guardarPreset(e))) return;
+  S.cur.eventos.push({...e, id:uid()}); renderEventos();
+  ['c_cod','c_desc','c_ref','c_val'].forEach(i=>$(i).value=''); $('c_salvar').checked=false; toast('Evento adicionado ao holerite');
+};
+
+/* campos personalizados (rótulo/valor) */
+const kvHTML = (arr) => arr.map((x,i)=>`<div class="kv-row" data-i="${i}"><input data-k="r" value="${esc(x.r)}" placeholder="Rótulo" maxlength="40" aria-label="Rótulo"><input data-k="v" value="${esc(x.v)}" placeholder="Valor" maxlength="120" aria-label="Valor"><button type="button" class="x" data-rm="${i}" aria-label="Remover campo">×</button></div>`).join('');
+function renderInfo(){ $('infoList').innerHTML = kvHTML(S.cur.info); if (S.cur.info.length) $('pInfo').open = true; }
+$('infoAdd').onclick = () => { S.cur.info.push({r:'',v:''}); renderInfo(); $('infoList').lastElementChild.querySelector('input').focus(); };
+$('infoList').addEventListener('input', e => { const r = e.target.closest('.kv-row'); if (!r) return; S.cur.info[+r.dataset.i][e.target.dataset.k] = e.target.value; renderEventos(); });
+$('infoList').addEventListener('click', e => { const i = e.target.dataset.rm; if (i==null) return; S.cur.info.splice(+i,1); renderInfo(); renderEventos(); });
+
+/* ajustes do demonstrativo */
+const AJ = ['sal','bINSS','bFGTS','fgts','bIR','faixa','red','liq'];
+function fillAjustes(R){
+  const A = S.cur.aj || {};
+  AJ.forEach(k => { const el = $('a_'+k); el.placeholder = brl(R.calc[k]); if (document.activeElement !== el) el.value = A[k]!=null && A[k]!=='' ? brl(A[k]) : ''; });
+  [['titulo', S.empresa.titulo||'Demonstrativo de pagamento'], ['comp', compTxt(S.cur.comp)], ['nota', notaAuto(R)], ['decl', S.empresa.decl||DECL]].forEach(([k,ph]) => { const el = $('a_'+k); el.placeholder = ph; if (document.activeElement !== el) el.value = A[k]||''; });
+}
+AJ.forEach(k => $('a_'+k).addEventListener('change', e => { const v = e.target.value.trim(); S.cur.aj[k] = v==='' ? null : num(v); renderEventos(); }));
+['titulo','comp','nota','decl'].forEach(k => $('a_'+k).addEventListener('input', e => { S.cur.aj[k] = e.target.value; renderEventos(); }));
+$('a_reset').onclick = () => { S.cur.aj = {}; renderEventos(); toast('Ajustes limpos, valores automáticos de volta'); };
+
+$('hEmp').onchange = () => { const f = empFor($('hEmp').value); if (f && !f.temPag) toast('Cadastre o salário deste funcionário na aba Funcionários'); const keep = {comp:S.cur.comp, pag:S.cur.pag}; S.cur = {...novoHolerite(f), ...keep}; abertos.clear(); renderHoleriteForm(); };
+$('hComp').onchange = () => { S.cur.comp = $('hComp').value; renderEventos(); };
+$('hDias').onchange = () => { S.cur.dias = Math.min(30,Math.max(0,+$('hDias').value||0)); $('hDias').value=S.cur.dias; renderEventos(); };
+$('hPag').onchange = () => { S.cur.pag = $('hPag').value; renderEventos(); };
+$('hMsg').oninput = () => { S.cur.msg = $('hMsg').value; renderEventos(); };
+$('hVias').onchange = () => { S.cur.vias = $('hVias').checked; renderEventos(); };
+
+const DECL = 'Declaro ter recebido a importância líquida discriminada neste recibo.';
+function notaAuto(R){ return `Base IRRF por ${R.ir.usaSimpl?'desconto simplificado (R$ 607,20)':'deduções legais (INSS e dependentes)'}${R.calc.red>0?`; redução de R$ ${brl(R.calc.red)} conforme Lei 15.270/2025`:''}. Tabelas INSS e IRRF vigentes em 2026.`; }
 function viaHTML(R, emp, label){
-  const E = S.empresa, h = S.cur;
+  const E = S.empresa, h = S.cur, A = h.aj || {};
+  const extras = [...(emp.extras||[]), ...(h.info||[])].filter(x => (x.r||'').trim() || (x.v||'').trim());
   const minRows = h.vias!==false ? 9 : 16;
   const linhas = R.linhas.map(l => `<tr><td class="m">${esc(l.cod)}</td><td>${esc(l.desc)}</td><td class="n m">${l.ref}</td><td class="n m">${l.tipo==='V'?brl(l.valor):''}</td><td class="n m">${l.tipo==='D'?brl(l.valor):''}</td></tr>`);
   while (linhas.length < minRows) linhas.push('<tr class="fill"><td></td><td></td><td></td><td></td><td></td></tr>');
@@ -573,7 +772,7 @@ function viaHTML(R, emp, label){
     <div class="p-head">
       <img src="${logoSrc()}" alt="">
       <div class="p-emp"><b>${esc(E.nome)}</b><span>CNPJ ${esc(E.cnpj)}</span><span>${esc(E.end)}${E.tel?' · '+esc(E.tel):''}</span></div>
-      <div class="p-doc"><div class="t">Demonstrativo de pagamento</div><div class="c">${compTxt(h.comp)}</div><span class="v">${label}</span></div>
+      <div class="p-doc"><div class="t">${esc(A.titulo||E.titulo||'Demonstrativo de pagamento')}</div><div class="c">${esc(A.comp||compTxt(h.comp))}</div><span class="v">${label}</span></div>
     </div>
     <div class="p-func">
       <div><span class="l">Código</span><span class="v">${esc(emp.cod)}</span></div>
@@ -582,7 +781,7 @@ function viaHTML(R, emp, label){
       <div><span class="l">CBO</span><span class="v">${esc(emp.cbo)}</span></div>
       <div><span class="l">Admissão</span><span class="v">${dataBR(emp.adm)}</span></div>
       <div><span class="l">Pagamento</span><span class="v">${dataBR(h.pag)}</span></div>
-      <div class="wide"><span>CPF <b>${esc(emp.cpf)}</b></span>${emp.depto?`<span>Depto. <b>${esc(emp.depto)}</b></span>`:''}<span>Dias trabalhados <b>${h.dias}</b></span><span>Dep. IR <b>${emp.dep}</b></span>${banco?`<span>Crédito <b>${esc(banco)}</b></span>`:''}</div>
+      <div class="wide"><span>CPF <b>${esc(emp.cpf)}</b></span>${emp.depto?`<span>Depto. <b>${esc(emp.depto)}</b></span>`:''}<span>Dias trabalhados <b>${h.dias}</b></span><span>Dep. IR <b>${emp.dep}</b></span>${banco?`<span>Crédito <b>${esc(banco)}</b></span>`:''}${extras.map(x=>`<span>${esc(x.r)} <b>${esc(x.v)}</b></span>`).join('')}</div>
     </div>
     <table class="p-ev">
       <thead><tr><th style="width:52px">Cód.</th><th>Descrição</th><th class="n" style="width:70px">Ref.</th><th class="n" style="width:110px">Vencimentos</th><th class="n" style="width:110px">Descontos</th></tr></thead>
@@ -602,10 +801,10 @@ function viaHTML(R, emp, label){
       <div><small>Faixa IRRF</small><b>${fmtRef(R.ir.al*100)||'0,00'}%</b></div>
       <div><small>Redução IR</small><b>${brl(R.ir.red)}</b></div>
     </div>
-    <div class="p-note">Base IRRF por ${R.ir.usaSimpl?'desconto simplificado (R$ 607,20)':'deduções legais (INSS e dependentes)'}${R.ir.red>0?`; redução de R$ ${brl(R.ir.red)} conforme Lei 15.270/2025`:''}. Tabelas INSS e IRRF vigentes em 2026.</div>
+    <div class="p-note">${esc(A.nota||E.nota||notaAuto(R))}</div>
     ${h.msg?`<div class="p-msg"><b>Mensagem:</b> ${esc(h.msg)}</div>`:''}
     <div class="p-sign">
-      <div class="decl">Declaro ter recebido a importância líquida discriminada neste recibo.</div>
+      <div class="decl">${esc(A.decl||E.decl||DECL)}</div>
       <div class="ln">Data</div>
       <div class="ln">Assinatura do funcionário</div>
     </div>
@@ -667,11 +866,17 @@ function renderFuncs(){
   $('fList').innerHTML = lista.length ? lista.map(f => `<div class="item ${f.id===fSel?'sel':''}" data-id="${f.id}" role="button" tabindex="0"><div><b>${esc(f.nome)}</b><span>${esc(f.cod)} · ${esc(f.cargo)}${f.depto?' · '+esc(f.depto):''}</span></div><div class="r">${f.temPag?'R$ '+brl(num(f.sal)):'<span style="font-size:12px;color:var(--muted)">sem salário</span>'}</div></div>`).join('') : '<div class="empty">Nenhum funcionário encontrado.</div>';
   fillForm(S.funcs.find(f=>f.id===fSel));
 }
+let fxTmp = [];
 function fillForm(f){
   $('fConfirm').innerHTML='';
   FF.forEach(k => { $('f_'+k).value = f ? (k==='sal'||k==='vt'||k==='aux' ? brl(num(f[k])) : (f[k] ?? '')) : ''; });
   $('f_fgts').checked = f ? !!f.fgts : true;
+  fxTmp = f ? JSON.parse(JSON.stringify(f.extras||[])) : []; $('fxList').innerHTML = kvHTML(fxTmp);
 }
+$('fxAdd').onclick = () => { fxTmp.push({r:'',v:''}); $('fxList').innerHTML = kvHTML(fxTmp); $('fxList').lastElementChild.querySelector('input').focus(); };
+$('fxList').addEventListener('input', e => { const r = e.target.closest('.kv-row'); if (r) fxTmp[+r.dataset.i][e.target.dataset.k] = e.target.value; });
+$('fxList').addEventListener('click', e => { const i = e.target.dataset.rm; if (i==null) return; fxTmp.splice(+i,1); $('fxList').innerHTML = kvHTML(fxTmp); });
+$('fRestaurar').onclick = () => { const f = S.funcs.find(x=>x.id===fSel); if (!f) return; ['cod','nome','cargo','depto','adm'].forEach(k => $('f_'+k).value = f.orig[k] || ''); toast('Dados do ponto de volta no formulário. Salve para confirmar.'); };
 $('fBusca').addEventListener('input', renderFuncs);
 $('fList').addEventListener('click', e => { const it = e.target.closest('.item'); if (!it) return; fSel = it.dataset.id; renderFuncs(); });
 $('fList').addEventListener('keydown', e => { if (e.key==='Enter'){ const it = e.target.closest('.item'); if (it){ fSel = it.dataset.id; renderFuncs(); } } });
@@ -680,15 +885,20 @@ $('fForm').onsubmit = async e => {
   const f = S.funcs.find(x=>x.id===fSel); if (!f) return;
   const btn = e.submitter || $('fForm').querySelector('[type=submit]'); btn.disabled = true;
   try {
-    const row = {colaborador_id:f.id, funcao:$('f_funcao').value.trim().toUpperCase()||null, cbo:$('f_cbo').value.trim()||null, salario:num($('f_sal').value),
+    const up = k => $('f_'+k).value.trim().toUpperCase();
+    const ov = (k, v) => (v && v !== f.orig[k]) ? v : null;
+    const extras = fxTmp.map(x=>({r:String(x.r||'').trim().slice(0,40), v:String(x.v||'').trim().slice(0,120)})).filter(x=>x.r||x.v).slice(0,12);
+    const row = {colaborador_id:f.id, codigo:ov('cod', $('f_cod').value.trim()), nome:ov('nome', up('nome')), cargo:ov('cargo', up('cargo')), depto:ov('depto', up('depto')), admissao:ov('adm', $('f_adm').value||''),
+      funcao:up('funcao')||null, cbo:$('f_cbo').value.trim()||null, salario:num($('f_sal').value),
       dependentes:Math.max(0,+$('f_dep').value||0), adiantamento_pct:Math.min(100,Math.max(0,+$('f_adi').value||0)), vale_transporte:num($('f_vt').value),
-      auxilio_alimentacao:num($('f_aux').value), fgts:$('f_fgts').checked, banco:$('f_banco').value.trim()||null, agencia:$('f_ag').value.trim()||null, conta:$('f_cc').value.trim()||null, atualizado_em:new Date().toISOString()};
+      auxilio_alimentacao:num($('f_aux').value), fgts:$('f_fgts').checked, banco:$('f_banco').value.trim()||null, agencia:$('f_ag').value.trim()||null, conta:$('f_cc').value.trim()||null, extras, atualizado_em:new Date().toISOString()};
     const {error} = await sb.from('folha_dados').upsert(row); if (error) throw error;
     const cpf = $('f_cpf').value.trim();
     if (cpf !== f.cpf){ const r = await sb.from('colaboradores').update({cpf}).eq('id',f.id); if (r.error) throw r.error; }
-    Object.assign(f, {cpf, funcao:row.funcao||'', cbo:row.cbo||'', sal:row.salario, dep:row.dependentes, adi:row.adiantamento_pct, vt:row.vale_transporte, aux:row.auxilio_alimentacao, fgts:row.fgts, banco:row.banco||'', ag:row.agencia||'', cc:row.conta||'', temPag:true});
-    if (S.cur.empId === f.id){ const keep = {comp:S.cur.comp, pag:S.cur.pag, dias:S.cur.dias}; S.cur = {...novoHolerite(f), ...keep}; }
-    renderFuncs(); renderHoleriteForm(); toast('Dados de pagamento salvos');
+    Object.assign(f, {cpf, cod:row.codigo||f.orig.cod, nome:row.nome||f.orig.nome, cargo:row.cargo||f.orig.cargo, depto:row.depto||f.orig.depto, adm:row.admissao||f.orig.adm,
+      funcao:row.funcao||'', cbo:row.cbo||'', sal:row.salario, dep:row.dependentes, adi:row.adiantamento_pct, vt:row.vale_transporte, aux:row.auxilio_alimentacao, fgts:row.fgts, banco:row.banco||'', ag:row.agencia||'', cc:row.conta||'', extras, temPag:true});
+    if (S.cur.empId === f.id){ const keep = {comp:S.cur.comp, pag:S.cur.pag, dias:S.cur.dias, over:S.cur.over, aj:S.cur.aj, info:S.cur.info}; S.cur = {...novoHolerite(f), ...keep}; }
+    renderFuncs(); renderHoleriteForm(); toast('Dados do funcionário salvos');
   } catch(err){ toast('Não foi possível salvar: '+(err.message||err)); }
   btn.disabled = false;
 };
@@ -707,9 +917,13 @@ $('hList').addEventListener('click', async e => {
 });
 
 /* ---------- Empresa ---------- */
-function fillEmpresa(){ const E=S.empresa; $('e_nome').value=E.nome; $('e_cnpj').value=E.cnpj; $('e_end').value=E.end; $('e_tel').value=E.tel||''; $('e_msg').value=E.msg||''; $('hdrEmp').textContent=E.nome; $('hdrLogo').src=logoSrc(); }
-$('eForm').onsubmit = async e => { e.preventDefault(); Object.assign(S.empresa,{end:$('e_end').value.trim(), tel:$('e_tel').value.trim(), msg:$('e_msg').value.trim()});
-  const {error} = await sb.from('empresa').update({holerite_endereco:S.empresa.end, holerite_telefone:S.empresa.tel, holerite_mensagem:S.empresa.msg}).eq('id',1);
+function fillEmpresa(){ const E=S.empresa; $('e_nome').value=E.nome; $('e_cnpj').value=E.cnpj; $('e_end').value=E.end; $('e_tel').value=E.tel||''; $('e_msg').value=E.msg||''; $('e_titulo').value=E.titulo||''; $('e_decl').value=E.decl||''; $('e_nota').value=E.nota||''; $('hdrEmp').textContent=E.nome; $('hdrLogo').src=logoSrc(); }
+$('eForm').onsubmit = async e => { e.preventDefault();
+  const v = id => $(id).value.trim();
+  Object.assign(S.empresa,{nome:v('e_nome')||S.empresa.orig.nome, cnpj:v('e_cnpj')||S.empresa.orig.cnpj, end:v('e_end'), tel:v('e_tel'), msg:v('e_msg'), titulo:v('e_titulo'), decl:v('e_decl'), nota:v('e_nota')});
+  const E = S.empresa;
+  const {error} = await sb.from('empresa').update({holerite_razao:E.nome!==E.orig.nome?E.nome:null, holerite_cnpj:E.cnpj!==E.orig.cnpj?E.cnpj:null, holerite_endereco:E.end, holerite_telefone:E.tel, holerite_mensagem:E.msg,
+    holerite_config:{titulo:E.titulo, decl:E.decl, nota:E.nota}}).eq('id',1);
   if (error){ toast('Não foi possível salvar: '+error.message); return; } fillEmpresa(); renderEventos(); toast('Dados da empresa salvos'); };
 $('e_logo').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > 600000){ toast('Use uma imagem de até 600 KB'); return; } const rd = new FileReader(); rd.onload = async () => { const {error} = await sb.from('empresa').update({holerite_logo:rd.result}).eq('id',1); if (error){ toast('Não foi possível salvar o logo'); return; } S.empresa.logo = rd.result; fillEmpresa(); renderEventos(); toast('Logotipo atualizado'); }; rd.readAsDataURL(f); };
 $('eLogoReset').onclick = async () => { await sb.from('empresa').update({holerite_logo:null}).eq('id',1); S.empresa.logo = null; fillEmpresa(); renderEventos(); toast('Logo FTVTEC restaurado'); };
@@ -718,7 +932,7 @@ $('eLogoReset').onclick = async () => { await sb.from('empresa').update({holerit
 (function(){ let prev=0; $('tINSS').innerHTML = T.inss.map(([l,a]) => { const s=`<tr><td>${prev?'De R$ '+brl(prev+0.01)+' a ':'Até '}R$ ${brl(l)}</td><td class="n">${fmtRef(a*100)}%</td></tr>`; prev=l; return s; }).join('');
   prev=0; $('tIRRF').innerHTML = T.irrf.map(([l,a,d]) => { const s=`<tr><td>${l===Infinity?'Acima de R$ '+brl(prev):(prev?'De R$ '+brl(prev+0.01)+' a ':'Até ')+'R$ '+brl(l)}</td><td class="n">${a?fmtRef(a*100)+'%':'Isento'}</td><td class="n">${d?brl(d):'-'}</td></tr>`; prev=l; return s; }).join(''); })();
 
-function renderAll(){ fillEmpresa(); renderHoleriteForm(); }
+function renderAll(){ fillEmpresa(); renderPresetSelect(); renderHoleriteForm(); }
 carregar().then(ok => { if (ok) renderAll(); }).catch(err => { $('gate').innerHTML = '<div><b>Não foi possível carregar</b><span class="hint">'+esc(err.message||String(err))+'</span><a class="btn primary" href="./">Voltar</a></div>'; });
 </script>
 
