@@ -468,6 +468,11 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .ext-pin{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;margin-left:2px;border:0;border-radius:50%;background:var(--warn-bg);color:var(--warn);cursor:pointer;vertical-align:middle}
 .ext-pin svg{width:12px;height:12px}
 .receipt [data-end]{word-break:normal;overflow-wrap:anywhere;text-align:right;font-family:var(--f-body)}
+.kpi-btn{font:inherit;color:inherit;text-align:left;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s}
+.kpi-btn:hover,.kpi-btn:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent);outline:none;transform:translateY(-1px)}
+.kpi-more{font-size:.75rem;color:var(--accent);margin-top:2px}
+.kpi-li{width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;cursor:pointer}
+.kpi-li:hover{background:var(--surface-2)}
 </style>
 </head><body>
 <div id="app"></div>
@@ -1084,6 +1089,19 @@ function viewRH(){
     <div class="side-foot"><div class="who"><div style="color:#fff;font-weight:600">${esc(ME.nome)}</div><div>${esc(S.company.razao)}</div></div><button class="btn sm" data-act="logout">Sair</button></div></aside>
     <main class="main">${body}</main></div>`;
 }
+function kpiLista(k){
+  const td=today();
+  const T={trab:['Trabalhando agora',x=>x.s[0]==='Trabalhando'],int:['Em intervalo',x=>x.s[0]==='Em intervalo'],nreg:['Não registraram hoje',x=>x.s[0]==='Não registrou'],atr:['Atrasos hoje',x=>x.di.atraso>0]};
+  const [tit,f]=T[k]||T.trab;
+  const rows=S.emps.filter(e=>e.ativo).map(e=>({e,s:nowState(e),di:dayInfo(e,td)})).filter(f).sort((a,b)=>a.e.nome.localeCompare(b.e.nome));
+  const info=x=>{const m=x.di.marks.map(p=>p.ts.slice(11,16)+(p.foraCerca?' (externo)':'')).join(' · ');
+    if(k==='atr')return `Entrada às <b class="mono">${x.di.marks[0].ts.slice(11,16)}</b> · previsto ${x.di.j.ini} · <b style="color:var(--warn)">${x.di.atraso} min</b>`;
+    if(k==='nreg')return `Entrada prevista ${x.di.j.ini} · ${esc(x.di.j.nome)}${x.e.email?' · '+esc(x.e.email):''}`;
+    return `${esc(x.s[2])}${m?' · marcações: <span class="mono">'+m+'</span>':''}`};
+  openModal(`<div class="modal-h"><div><div class="eyebrow">${fmtDate(td)} · ${rows.length} ${rows.length===1?'pessoa':'pessoas'}</div><h3>${tit}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div>
+  <div class="modal-b" style="padding:0">${rows.length?`<div class="list">${rows.map(x=>`<button class="li kpi-li" data-act="see-mirror" data-id="${x.e.id}"><div class="avatar">${initials(x.e.nome)}</div><div class="grow"><div class="ttl">${esc(x.e.nome)}</div><div class="sub">${esc(x.e.cargo||'')}${x.e.vinculo?' · '+esc(x.e.vinculo):''}</div><div class="sub">${info(x)}</div></div><span class="chip ${x.s[1]}">${x.s[0]}</span></button>`).join('')}</div>`:'<div class="empty">Ninguém nesta situação agora.</div>'}</div>
+  <div class="modal-f"><span class="muted" style="font-size:.8rem;margin-right:auto">Toque em um nome para abrir a folha de ponto.</span><button class="btn primary" data-act="close">Fechar</button></div>`);
+}
 function rhPainel(){
   const act=S.emps.filter(e=>e.ativo),td=today(),d=NOW();
   if(act.length<=1&&!S.punches.length)return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div></div>
@@ -1112,11 +1130,11 @@ function rhPainel(){
   const col={warn:'var(--warn)',bad:'var(--bad)',info:'var(--info)'};
   return `<div class="page-h"><div><div class="eyebrow">${esc(fmtLong(d))}</div><h1>Painel de presença</h1></div><div class="spacer"></div>${holOf(td)?`<span class="chip warn">Feriado · ${esc(holOf(td))}</span>`:''}<span class="chip ok">Ao vivo · ${clockHTML()}</span></div>
   <section class="kpis">
-    <div class="card kpi"><span class="l">Trabalhando agora</span><span class="v">${cnt('Trabalhando')}<span class="muted" style="font-size:.9rem"> / ${act.length}</span></span></div>
-    <div class="card kpi"><span class="l">Em intervalo</span><span class="v">${cnt('Em intervalo')}</span></div>
-    <div class="card kpi"><span class="l">Não registraram</span><span class="v" style="color:${cnt('Não registrou')?'var(--bad)':'inherit'}">${cnt('Não registrou')}</span></div>
-    <div class="card kpi"><span class="l">Atrasos hoje</span><span class="v" style="color:${late?'var(--warn)':'inherit'}">${late}</span></div>
-    <div class="card kpi" style="cursor:pointer" data-act="rtab" data-v="aprov"><span class="l">Pendências do RH</span><span class="v" style="color:var(--accent)">${pendingCount()}</span></div>
+    <button class="card kpi kpi-btn" data-act="kpi-lista" data-v="trab"><span class="l">Trabalhando agora</span><span class="v">${cnt('Trabalhando')}<span class="muted" style="font-size:.9rem"> / ${act.length}</span></span><span class="kpi-more">Ver lista</span></button>
+    <button class="card kpi kpi-btn" data-act="kpi-lista" data-v="int"><span class="l">Em intervalo</span><span class="v">${cnt('Em intervalo')}</span><span class="kpi-more">Ver lista</span></button>
+    <button class="card kpi kpi-btn" data-act="kpi-lista" data-v="nreg"><span class="l">Não registraram</span><span class="v" style="color:${cnt('Não registrou')?'var(--bad)':'inherit'}">${cnt('Não registrou')}</span><span class="kpi-more">Ver lista</span></button>
+    <button class="card kpi kpi-btn" data-act="kpi-lista" data-v="atr"><span class="l">Atrasos hoje</span><span class="v" style="color:${late?'var(--warn)':'inherit'}">${late}</span><span class="kpi-more">Ver lista</span></button>
+    <button class="card kpi kpi-btn" data-act="rtab" data-v="aprov"><span class="l">Pendências do RH</span><span class="v" style="color:var(--accent)">${pendingCount()}</span><span class="kpi-more">Abrir aprovações</span></button>
   </section>
   <div class="cols">
     <section class="card"><div class="card-h"><h3>Equipe agora</h3><div class="spacer"></div><span class="muted" style="font-size:.8rem">Atualiza sozinho a cada marcação</span></div>
@@ -1594,7 +1612,8 @@ document.addEventListener('click',async ev=>{
     case 'csv-report':csvReport(t.dataset.ym);break;
     case 'afd':afd(t.dataset.ym);break;
     case 'emp-form':empForm(t.dataset.id);break;
-    case 'see-mirror':UI.mirrorEmp=t.dataset.id;UI.rhTab='espelho';render();break;
+    case 'see-mirror':if($('#modal-root').innerHTML)closeModal();UI.mirrorEmp=t.dataset.id;UI.rhTab='espelho';render();window.scrollTo(0,0);break;
+    case 'kpi-lista':kpiLista(t.dataset.v);break;
     case 'jor-form':jorForm(t.dataset.id);break;
     case 'lrole':{const u=$('#l-user')?$('#l-user').value:'';UI.loginRole=t.dataset.v;BOOT.msg='';render();const n=$('#l-user');if(n){n.value=u;(u?$('#l-pw'):n).focus()}break}
     case 'home':UI.navOpen=false;closeModal();if(MODE==='rh'){UI.rhTab='painel'}else{UI.empTab='ponto';UI.teamEmp=null}render();window.scrollTo(0,0);break;
