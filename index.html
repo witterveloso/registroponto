@@ -965,6 +965,7 @@ function empEquipe(){
     return `<div class="row"><button class="btn sm ghost" data-act="team-back">← Equipe</button><div class="spacer"></div><select class="input" style="width:auto" id="tm2" data-change="team-month">${monthOpts(ym)}</select></div>
     <section class="card card-b row" style="gap:12px"><div class="avatar" style="width:48px;height:48px">${e.face?`<img src="${e.face.thumb}" alt="">`:initials(e.nome)}</div><div style="flex:1;min-width:0"><h2>${esc(e.nome)}</h2><div class="muted" style="font-size:.85rem">${esc(e.cargo)} · ${esc(jor(e.jornadaId).nome)}</div></div></section>
     ${aprovBlock(e,ym,ms)}
+    <div class="row folha-acts"><button class="btn" data-act="pdf-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar folha (PDF)</button></div>
     <section class="kpis">
       <div class="card kpi"><span class="l">Trabalhado</span><span class="v">${dur(ms.worked)}</span></div>
       <div class="card kpi"><span class="l">Saldo do mês</span><span class="v ${saldoCls(ms.saldo)}">${saldoTxt(ms.saldo)}</span></div>
@@ -1028,7 +1029,7 @@ function empEspelho(e){
   const ym=UI.mirrorMonth||today().slice(0,7);const{ms,html}=mirrorTable(e,ym,{own:true});
   return `<div class="row"><h2>Folha de ponto</h2><div class="spacer"></div><select class="input" style="width:auto" id="mm" data-change="month">${monthOpts(ym)}</select></div>
   <div class="muted" style="font-size:.85rem;margin-top:-6px">Fechamento de ${MES[+ym.slice(5,7)-1].toLowerCase()}: ${fmtDate(fechamentoDe(ym))}${mesFechado(e,ym)?' · <b>mês fechado</b>':''}</div>
-  <div class="row folha-acts"><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar folha (CSV)</button>${mesFechado(e,ym)?'':'<button class="btn primary" data-act="new-req" data-tipo="ajuste">Marcação manual</button>'}</div>
+  <div class="row folha-acts"><button class="btn" data-act="pdf-mirror" data-emp="${e.id}" data-ym="${ym}">Baixar folha (PDF)</button><button class="btn" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">CSV</button>${mesFechado(e,ym)?'':'<button class="btn primary" data-act="new-req" data-tipo="ajuste">Marcação manual</button>'}</div>
   ${pendBox(e,ym,false)}
   <section class="kpis">
     <div class="card kpi"><span class="l">Trabalhado</span><span class="v">${dur(ms.worked)}</span></div>
@@ -1296,7 +1297,7 @@ function rhEspelho(){
   </section>
   ${aprovBlock(e,ym,ms)}
   <section class="card"><div class="card-h"><div><h3>${esc(e.nome)}</h3><div class="muted" style="font-size:.82rem">${esc(e.cargo)} · ${esc(e.login)} · CPF ${esc(maskCPF(e.cpf))} · ${esc(jor(e.jornadaId).nome)}</div></div><div class="spacer"></div>
-    <button class="btn sm" data-act="add-punch" data-id="${e.id}">Incluir marcação</button><button class="btn sm" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">CSV</button><button class="btn sm" data-act="afd" data-ym="${ym}">Gerar AFD</button></div>${html}</section>`;
+    <button class="btn sm" data-act="add-punch" data-id="${e.id}">Incluir marcação</button><button class="btn sm primary" data-act="pdf-mirror" data-emp="${e.id}" data-ym="${ym}">PDF</button><button class="btn sm" data-act="csv-mirror" data-emp="${e.id}" data-ym="${ym}">CSV</button><button class="btn sm" data-act="afd" data-ym="${ym}">Gerar AFD</button></div>${html}</section>`;
 }
 function rhRelat(){
   const ym=UI.mirrorMonth||today().slice(0,7);
@@ -1494,6 +1495,99 @@ function decideForm(id,v){
 }
 
 /* ---------- Exportações ---------- */
+/* ---------- Folha de ponto em PDF (jsPDF carregado só quando alguém pede o PDF) ---------- */
+const PDF_LIBS=[['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js','sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk'],['https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js','sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3']];
+let PDF_OK=null;
+function carregaPdf(){
+  if(PDF_OK)return PDF_OK;
+  const um=([src,sri])=>new Promise((ok,erro)=>{const s=document.createElement('script');s.src=src;s.integrity=sri;s.crossOrigin='anonymous';s.referrerPolicy='no-referrer';s.onload=ok;s.onerror=()=>erro(new Error('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.'));document.head.appendChild(s)});
+  PDF_OK=um(PDF_LIBS[0]).then(()=>um(PDF_LIBS[1])).catch(e=>{PDF_OK=null;throw e});
+  return PDF_OK;
+}
+async function pdfMirror(eid,ym){
+  toast('Gerando PDF…');
+  await carregaPdf();
+  const {jsPDF}=window.jspdf;const e=emp(eid);if(!e)throw new Error('Colaborador não encontrado.');
+  const ms=monthSummary(e,ym),j=jor(e.jornadaId),td=today(),a=aprovDe(e.id,ym),setor=setorDe(e),gestor=setor&&setor.gestor_id?emp(setor.gestor_id):null;
+  const NAVY=[10,22,40],TEAL=[10,123,132],GLOW=[23,201,182],INK=[13,26,43],MUTED=[90,107,130],LINE=[216,224,233],SOFT=[237,246,246];
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=12;
+  const mesNome=MES[+ym.slice(5,7)-1]+' de '+ym.slice(0,4);
+  const cab=()=>{
+    doc.setFillColor(...NAVY);doc.rect(0,0,W,30,'F');doc.setFillColor(...GLOW);doc.rect(0,30,W,1.2,'F');
+    doc.setFillColor(255,255,255);doc.roundedRect(M,6,30,18,2.5,2.5,'F');
+    try{doc.addImage(LOGO,'PNG',M+2.5,7.5,25,15)}catch(x){}
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('Folha de ponto',M+36,14);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(200,214,230);
+    doc.text(String(S.company.razao||'FTVTEC'),M+36,19.5);doc.text('CNPJ '+String(S.company.cnpj||''),M+36,24);
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...GLOW);doc.text(mesNome.charAt(0).toUpperCase()+mesNome.slice(1),W-M,14,{align:'right'});
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(200,214,230);doc.text('Competência '+ym.slice(5,7)+'/'+ym.slice(0,4),W-M,19.5,{align:'right'});
+    doc.text('Fechamento '+fmtDate(fechamentoDe(ym)),W-M,24,{align:'right'});
+  };
+  cab();
+  // Dados do colaborador
+  let y=37;
+  doc.setDrawColor(...LINE);doc.setFillColor(...SOFT);doc.roundedRect(M,y,W-2*M,22,2,2,'FD');
+  const campo=(r,v,x,yy)=>{doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(r.toUpperCase(),x,yy);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...INK);doc.text(String(v||'Não informado'),x,yy+4.2,{maxWidth:(W-2*M)/3-6})};
+  const c1=M+4,c2=M+4+(W-2*M)/3,c3=M+4+2*(W-2*M)/3;
+  campo('Colaborador',e.nome,c1,y+6);campo('Matrícula',e.matricula,c2,y+6);campo('Cargo',e.cargo,c3,y+6);
+  campo('Vínculo',e.vinculo||e.depto,c1,y+15);campo('Jornada',`${j.nome} · ${j.ini} às ${j.fim}`,c2,y+15);campo('Setor / gestor',setor?(setor.nome+(gestor?' · '+gestor.nome:'')):'Não definido',c3,y+15);
+  y+=27;
+  // Resumo
+  const kp=[['Trabalhado',dur(ms.worked)],['Previsto',dur(ms.exp)],['Saldo',saldoTxt(ms.saldo)],['Horas extras',dur(ms.extra)],['Atrasos',String(ms.atrasos)],['Faltas',String(ms.faltas)]];
+  const kw=(W-2*M-5*3)/6;
+  kp.forEach(([l,v],i)=>{const x=M+i*(kw+3);doc.setDrawColor(...LINE);doc.setFillColor(255,255,255);doc.roundedRect(x,y,kw,14,2,2,'FD');doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(l.toUpperCase(),x+3,y+5);doc.setFont('helvetica','bold');doc.setFontSize(11);const neg=l==='Saldo'&&ms.saldo<0;doc.setTextColor(...(neg?[185,54,44]:l==='Saldo'&&ms.saldo>0?[21,127,81]:INK));doc.text(v,x+3,y+11)});
+  y+=19;
+  // Tabela dos dias
+  const ext=[];
+  const corpo=ms.days.map(di=>{
+    const fut=di.ds>td,pre=!!di.pre,wk=!di.j.dias.includes(di.dow)||di.hol;
+    const m=di.marks.map(x=>{let t=x.ts.slice(11,16);if(x.metodo==='ajuste-rh')t+=' M';if(x.foraCerca){t+=' *';ext.push(x)}return t});
+    const sit=fut?(di.hol?'Feriado':wk?'Folga':''):pre&&!di.hol&&!wk?'Fora do período':(ST[di.status]||['',''])[0]+(di.hol?' · '+di.hol:'');
+    return [`${di.ds.slice(8)}/${di.ds.slice(5,7)}`,DOW[di.dow],m[0]||'',m[1]||'',m[2]||'',m[3]||'',m.length>4?m.slice(4).join(' '):'',fut||pre?'':dur(di.credit),fut||pre?'':saldoTxt(di.saldo),sit.replace(/^·$/,'')];
+  });
+  doc.autoTable({startY:y,head:[['Dia','','Entrada','Saída int.','Retorno','Saída','Extras','Trabalhado','Saldo','Situação']],body:corpo,margin:{left:M,right:M,top:36,bottom:16},theme:'grid',
+    styles:{font:'helvetica',fontSize:7.4,cellPadding:1.35,textColor:INK,lineColor:LINE,lineWidth:.15,valign:'middle'},
+    headStyles:{fillColor:TEAL,textColor:[255,255,255],fontStyle:'bold',fontSize:7.2},
+    columnStyles:{0:{cellWidth:12,fontStyle:'bold'},1:{cellWidth:9,textColor:MUTED},2:{cellWidth:15,halign:'center'},3:{cellWidth:16,halign:'center'},4:{cellWidth:15,halign:'center'},5:{cellWidth:15,halign:'center'},6:{cellWidth:16,halign:'center'},7:{cellWidth:17,halign:'right'},8:{cellWidth:15,halign:'right'},9:{cellWidth:'auto'}},
+    didParseCell:d=>{if(d.section!=='body')return;const di=ms.days[d.row.index];const wk=!di.j.dias.includes(di.dow)||di.hol;if(wk)d.cell.styles.fillColor=[244,247,250];if(di.ds===td)d.cell.styles.fillColor=[220,241,241];
+      if(d.column.index===8&&di.saldo!=null&&di.ds<=td){if(di.saldo<0)d.cell.styles.textColor=[185,54,44];else if(di.saldo>0)d.cell.styles.textColor=[21,127,81]}
+      if(d.column.index===9&&['falta','ausente'].includes(di.status))d.cell.styles.textColor=[185,54,44];if(d.column.index===9&&['atraso','incompleto'].includes(di.status))d.cell.styles.textColor=[154,102,0]},
+    didDrawPage:()=>{if(doc.internal.getCurrentPageInfo().pageNumber>1)cab()}});
+  y=doc.lastAutoTable.finalY+5;
+  const novaPag=need=>{if(y+need>H-18){doc.addPage();cab();y=37}};
+  const titulo=t=>{novaPag(12);doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...TEAL);doc.text(t,M,y);y+=4.5};
+  const linha=(t,cor)=>{doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...(cor||INK));const l=doc.splitTextToSize(t,W-2*M);novaPag(l.length*3.6+1);doc.text(l,M,y);y+=l.length*3.6+.8};
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);
+  doc.text('M = marcação manual aprovada (gestor ou RH).  * = registro feito fora da sede (detalhes abaixo).  Tolerância de até 10 minutos por dia (CLT, art. 58, §1º).',M,y);y+=6;
+  // Registros externos
+  if(ext.length){titulo('Registros fora da sede');ext.forEach(x=>linha(`${fmtDate(x.ts.slice(0,10))} às ${x.ts.slice(11,16)} · ${x.endereco||x.local}${x.geo?` · ${x.geo.lat.toFixed(6)}, ${x.geo.lng.toFixed(6)} (±${Math.round(x.geo.acc||0)} m)`:''}`));y+=2}
+  // Ocorrências e justificativas
+  const ini=ym+'-01',fim=ym+'-31';
+  const reqs=S.requests.filter(r=>r.empId===e.id&&r.data<=fim&&(r.ate||r.data)>=ini).sort((x,z)=>x.data<z.data?-1:1);
+  const pend=pendencias(e,ym);
+  if(reqs.length||pend.length){titulo('Ocorrências e justificativas');
+    reqs.forEach(r=>linha(`${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' às '+r.hora:''} · ${reqTit(r)} · ${({pendente:'Em análise',aprovado:'Aprovada',recusado:'Recusada'})[r.status]} · ${r.motivo}${r.resposta?' · Resposta: '+r.resposta:''}`));
+    pend.forEach(({di,a:k})=>linha(`${fmtDate(di.ds)} · ${ANOM[k]} · sem justificativa`,[185,54,44]));y+=2}
+  // Aprovação
+  titulo('Aprovação');
+  if(a&&a.status==='aprovado'){const q=localTs(a.aprovado_em);linha(`Aprovado por ${(a.resumo&&a.resumo.por)||'gestor'} em ${fmtDate(q.slice(0,10))} às ${q.slice(11,16)}.`);if(a.assinatura)linha('Código de verificação: '+a.assinatura,MUTED)}
+  else if(a&&a.status==='devolvido')linha('Devolvido para ajuste: '+(a.observacao||''),[185,54,44]);
+  else linha(ym>=td.slice(0,7)?'Mês em andamento. A folha vai para aprovação do gestor depois do último dia do mês.':'Aguardando aprovação do gestor.',MUTED);
+  // Assinaturas
+  novaPag(26);y=Math.max(y+14,y);
+  const sw=(W-2*M-20)/2;
+  doc.setDrawColor(...MUTED);doc.setLineWidth(.2);doc.line(M,y,M+sw,y);doc.line(M+sw+20,y,W-M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...INK);
+  doc.text(e.nome,M+sw/2,y+4,{align:'center'});doc.text(gestor?gestor.nome:'Gestor imediato',M+sw+20+sw/2,y+4,{align:'center'});
+  doc.setTextColor(...MUTED);doc.setFontSize(7);doc.text('Colaborador',M+sw/2,y+7.5,{align:'center'});doc.text('Gestor / RH',M+sw+20+sw/2,y+7.5,{align:'center'});
+  // Rodapé em todas as páginas
+  const n=doc.internal.getNumberOfPages(),agora=tstr(NOW());
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.line(M,H-11,W-M,H-11);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);
+    doc.text(`Registro de Ponto FTVTEC · gerado em ${fmtDate(agora.slice(0,10))} às ${agora.slice(11,16)}`,M,H-7);doc.text(`Página ${i} de ${n}`,W-M,H-7,{align:'right'})}
+  const nome=`folha_ponto_${(e.nome||'colaborador').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase()}_${ym}.pdf`;
+  doc.save(nome);toast('PDF gerado: '+nome);
+}
 function saveFile(name,text){
   const blob=new Blob(['﻿'+text],{type:name.endsWith('.csv')?'text/csv':'text/plain'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Arquivo gerado: '+name);
@@ -1609,6 +1703,7 @@ document.addEventListener('click',async ev=>{
     case 'receipt':showReceipt(t.dataset.id);break;
     case 'new-req':reqForm(t.dataset.tipo||'ajuste',t.dataset.data?{data:t.dataset.data,ate:t.dataset.data}:null);break;
     case 'csv-mirror':csvMirror(t.dataset.emp,t.dataset.ym);break;
+    case 'pdf-mirror':{t.disabled=true;try{await pdfMirror(t.dataset.emp,t.dataset.ym)}finally{t.disabled=false}break}
     case 'csv-report':csvReport(t.dataset.ym);break;
     case 'afd':afd(t.dataset.ym);break;
     case 'emp-form':empForm(t.dataset.id);break;
