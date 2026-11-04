@@ -1581,12 +1581,18 @@ async function pdfMirror(eid,ym){
   cab();
   // Dados do colaborador
   let y=37;
-  doc.setDrawColor(...LINE);doc.setFillColor(...SOFT);doc.roundedRect(M,y,W-2*M,22,2,2,'FD');
-  const campo=(r,v,x,yy)=>{doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(r.toUpperCase(),x,yy);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...INK);doc.text(String(v||'Não informado'),x,yy+4.2,{maxWidth:(W-2*M)/3-6})};
-  const c1=M+4,c2=M+4+(W-2*M)/3,c3=M+4+2*(W-2*M)/3;
-  campo('Colaborador',e.nome,c1,y+6);campo('Matrícula',e.matricula,c2,y+6);campo('Cargo',e.cargo,c3,y+6);
-  campo('Vínculo',e.vinculo||e.depto,c1,y+15);campo('Jornada',`${j.nome} · ${j.ini} às ${j.fim}`,c2,y+15);campo('Setor / gestor',setor?(setor.nome+(gestor?' · '+gestor.nome:'')):'Não definido',c3,y+15);
-  y+=27;
+  // Dados do colaborador: cada campo quebra a linha dentro da própria coluna e a caixa cresce junto
+  const colW=(W-2*M-8)/3,cx=[M+4,M+4+colW,M+4+2*colW],LH=3.9;
+  const linhasDe=v=>{doc.setFont('helvetica','bold');doc.setFontSize(9);return doc.splitTextToSize(String(v||'Não informado'),colW-5)};
+  const grupos=[[['Colaborador',e.nome],['Matrícula',e.matricula],['Cargo',e.cargo]],
+                [['Vínculo',e.vinculo||e.depto],['Jornada',`${j.nome} · ${j.ini} às ${j.fim}`],['Setor / gestor',setor?(setor.nome+(gestor?' · '+gestor.nome:'')):'Não definido']]]
+                .map(g=>g.map(([r,v])=>({r,l:linhasDe(v)})));
+  const altG=grupos.map(g=>5.6+Math.max(...g.map(c=>c.l.length))*LH);
+  const altBox=3.5+altG.reduce((t,h)=>t+h,0)+1;
+  doc.setDrawColor(...LINE);doc.setFillColor(...SOFT);doc.roundedRect(M,y,W-2*M,altBox,2,2,'FD');
+  let yy=y+5.5;
+  grupos.forEach((g,gi)=>{g.forEach((c,ci)=>{doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(c.r.toUpperCase(),cx[ci],yy);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...INK);doc.text(c.l,cx[ci],yy+4.2,{lineHeightFactor:1.2})});yy+=altG[gi]});
+  y+=altBox+5;
   // Resumo
   const kp=[['Trabalhado',dur(ms.worked)],['Previsto',dur(ms.exp)],['Saldo',saldoTxt(ms.saldo)],['Horas extras',dur(ms.extra)],['Atrasos',String(ms.atrasos)],['Faltas',String(ms.faltas)]];
   const kw=(W-2*M-5*3)/6;
