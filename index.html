@@ -655,12 +655,22 @@ const motivoTxt=p=>{const t=(p.motivo&&p.motivo.length?p.motivo:(p.foraCerca?['e
 const idxDia=p=>marksOf(p.empId,p.ts.slice(0,10)).findIndex(x=>x.id===p.id);
 const parDe=p=>{const ms=marksOf(p.empId,p.ts.slice(0,10)),i=ms.findIndex(x=>x.id===p.id);return i>0&&i%2===1?ms[i-1]:null};
 const marcado=p=>!!p&&p.revisao==='pendente'&&(p.motivo.length>0||p.foraCerca);
-const motivoPeriodo=p=>{const q=parDe(p);const m=new Set([...(p.motivo||[]),...(p.foraCerca?['externo']:[]),...(q?(q.motivo||[]):[]),...(q&&q.foraCerca?['externo']:[])]);return {motivo:[...m],foraCerca:m.has('externo')}};
-const precisaJust=p=>{if(idxDia(p)%2!==1)return false;const q=parDe(p);return (marcado(p)||marcado(q))&&!p.just&&!(q&&q.just)};
+/* Justificativa por dia: é pedida só na última saída do dia e vale para todos os registros do dia.
+   Dia útil: a 4ª marcação (ou a saída de uma jornada extra). Sábado, domingo e feriado: qualquer saída
+   (pode ser só entrada e saída). Dia já encerrado: a última saída registrada. */
+const diaUtil=(e,ds)=>{const j=jor(e.jornadaId);return j.dias.includes(parseD(ds).getDay())&&!holOf(ds)};
+const ehUltimaSaida=p=>{const ms=marksOf(p.empId,p.ts.slice(0,10)),i=ms.findIndex(x=>x.id===p.id);if(i<0||i%2!==1)return false;
+  if(ms.slice(i+1).some((x,k)=>(i+1+k)%2===1))return false;
+  const e=emp(p.empId),ds=p.ts.slice(0,10);if(!e)return i>=3;
+  return !diaUtil(e,ds)||i>=3||ds<today()};
+const pendDia=p=>marksOf(p.empId,p.ts.slice(0,10)).filter(x=>x.ts<=p.ts&&marcado(x)&&!x.just);
+const motivoPeriodo=p=>{const m=new Set();[p,...pendDia(p)].forEach(x=>{(x.motivo||[]).forEach(y=>m.add(y));if(x.foraCerca)m.add('externo')});return {motivo:[...m],foraCerca:m.has('externo')}};
+const precisaJust=p=>ehUltimaSaida(p)&&pendDia(p).length>0;
 function justMarcHTML(p){
-  const mp=motivoPeriodo(p),q=parDe(p),ext=mp.motivo.includes('externo'),ex=mp.motivo.includes('extra');
-  return `<form data-form="just-marc" data-id="${p.id}" class="just-marc"><div class="jm-h">${IC.pin}<div><b>${esc(motivoTxt(mp))}: justifique este período${q?` (${q.ts.slice(11,16)} às ${p.ts.slice(11,16)})`:''}</b><span>${ext&&ex?'Você registrou o ponto fora da sede e fora do horário da sua jornada.':ext?'Você registrou o ponto fora da sede da emissora.':'Você registrou o ponto fora do horário da sua jornada.'} O seu gestor vai analisar a justificativa${ext?' junto com a localização':''}.</span></div></div>
-    <div class="field"><label for="jm-${p.id}">Justificativa</label><textarea class="input" id="jm-${p.id}" name="texto" rows="3" minlength="10" maxlength="1000" required placeholder="${ext?'Ex.: gravação externa na Câmara Municipal, pauta da manhã':'Ex.: cobertura do evento da prefeitura, autorizada pela chefia'}"></textarea></div>
+  const mp=motivoPeriodo(p),ext=mp.motivo.includes('externo'),ex=mp.motivo.includes('extra');
+  const ms=marksOf(p.empId,p.ts.slice(0,10)).filter(x=>x.ts<=p.ts),fds=(()=>{const e=emp(p.empId);return e&&!diaUtil(e,p.ts.slice(0,10))})();
+  return `<form data-form="just-marc" data-id="${p.id}" class="just-marc"><div class="jm-h">${IC.pin}<div><b>${esc(motivoTxt(mp))}: justifique o dia ${p.ts.slice(8,10)}/${p.ts.slice(5,7)}${ms.length?` (${ms.map(x=>x.ts.slice(11,16)).join(' · ')})`:''}</b><span>${ext&&ex?'Você registrou o ponto fora da sede e fora do horário da sua jornada.':ext?'Você registrou o ponto fora da sede da emissora.':'Você registrou o ponto fora do horário da sua jornada.'} O seu gestor vai analisar a justificativa${ext?' junto com a localização':''}.</span></div></div>
+    <div class="field"><label for="jm-${p.id}">Justificativa</label><textarea class="input" id="jm-${p.id}" name="texto" rows="3" minlength="10" maxlength="1000" required placeholder="${fds?'Ex.: cobertura do evento no Parque da Cidade, das 9h às 13h':ext?'Ex.: gravação externa na Câmara Municipal, pauta da manhã':'Ex.: cobertura do evento da prefeitura, autorizada pela chefia'}"></textarea></div>
     <div class="err"></div><button class="btn primary" type="submit">Enviar justificativa</button></form>`;
 }
 function justMarcForm(id){const p=S.punches.find(x=>x.id===id);if(!p)return;openModal(`<div class="modal-h"><div><div class="eyebrow">${fmtDate(p.ts.slice(0,10))} às ${p.ts.slice(11,16)}</div><h3>Justificar registro</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${justMarcHTML(p)}</div>`)}
@@ -819,7 +829,10 @@ function dayInfo(e,ds){
   const incomplete=marks.length%2===1&&ds<td;
   let credit=worked;if(just&&sched)credit=Math.max(worked,exp);
   let saldo=credit-exp;if(Math.abs(saldo)<=j.tol&&sched)saldo=0;
-  const late=sched&&marks[0]?tsMin(marks[0].ts)-toMin(j.ini):0;const atraso=late>5?late:0;
+  // Jornada flexível: entrar mais tarde não é atraso se a carga horária do dia for cumprida
+  const late=sched&&marks[0]?tsMin(marks[0].ts)-toMin(j.ini):0;
+  const fechado=ds<td||(marks.length>=4&&!open&&!incomplete);
+  const atraso=late>5&&!(fechado&&credit>=exp-j.tol)&&!(ds===td&&!fechado)?late:0;
   let status;
   if(ds>td)status='futuro';
   else if(hol)status=marks.length?'extra':'feriado';
@@ -2035,7 +2048,7 @@ document.addEventListener('submit',async ev=>{
     const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null});
     if(error||!data||!data.ok){errEl.textContent=error?errMsg(error):(data&&data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const p=mapPunch(data.marcacao);S.punches.push(p);setTimeout(()=>pedirEnderecos([p]),300);
-    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${marcado(p)&&idxDia(p)%2===0?`<div class="notice"><b>${esc(motivoTxt(p))}.</b> Ao registrar a saída deste período, você vai justificar o motivo para o seu gestor.</div>`:''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
+    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${marcado(p)&&!precisaJust(p)?`<div class="notice"><b>${esc(motivoTxt(p))}.</b> Você justifica o dia todo de uma vez, ao registrar a última saída.</div>`:''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
     return;
   }
   if(k==='convite'){const g=f.querySelector('[data-act="google-convite"]');if(g)g.click();if(btn)btn.disabled=false;return}
