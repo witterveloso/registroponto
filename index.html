@@ -529,6 +529,13 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .g-obs-v b{color:var(--info)}
 .g-obs-box{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);margin-bottom:12px}
 .rev-acts{flex-wrap:wrap;justify-content:flex-end}
+.reset-o{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:.85rem}
+.reset-o>div{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.reset-o ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+.check-row{display:flex;gap:8px;align-items:flex-start;font-size:.88rem}
+.check-row input{margin-top:3px}
+.btn.warn-btn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+@media (max-width:520px){.reset-o{grid-template-columns:1fr}}
 </style>
 </head><body>
 <div id="app"></div>
@@ -1304,6 +1311,16 @@ function inviteForm(id){
     <div class="err" id="u-err"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Gerar link de convite</button></div></form>`);
 }
+function resetForm(id){
+  const e=emp(id);if(!e)return;
+  openModal(`<form data-form="u-reset" data-id="${id}"><div class="modal-h"><div><div class="eyebrow">Reiniciar acesso</div><h3>${esc(e.nome)}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <p class="muted">Use quando a pessoa não consegue entrar, trocou de celular, entrou com a conta errada ou a conta ficou com algum problema. Ela volta a ficar <b>sem acesso</b> e começa de novo pelo convite.</p>
+    <div class="reset-o"><div><b>O que é desfeito</b><ul><li>O login atual (Google ou senha)</li><li>As sessões abertas em todos os aparelhos</li><li>Convites pendentes</li></ul></div><div><b>O que fica guardado</b><ul><li>Cadastro, setor e jornada</li><li>Todas as marcações de ponto</li><li>Solicitações, aprovações e histórico</li></ul></div></div>
+    <label class="check-row"><input type="checkbox" name="pin" checked> Apagar também o PIN de ponto (a pessoa cria um novo no próximo acesso)</label>
+    <div class="field"><label for="rs-m">Motivo (fica registrado na auditoria)</label><input class="input" id="rs-m" name="motivo" maxlength="300" placeholder="Ex.: não conseguia entrar com o Google" required></div>
+    <div class="err" id="u-err"></div>
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn danger" type="submit">Reiniciar e gerar novo convite</button></div></form>`);
+}
 function inviteLinkModal(e,email,tok){
   const link=SITE+'?convite='+tok;
   const msg=`Olá, ${first(e.nome)}! Você foi convidado(a) para o Registro de Ponto da ${S.company.razao||'empresa'}. Entre pelo link abaixo com o seu Google corporativo (${email}). O link vale por 7 dias e só pode ser usado uma vez:\n${link}`;
@@ -1346,6 +1363,7 @@ function rhUsuarios(){
       ${!e.ativo?`<button class="btn sm" data-act="u-block" data-id="${e.id}" data-v="1">Desbloquear</button>`:
         !e.temAcesso?`<button class="btn sm primary" data-act="u-invite" data-id="${e.id}">${conviteDe(e.id)?'Reenviar convite':'Enviar convite'}</button>${conviteDe(e.id)?`<button class="btn sm ghost" data-act="u-invite-cancel" data-id="${e.id}">Cancelar convite</button>`:''}<button class="btn sm ghost" data-act="u-pass" data-id="${e.id}">Acesso por senha</button>`:
         `<button class="btn sm" data-act="u-pass" data-id="${e.id}">Redefinir senha</button>`}
+      ${e.ativo&&e.id!==ME.id&&(e.temAcesso||e.temPin)?`<button class="btn sm warn-btn" data-act="u-reset" data-id="${e.id}" title="Desfaz o login, desconecta os aparelhos e envia um novo convite">Reiniciar acesso</button>`:''}
       ${e.ativo&&e.id!==ME.id?`<button class="btn sm ghost" data-act="u-role" data-id="${e.id}">${e.papel==='rh'?'Tirar de admin':'Tornar admin'}</button>`:''}
       ${e.ativo&&e.id!==ME.id?`<button class="btn sm danger" data-act="u-block" data-id="${e.id}" data-v="0">Bloquear</button>`:''}
       <button class="btn sm ghost" data-act="emp-form" data-id="${e.id}">Editar dados</button>
@@ -1587,6 +1605,7 @@ function pwForm(){
     <div class="capture" style="gap:6px"><div class="big-clock" style="font-size:2.6rem">${clockHTML()}</div><div style="color:var(--deep-muted);font-size:.85rem">${esc(ME.nome)}</div></div>
     <div class="geo-st" id="geo-st" data-st="busca">${IC.pin.replace('<svg','<svg width="16" height="16"')}<span>Obtendo a sua localização pelo GPS…</span></div>
     <button type="button" class="btn sm" id="geo-retry" data-act="geo-retry" hidden>Tentar de novo</button>
+    ${(()=>{try{return !matchMedia('(pointer:coarse)').matches}catch(e){return false}})()?'<div class="notice" style="border-color:var(--warn)"><b>Você está num computador.</b> A maioria dos computadores não tem GPS e informa uma posição aproximada, que o sistema recusa. Se o registro não passar, bata o ponto pelo celular.</div>':''}
     <div class="field"><label for="pw-s">Seu PIN de ponto (6 números)</label><input class="input mono pin-in" id="pw-s" name="senha" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="off" required autofocus></div>
     <div class="err" id="pw-err"></div>
     <div class="notice">O horário oficial é definido pelo servidor e a localização do aparelho fica gravada junto com o registro.</div>
@@ -1908,6 +1927,7 @@ document.addEventListener('click',async ev=>{
     case 'pin-alterar':MODE='pin';render();break;
     case 'pin-cancel':MODE='emp';render();break;
     case 'u-invite':inviteForm(t.dataset.id);break;
+    case 'u-reset':resetForm(t.dataset.id);break;
     case 'u-invite-cancel':{t.disabled=true;const {error}=await sb.rpc('cancelar_convite',{p_colab:t.dataset.id});if(error)throw error;await loadAll();render();toast('Convite cancelado');break}
     case 'audit-reload':UI.audit=null;render();break;
     case 'dom-add':domForm();break;
@@ -2189,6 +2209,11 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='addp'){const {error}=await sb.rpc('incluir_marcacao',{p_colab:f.dataset.id,p_ts:brIso(fd.data,fd.hora),p_obs:fd.obs});if(error)throw error;await loadAll({punches:true});closeModal();toast('Marcação incluída');return}
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
+  if(k==='u-reset'){
+    const id=f.dataset.id;if(!fd.motivo||fd.motivo.trim().length<3)throw new Error('Informe o motivo.');
+    await invoke({acao:'reiniciar',colaborador_id:id,apagar_pin:!!fd.pin,motivo:fd.motivo.trim()});
+    await loadAll();toast('Acesso reiniciado. Agora gere o novo convite.');inviteForm(id);return;
+  }
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
     const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(150,Math.max(20,+fd.precisao||100)),atualizado_em:new Date().toISOString()}).eq('id',1);
