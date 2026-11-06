@@ -787,7 +787,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||100,abAnalista:co.abonada_analista||null,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||100,abAnalistas:co.abonada_analistas||[],ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -1440,13 +1440,14 @@ function sugereLogin(nome){
 }
 function genPass(){const L='abcdefghjkmnpqrstuvwxyz',N='23456789',c=L+N;const a=new Uint32Array(10);crypto.getRandomValues(a);const s=Array.from(a,x=>c[x%c.length]);s[a[0]%10]=L[a[1]%L.length];s[(a[0]+3)%10]=N[a[2]%N.length];return s.join('')}
 
-const analistaAb=empId=>{const a=S.config.abAnalista&&emp(S.config.abAnalista);return a&&a.ativo!==false&&a.papel==='rh'&&a.id!==empId?a:null};
+const analistasAb=empId=>(S.config.abAnalistas||[]).map(emp).filter(a=>a&&a.ativo!==false&&a.papel==='rh'&&a.id!==empId);
+const nomesAb=l=>l.map(a=>a.nome.split(' ').slice(0,2).join(' ')).join(' ou ');
 function abRHacts(r,e){
   const s=saldoAbonadas(e,+r.data.slice(0,4)),g=gestorDe(e);
   const info=`<div class="muted ab-rh-info">${DOW[parseD(r.data).getDay()]} · ${s.ab.length} de ${s.c.ano} pedidas em ${s.ano} · ${+r.data.slice(5,7)<=6?s.s1:s.s2} de ${s.c.sem} no semestre${s.at?` · ${s.at} atestado(s) no ano`:''} · vínculo: ${esc(e.vinculo||'não informado')} · admissão ${e.admissao?fmtDate(e.admissao):'não informada'}</div>`;
   if(r.etapa==='gestor')return `${info}${rhLib(r)}<div class="row" style="justify-content:flex-end">${g?`<span class="chip warn">Aguardando ${esc(g.nome.split(' ')[0])} (gestor)</span>`:`<span class="muted" style="font-size:.8rem">Setor sem gestor: o RH faz a aprovação final</span><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button>`}</div>`;
-  const an=analistaAb(r.empId);
-  if(an&&(!ME||ME.id!==an.id))return `${info}<div class="row" style="justify-content:flex-end"><span class="chip warn">Em análise com ${esc(an.nome.split(' ').slice(0,2).join(' '))}</span></div>`;
+  const an=analistasAb(r.empId);
+  if(an.length&&(!ME||!an.some(a=>a.id===ME.id)))return `${info}<div class="row" style="justify-content:flex-end"><span class="chip warn">Em análise com ${esc(nomesAb(an))}</span></div>`;
   return `${info}<div class="row" style="justify-content:flex-end"><button class="btn sm danger" data-act="ab-lib" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="ab-lib" data-id="${r.id}" data-v="liberado">Encaminhar ao gestor</button></div>`;
 }
 function libForm(id,v){
@@ -1532,7 +1533,7 @@ function rhConfig(){
     <div class="grid2"><div class="field"><label for="c-raz">Razão social</label><input class="input" id="c-raz" name="razao" value="${esc(co.razao)}" required></div><div class="field"><label for="c-cnpj">CNPJ</label><input class="input mono" id="c-cnpj" name="cnpj" value="${esc(co.cnpj)}" required></div><div class="field"><label for="c-loc">Nome do local principal</label><input class="input" id="c-loc" name="local" value="${esc(co.local)}" required></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Localização da sede</div><div class="grid2">
       <div class="field"><label for="c-at">Conferir se o registro foi feito na sede</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada (usa os locais de trabalho abaixo)</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
-      <div class="field"><label for="c-an">Análise das faltas abonadas</label><select class="input" id="c-an" name="abAnalista"><option value="">Qualquer pessoa do RH</option>${S.emps.filter(x=>x.papel==='rh'&&x.ativo!==false).map(x=>`<option value="${x.id}" ${c.abAnalista===x.id?'selected':''}>${esc(x.nome)}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Recebe os pedidos de abonada primeiro, analisa e encaminha ao gestor da área.</span></div>
+      <div class="field"><label>Análise das faltas abonadas</label>${S.emps.filter(x=>x.papel==='rh'&&x.ativo!==false).map(x=>`<label class="chk" style="display:flex;gap:.5rem;align-items:center;font-weight:400"><input type="checkbox" name="an_${x.id}" value="1" ${(c.abAnalistas||[]).includes(x.id)?'checked':''}>${esc(x.nome)}</label>`).join('')}<span class="muted" style="font-size:.78rem">Qualquer um dos marcados pode analisar e encaminhar ao gestor da área. Sem ninguém marcado, qualquer pessoa do RH analisa. Em férias, desmarque quem se ausenta.</span></div>
       <div class="field"><label for="c-pre">Precisão mínima da localização</label><select class="input" id="c-pre" name="precisao">${[[50,'50 m (muito rigorosa, só GPS ao ar livre)'],[100,'100 m (recomendada)'],[150,'150 m (tolerante)']].map(([v,t])=>`<option value="${v}" ${+c.precisao===v?'selected':''}>${t}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Leituras com margem de erro maior são recusadas. Evita registros com posição aproximada pela internet, que pode cair em outra cidade.</span></div>
       <div class="field"><label for="c-blq">Registro fora da sede</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
@@ -1663,7 +1664,7 @@ function reqForm(tipo,keep){
     <div class="ab-mini"><div><b>${s.disp}</b><span>disponíveis no ano</span></div><div><b>${s.dispSem}</b><span>neste semestre</span></div><div><b>${s.pend}</b><span>em análise</span></div></div>
     <div class="field"><label for="r-d">Dia da abonada</label><input class="input" type="date" id="r-d" name="data" value="${esc(d)}" min="${(()=>{const m=mesesAbertos().find(x=>!mesFechado(ME,x))||td.slice(0,7);const ini=m+'-01';return s.lib&&s.lib>ini?s.lib:ini})()}" required></div>
     <div class="field"><label for="r-m">Observação para o gestor (opcional)</label><textarea class="input" id="r-m" name="motivo" rows="3" maxlength="500" placeholder="Ex.: assunto pessoal">${esc(k.motivo||'')}</textarea></div>
-    <div class="notice">Até <b>${c.ano} por ano</b> e <b>${c.sem} por semestre</b>, com pelo menos <b>${c.intervalo} dias</b> entre uma e outra${c.atestado?'. Cada atestado médico aprovado no ano desconta uma abonada':''}. A abonada vale para o dia inteiro. O pedido passa primeiro pela análise do <b>RH${(()=>{const a=analistaAb(ME&&ME.id);return a?' ('+esc(a.nome.split(' ')[0])+')':''})()}</b>, que encaminha ao seu <b>gestor</b> para aprovar ou recusar. Você recebe um aviso com a decisão.</div>
+    <div class="notice">Até <b>${c.ano} por ano</b> e <b>${c.sem} por semestre</b>, com pelo menos <b>${c.intervalo} dias</b> entre uma e outra${c.atestado?'. Cada atestado médico aprovado no ano desconta uma abonada':''}. A abonada vale para o dia inteiro. O pedido passa primeiro pela análise do <b>RH${(()=>{const a=analistasAb(ME&&ME.id);return a.length?' ('+esc(a.map(x=>x.nome.split(' ')[0]).join(' ou '))+')':''})()}</b>, que encaminha ao seu <b>gestor</b> para aprovar ou recusar. Você recebe um aviso com a decisão.</div>
     <div class="err" id="req-err"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit" ${s.disp?'':'disabled'}>Enviar pedido</button></div></form>`);
     return;
@@ -2255,7 +2256,7 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(150,Math.max(20,+fd.precisao||100)),abonada_analista:fd.abAnalista||null,atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(150,Math.max(20,+fd.precisao||100)),abonada_analistas:Object.keys(fd).filter(k=>k.startsWith('an_')).map(k=>k.slice(3)),atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
