@@ -1365,7 +1365,7 @@ function holVisto(h){if(h.visto_em||!ME||h.colaborador_id!==ME.id)return;h.visto
 function baixarBlob(blob,nome){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function holHTML(h){
   const d=h.dados||{};const L=d.lancamentos||[];
-  return `<div class="hol-doc"><div class="hol-doc-h"><div class="eyebrow">Demonstrativo de pagamento · ${esc(h.titulo)}</div><b>${esc(d.empresa||'')}</b><span>${esc(d.endereco||'')}</span><span>CNPJ ${esc(d.cnpj||'')} · Referência ${esc(d.ref||'')}</span></div>
+  return `<div class="hol-doc"><div class="hol-doc-h"><div class="eyebrow">Demonstrativo de pagamento · ${esc(h.titulo)}</div><b>${esc((d.empresa||'').toUpperCase())}</b><span>${esc(d.endereco||'')}</span><span>CNPJ ${esc(d.cnpj||'')} · Referência ${esc(d.ref||'')}</span></div>
   <div class="hol-doc-f"><div><span>Código</span><b>${esc(d.cod||'')}</b></div><div class="g"><span>Nome</span><b>${esc(d.nome||'')}</b></div><div><span>Cargo</span><b>${esc(d.cargo||'-')}</b></div><div><span>Admissão</span><b>${esc(d.admissao||'-')}</b></div></div>
   <div class="tablewrap no-resp"><table class="hol-t"><thead><tr><th>Cód.</th><th>Descrição</th><th class="num">Ref.</th><th class="num">Vencimentos</th><th class="num">Descontos</th></tr></thead><tbody>${L.map(x=>`<tr><td class="mono">${esc(x.cod)}</td><td>${esc(x.desc)}</td><td class="num mono">${x.ref!=null?fmtNum(x.ref):''}</td><td class="num mono">${x.venc!=null?fmtNum(x.venc):''}</td><td class="num mono">${x.descto!=null?fmtNum(x.descto):''}</td></tr>`).join('')}</tbody></table></div>
   <div class="hol-tot"><div><span>Total de vencimentos</span><b class="mono">${fmtNum(d.totVenc)}</b></div><div><span>Total de descontos</span><b class="mono">${fmtNum(d.totDesc)}</b></div><div class="liq"><span>Valor líquido</span><b class="mono">${fmtNum(d.liquido)}</b></div></div>
@@ -1383,7 +1383,7 @@ async function holPDF(h){
     try{doc.addImage(LOGO,'PNG',M+2.5,7.5,25,15)}catch(x){}
     doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('Holerite',M+36,14);
     doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(200,214,230);
-    doc.text(String(d.empresa||S.company.razao||'FTVTEC'),M+36,19.5);doc.text('CNPJ '+String(d.cnpj||S.company.cnpj||''),M+36,24);
+    doc.text(String(d.empresa||S.company.razao||'FTVTEC').toUpperCase(),M+36,19.5);doc.text('CNPJ '+String(d.cnpj||S.company.cnpj||''),M+36,24);
     doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...GLOW);doc.text(mes.charAt(0).toUpperCase()+mes.slice(1),W-M,14,{align:'right'});
     doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(200,214,230);doc.text('Competência '+(d.ref||''),W-M,19.5,{align:'right'});
     doc.text('Pagamento: '+h.titulo,W-M,24,{align:'right'});
