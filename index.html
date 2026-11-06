@@ -654,8 +654,10 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
   return a.status==='aprovado'?`<span class="chip ${alt?'warn':'ok'}">${alt?'Alterado após aprovação':'Aprovado'}</span>`:'<span class="chip bad">Devolvido</span>'}
 
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
-const avFoto=e=>e&&e.foto?`<img src="${esc(e.foto)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:e&&e.face?`<img src="${e.face.thumb}" alt="">`:initials(e?e.nome:'');
-const mapEmp=c=>({foto:c.foto_url||'',id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin,abonada:c.direito_abonada!==false});
+// A foto do Google só é lida da sessão de quem está logado: nada é guardado no banco
+const fotoDe=e=>e&&ME&&e.id===ME.id?ME.foto:'';
+const avFoto=e=>fotoDe(e)?`<img src="${esc(fotoDe(e))}" alt="" referrerpolicy="no-referrer" loading="lazy">`:e&&e.face?`<img src="${e.face.thumb}" alt="">`:initials(e?e.nome:'');
+const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin,abonada:c.direito_abonada!==false});
 const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,gObs:p.revisao_obs||'',gObsEm:p.revisao_obs_em||null,gObsPor:p.revisao_obs_por||'',revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em),etapa:r.etapa||null,rhPor:r.rh_por||'',rhEm:r.rh_em||null,rhObs:r.rh_obs||''});
 const reqSt=r=>r.status==='pendente'&&r.tipo==='abonada'?(r.etapa==='gestor'?['Aguardando gestor','warn']:['Em análise no RH','warn']):REQS[r.status];
@@ -720,7 +722,7 @@ function geoBloco(p){
     <a class="btn sm" href="${mapsUrl(p.geo)}" target="_blank" rel="noopener noreferrer">Ver no mapa</a></div>`;
 }
 const extPin=x=>(x.foraCerca||(x.motivo&&x.motivo.length))&&x.geo?` <button type="button" class="ext-pin" data-act="receipt" data-id="${x.id}" title="Registro externo: ver localização">${IC.pin}</button>`:'';
-const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,face_em,setor_id,trocar_senha,tem_pin,direito_abonada,foto_url';
+const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,face_em,setor_id,trocar_senha,tem_pin,direito_abonada';
 const monthStart=ym=>new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);
 async function fetchPunches(fromDate,toDate){
   let out=[];
@@ -2091,7 +2093,7 @@ async function afterLogin(){
   }
   if(!data.ativo){await sb.auth.signOut();BOOT.msg='Seu acesso não está ativo. Fale com o RH.';MODE='login';return}
   ME=mapEmp(data);ME.google=provs.includes('google')&&!provs.includes('email');
-  {const md=user.user_metadata||{};const gf=String(md.avatar_url||md.picture||'');if(gf&&/^https:\/\/[a-z0-9-]+\.googleusercontent\.com\//.test(gf)&&gf!==ME.foto){ME.foto=gf;sb.rpc('atualizar_minha_foto',{p_url:gf})}}
+  {const md=user.user_metadata||{};const gf=String(md.avatar_url||md.picture||'');ME.foto=/^https:\/\/[a-z0-9-]+\.googleusercontent\.com\//.test(gf)?gf:''}
   if(perfil==='rh'&&ME.papel!=='rh'){await sb.auth.signOut();ME=null;BOOT.msg='Seu usuário não tem acesso ao painel do RH. Escolha "Colaborador" para bater o ponto.';MODE='login';return}
   safeStorage.setItem('batida.perfil',perfil);
   if(perfil==='rh'){
