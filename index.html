@@ -785,6 +785,7 @@ async function loadAll(opts){
   opts=opts||{};
   const [fe,lo]=await Promise.all([sb.from('feriados').select('id,data,nome,tipo').order('data'),sb.from('locais').select('id,nome,lat,lng,raio').order('nome')]);
   S.feriados=fe.data||[];S.locais=lo.data||[];S.hol={};S.feriados.forEach(f=>S.hol[f.data]=f.nome);
+  if(ME&&ME.papel==='rh'){try{const rr=await sb.from('redes_sede').select('id,ip,descricao,local_id,ativo,criado_em').order('criado_em');S.redes=rr.data||[]}catch(e){S.redes=[]}}else S.redes=[];
   const [e,j,c,st]=await Promise.all([
     sb.from('empresa').select('*').eq('id',1).single(),
     sb.from('jornadas').select('*').order('criado_em'),
@@ -1777,6 +1778,9 @@ function rhConfig(){
   <section class="card"><div class="card-h"><div><h3>Domínios do Google corporativo</h3><div class="muted" style="font-size:.82rem">Convites só são aceitos para e-mails destes domínios.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="dom-add">Adicionar domínio</button></div>
     <div class="list">${(c.dominios||[]).map(d=>`<div class="li"><div class="grow"><div class="ttl mono">@${esc(d)}</div></div><button class="btn sm danger" data-act="dom-del" data-v="${esc(d)}">Excluir</button></div>`).join('')||listaVazia('Nenhum domínio cadastrado. Sem domínio, o convite aceita qualquer conta Google, desde que seja exatamente o e-mail informado pelo RH.')}</div></section>
 
+  <section class="card"><div class="card-h"><div><h3>Rede da sede</h3><div class="muted" style="font-size:.82rem">Registros feitos por uma conexão cadastrada aqui valem como na sede, mesmo sem GPS (útil em computadores). Cadastre estando conectado na rede da empresa.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="rede-add">Cadastrar a rede desta conexão</button></div>
+    <div class="list">${(S.redes||[]).map(r=>`<div class="li"><div class="grow"><div class="ttl">${esc(r.descricao)}${r.ativo?'':' (desativada)'}</div><div class="sub mono">${esc(r.ip)}${r.local_id&&(S.locais||[]).find(l=>l.id===r.local_id)?' · '+esc((S.locais.find(l=>l.id===r.local_id)).nome):''}</div></div><button class="btn sm" data-act="rede-tog" data-id="${r.id}">${r.ativo?'Desativar':'Ativar'}</button><button class="btn sm danger" data-act="rede-del" data-id="${r.id}">Excluir</button></div>`).join('')||listaVazia('Nenhuma rede cadastrada.')}</div></section>
+
   <section class="card"><div class="card-h"><div><h3>Locais de trabalho</h3><div class="muted" style="font-size:.82rem">A marcação vale dentro do raio de qualquer local da lista.</div></div><div class="spacer"></div><button class="btn sm primary" data-act="local-form">Adicionar local</button></div>
     <div class="list">${(S.locais||[]).map(l=>`<div class="li"><div class="grow"><div class="ttl">${esc(l.nome)}</div><div class="sub mono">${(+l.lat).toFixed(5)}, ${(+l.lng).toFixed(5)} · raio ${l.raio} m</div></div><button class="btn sm" data-act="local-form" data-id="${l.id}">Editar</button><button class="btn sm danger" data-act="local-del" data-id="${l.id}">Excluir</button></div>`).join('')||listaVazia('Nenhum local cadastrado. Adicione a sede para ativar a cerca virtual.')}</div></section>
 
@@ -1855,7 +1859,7 @@ function getGeo(onUpd,tempo){return new Promise(res=>{
     e=>{erro=e&&e.code===1?'negado':'falha';if(e&&e.code===1)fim()},
     {enableHighAccuracy:true,maximumAge:0,timeout:20000})}catch(e){fim()}
 })}
-function geoStatus(g,final){const el=$('#geo-st');if(!el)return;const lim=precisaoMax();const sp=el.querySelector('span');
+function geoStatus(g,final){const el=$('#geo-st');if(!el||UI.naRede)return;const lim=precisaoMax();const sp=el.querySelector('span');
   if(!g||g.erro){el.dataset.st=final?'erro':'busca';sp.textContent=g&&g.erro==='negado'?'A localização está bloqueada. Toque no cadeado ao lado do endereço do site e permita a localização.':(final?'Não foi possível obter a localização. Ative o GPS do aparelho e tente de novo.':'Obtendo a sua localização pelo GPS…');return}
   const a=Math.round(g.acc);
   if(a<=lim){el.dataset.st='ok';sp.textContent=`Localização precisa capturada (margem de ${a} m)`}
@@ -1878,6 +1882,7 @@ function pwForm(){
     <div class="notice">O horário oficial é definido pelo servidor e a localização do aparelho fica gravada junto com o registro.</div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Registrar ponto</button></div></form>`);
   setTimeout(()=>{const i=$('#pw-s');if(i)i.focus()},50);
+  UI.naRede=false;UI.redeP=Promise.resolve(sb.rpc('minha_rede_sede')).then(r=>{const d=r&&r.data;if(d&&d.na_rede){UI.naRede=true;UI.geoP=null;const el=$('#geo-st');if(el){el.dataset.st='ok';el.querySelector('span').textContent='Rede da sede reconhecida: o ponto será registrado sem GPS.'}const b=$('#geo-retry');if(b)b.hidden=true}return UI.naRede}).catch(()=>false);
   iniciarGeo();
 }
 
@@ -2206,6 +2211,9 @@ document.addEventListener('click',async ev=>{
     case 'local-form':localForm(t.dataset.id);break;
     case 'lo-geo':{toast('Buscando sua localização…');const g=await getGeo(null,15000);if(!g||g.erro){toast('Não foi possível obter a localização. Permita o acesso no navegador.');break}$('#lo-lat').value=g.lat.toFixed(6);$('#lo-lng').value=g.lng.toFixed(6);toast(`Localização preenchida (margem de ${Math.round(g.acc)} m)${g.acc>50?'. Para mais precisão, use o celular no local':''}`);break}
     case 'local-del':{const l=S.locais.find(x=>x.id===t.dataset.id);confirmar('Excluir local',`O local <b>${esc(l.nome)}</b> deixa de valer para a cerca virtual.${S.locais.length===1&&S.config.cerca.ativa?' Como é o único local, a cerca virtual deixa de bloquear ou revisar marcações até você cadastrar outro.':''}`,'local-del-ok',l.id);break}
+    case 'rede-add':{t.disabled=true;const {data,error}=await sb.rpc('cadastrar_rede_sede',{p_descricao:'Rede da sede',p_local:null});t.disabled=false;if(error)throw error;await loadAll();render();toast('Rede cadastrada: '+(data&&data.ip||''));break}
+    case 'rede-tog':{const r=(S.redes||[]).find(x=>x.id===t.dataset.id);if(!r)break;const {error}=await sb.from('redes_sede').update({ativo:!r.ativo}).eq('id',r.id);if(error)throw error;await loadAll();render();break}
+    case 'rede-del':{const {error}=await sb.from('redes_sede').delete().eq('id',t.dataset.id);if(error)throw error;await loadAll();render();toast('Rede excluída');break}
     case 'local-del-ok':{t.disabled=true;const {error}=await sb.from('locais').delete().eq('id',t.dataset.id);if(error)throw error;await loadAll();closeModal();toast('Local excluído');break}
     case 'jor-del':{const j=jor(t.dataset.id);const uso=S.emps.filter(e=>e.jornadaId===j.id).length;if(uso){toast(`Essa jornada está em uso por ${uso} colaborador(es). Troque a jornada deles antes de excluir.`);break}confirmar('Excluir jornada',`A jornada <b>${esc(j.nome)}</b> será excluída.`,'jor-del-ok',j.id);break}
     case 'jor-del-ok':{t.disabled=true;const {error}=await sb.from('jornadas').delete().eq('id',t.dataset.id);if(error)throw new Error(/foreign|violat/i.test(error.message)?'Essa jornada está em uso. Troque a jornada dos colaboradores antes de excluir.':error.message);await loadAll();closeModal();toast('Jornada excluída');break}
@@ -2310,6 +2318,15 @@ document.addEventListener('submit',async ev=>{
     const lim=precisaoMax();
     // Se já houver leitura precisa, registra na hora; senão espera o GPS terminar de afinar
     let geo=UI.geoBest&&UI.geoBest.acc<=lim?UI.geoBest:null;
+    if(!geo&&UI.redeP){await UI.redeP}
+    if(!geo&&UI.naRede){
+      if(btn)btn.textContent='Registrando…';
+      const rr=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:null,p_lng:null,p_acc:null});
+      if(rr.error||!rr.data||!rr.data.ok){errEl.textContent=rr.error?errMsg(rr.error):(rr.data&&rr.data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
+      const p=mapPunch(rr.data.marcacao);S.punches.push(p);
+      $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${marcado(p)&&!precisaJust(p)?`<div class="notice"><b>${esc(motivoTxt(p))}.</b> Você justifica o dia todo de uma vez, ao registrar a última saída.</div>`:''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
+      return;
+    }
     if(!geo){if(btn)btn.textContent='Aguardando o GPS…';if(!UI.geoP)iniciarGeo();geo=await UI.geoP;}
     const volta=m=>{errEl.textContent=m;if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}};
     if(!geo||geo.erro){UI.geoP=null;volta(geo&&geo.erro==='negado'?'A localização está bloqueada neste navegador. Toque no cadeado ao lado do endereço do site, permita a localização e tente de novo.':'Não foi possível obter a sua localização. Ative o GPS do aparelho e toque em Tentar de novo.');return}
