@@ -560,6 +560,7 @@ const SB_KEY='sb_publishable__JQhHNgikP7uGF-iVFCdsQ_Q6pOaU6C';
 const LOGIN_DOM='batida-ponto.app';
 const mem={};
 const safeStorage={getItem:k=>{try{return localStorage.getItem(k)}catch(e){return k in mem?mem[k]:null}},setItem:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}},removeItem:k=>{try{localStorage.removeItem(k)}catch(e){delete mem[k]}}};
+const storageOk=()=>{try{const k='__t'+Math.random();localStorage.setItem(k,'1');localStorage.removeItem(k);return true}catch(e){return false}};
 const SITE=location.origin+location.pathname;
 const ss={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return mem['s:'+k]||null}},set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){mem['s:'+k]=v}},del:k=>{try{sessionStorage.removeItem(k)}catch(e){delete mem['s:'+k]}}};
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storage:safeStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});
@@ -2134,6 +2135,7 @@ async function boot(){
   try{const t0=Date.now();const {data}=await sb.rpc('agora');if(data)OFF=new Date(data).getTime()-Math.round((t0+Date.now())/2)}catch(e){}
   let sess=null;
   try{const {data}=await sb.auth.getSession();sess=data.session}catch(e){BOOT.msg=errMsg(e)}
+  if(qs.get('code')&&!sess&&!BOOT.msg)BOOT.msg=storageOk()?'O Google confirmou a sua conta, mas este navegador não concluiu a entrada no sistema. Feche esta aba, abra o endereço direto no Safari ou no Chrome (fora de WhatsApp, e-mail ou aba privada) e toque em Entrar com Google uma vez só, sem atualizar a página.':'Este navegador está bloqueando o armazenamento do site (aba privada ou "Bloquear todos os cookies"), por isso o acesso não conclui. Abra o endereço em aba normal do Safari ou do Chrome e tente de novo.';
   if(location.search)history.replaceState(null,'',location.pathname);
   const pend=getConvite();
   try{
@@ -2186,7 +2188,7 @@ document.addEventListener('click',async ev=>{
     case 'home':UI.navOpen=false;closeModal();if(MODE==='rh'){UI.rhTab='painel'}else{UI.empTab='ponto';UI.teamEmp=null}render();window.scrollTo(0,0);break;
     case 'nav-toggle':UI.navOpen=!UI.navOpen;render();break;
     case 'u-new':userForm();break;
-    case 'google':{safeStorage.setItem('batida.perfil',UI.loginRole);const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
+    case 'google':{if(!storageOk())throw new Error('Este navegador está bloqueando o armazenamento do site (aba privada ou "Bloquear todos os cookies"). Abra o endereço no Safari ou Chrome em aba normal e tente de novo.');safeStorage.setItem('batida.perfil',UI.loginRole);const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
     case 'google-convite':{const f=t.closest('form');if(inApp()){$('#l-err').textContent='Abra o link no Chrome ou no Safari para entrar com o Google.';break}if(!f.termos.checked){$('#l-err').textContent='Para continuar, aceite o termo de uso e privacidade.';break}ss.set('batida.aceite',JSON.stringify({termos:true}));safeStorage.setItem('batida.perfil','emp');UI.loginRole='emp';const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE,queryParams:{prompt:'select_account'}}});if(error)throw error;break}
     case 'copiar-link':{const u=linkConvite();try{await navigator.clipboard.writeText(u);toast('Link copiado. Cole no Chrome ou no Safari.')}catch(e){prompt('Copie o link:',u)}break}
     case 'convite-trocar':{try{await invoke({acao:'descartar'})}catch(e){}await sb.auth.signOut();BOOT.conviteErro='';render();break}
