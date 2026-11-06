@@ -536,6 +536,7 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .check-row input{margin-top:3px}
 .btn.warn-btn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
 @media (max-width:520px){.reset-o{grid-template-columns:1fr}}
+.ab-rh-info{font-size:.8rem;margin:4px 0 8px}
 </style>
 </head><body>
 <div id="app"></div>
@@ -646,7 +647,10 @@ function aprovChip(e,ym){const a=aprovDe(e.id,ym);if(!a)return '<span class="chi
 const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slice(0,5),intFim:j.int_fim.slice(0,5),fim:j.fim.slice(0,5),dias:j.dias||[],tol:j.tol});
 const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin,abonada:c.direito_abonada!==false});
 const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,gObs:p.revisao_obs||'',gObsEm:p.revisao_obs_em||null,gObsPor:p.revisao_obs_por||'',revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
-const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em)});
+const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em),etapa:r.etapa||null,rhPor:r.rh_por||'',rhEm:r.rh_em||null,rhObs:r.rh_obs||''});
+const reqSt=r=>r.status==='pendente'&&r.tipo==='abonada'?(r.etapa==='gestor'?['Aguardando gestor','warn']:['Em análise no RH','warn']):REQS[r.status];
+const gestorDe=e=>{const st=e&&S.setores.find(x=>x.id===e.setorId);const g=st&&st.gestor_id&&st.gestor_id!==e.id?emp(st.gestor_id):null;return g&&g.ativo!==false?g:null};
+const rhLib=r=>r.rhPor?`<div class="rev-just g-obs-v"><b>Liberada pelo RH · ${esc(r.rhPor)}${r.rhEm?' · '+fmtDate(localTs(r.rhEm).slice(0,10)):''}</b>${r.rhObs?`<span>${esc(r.rhObs)}</span>`:''}</div>`:'';
 
 let LOADED_FROM=null;
 const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco,motivo_revisao,justificativa,justificado_em,revisado_em,revisao_obs,revisao_obs_em,revisao_obs_por';
@@ -758,8 +762,8 @@ function abonadaCard(e){
       <div class="ab-big"><span class="v">${s.disp}</span><span class="l">disponíveis de ${s.c.ano} no ano</span></div>
       <div class="ab-sem"><div><span class="l">1º semestre</span><span class="pips">${pip(s.s1,s.c.sem)}</span><span class="n">${s.s1} de ${s.c.sem}</span></div><div><span class="l">2º semestre</span><span class="pips">${pip(s.s2,s.c.sem)}</span><span class="n">${s.s2} de ${s.c.sem}</span></div></div>
     </div>
-    <div class="card-b" style="padding-top:0"><p class="muted" style="font-size:.8rem;margin:0">${s.pend?`${s.pend} pedido(s) aguardando o gestor. `:''}${s.at?`${s.at} abonada(s) descontada(s) por atestado médico no ano. `:''}Regras: até ${s.c.sem} por semestre, intervalo mínimo de ${s.c.intervalo} dias entre uma e outra${s.lib&&s.lib>today()?`, primeira a partir de ${fmtDate(s.lib)}`:''}. O pedido vai para o seu gestor aprovar.</p>
-    ${s.ab.length?`<div class="list" style="margin-top:8px">${s.ab.sort((a,b)=>a.data<b.data?-1:1).map(r=>`<div class="li"><div class="grow"><div class="ttl">${fmtDate(r.data)} · ${DOW[parseD(r.data).getDay()]}</div></div><span class="chip ${REQS[r.status][1]}">${REQS[r.status][0]}</span></div>`).join('')}</div>`:''}</div></section>`;
+    <div class="card-b" style="padding-top:0"><p class="muted" style="font-size:.8rem;margin:0">${s.pend?`${s.pend} pedido(s) em análise. `:''}${s.at?`${s.at} abonada(s) descontada(s) por atestado médico no ano. `:''}Regras: até ${s.c.sem} por semestre, intervalo mínimo de ${s.c.intervalo} dias entre uma e outra${s.lib&&s.lib>today()?`, primeira a partir de ${fmtDate(s.lib)}`:''}. O pedido passa pelo RH e depois pelo seu gestor.</p>
+    ${s.ab.length?`<div class="list" style="margin-top:8px">${s.ab.sort((a,b)=>a.data<b.data?-1:1).map(r=>`<div class="li"><div class="grow"><div class="ttl">${fmtDate(r.data)} · ${DOW[parseD(r.data).getDay()]}</div></div><span class="chip ${reqSt(r)[1]}">${reqSt(r)[0]}</span></div>`).join('')}</div>`:''}</div></section>`;
 }
 async function loadAprov(){const r=await sb.from('aprovacoes_ponto').select('*');if(r.error)throw r.error;S.aprov=r.data}
 // Carrega cadastros e configurações. As marcações só são buscadas de novo quando pedido,
@@ -1121,10 +1125,10 @@ function empEquipe(){
   }
   const rows=team.map(e=>({e,ms:monthSummary(e,ym),a:aprovDe(e.id,ym)}));
   const ids=new Set(minhaEquipe().map(x=>x.id));
-  const manuais=S.requests.filter(r=>['ajuste','justificativa','abono','abonada'].includes(r.tipo)&&r.status==='pendente'&&ids.has(r.empId)).sort((a,b)=>a.criado<b.criado?-1:1);
+  const manuais=S.requests.filter(r=>['ajuste','justificativa','abono','abonada'].includes(r.tipo)&&r.status==='pendente'&&(r.tipo!=='abonada'||r.etapa==='gestor')&&ids.has(r.empId)).sort((a,b)=>a.criado<b.criado?-1:1);
   const soRH=S.requests.filter(r=>['atestado','licenca','ferias'].includes(r.tipo)&&r.status==='pendente'&&ids.has(r.empId));
   const boxMan=manuais.length?`<section class="card"><div class="card-h"><h3>Solicitações da equipe aguardando sua decisão</h3><span class="chip warn">${manuais.length}</span></div>
-    ${manuais.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário informado <b class="mono">'+esc(r.hora)+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.tipo==='abonada'?(()=>{const s=saldoAbonadas(e,+r.data.slice(0,4));return `<div class="muted" style="font-size:.8rem;margin-top:2px">${DOW[parseD(r.data).getDay()]} · ${s.ab.length} de ${s.c.ano} abonadas pedidas em ${s.ano} (incluindo esta) · ${+r.data.slice(5,7)<=6?s.s1:s.s2} de ${s.c.sem} no semestre</div>`})():''}${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}</div>
+    ${manuais.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário informado <b class="mono">'+esc(r.hora)+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.tipo==='abonada'?rhLib(r):''}${r.tipo==='abonada'?(()=>{const s=saldoAbonadas(e,+r.data.slice(0,4));return `<div class="muted" style="font-size:.8rem;margin-top:2px">${DOW[parseD(r.data).getDay()]} · ${s.ab.length} de ${s.c.ano} abonadas pedidas em ${s.ano} (incluindo esta) · ${+r.data.slice(5,7)<=6?s.s1:s.s2} de ${s.c.sem} no semestre</div>`})():''}${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}</div>
     <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join('')}</section>`:'';
   const revEq=S.punches.filter(p=>p.revisao==='pendente'&&ids.has(p.empId)).sort((a,b)=>a.ts<b.ts?-1:1);
   const boxRev=revEq.length?`<section class="card"><div class="card-h"><h3>Registros fora da sede e jornadas extras</h3><span class="chip warn">${revEq.length}</span></div>${revEq.map(revCard).join('')}</section>`:'';
@@ -1194,7 +1198,7 @@ function empEspelho(e){
   <p class="notice">Em vermelho, as marcações incluídas por ajuste do RH. A tolerância diária segue o art. 58, §1º da CLT: até 10 minutos por dia não geram saldo.</p>`;
 }
 const REQT={abonada:'Falta abonada',ajuste:'Marcação manual',justificativa:'Justificativa de ausência',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
-const REQD={abonada:'Direito do servidor: até 6 no ano, 3 por semestre',ajuste:'Esqueceu de registrar ou registrou no horário errado',justificativa:'Falta, atraso, saída antecipada ou outra situação',atestado:'Envie o atestado para abonar o dia',licenca:'Maternidade, paternidade, casamento, luto e outras',abono:'Cursos, compromissos e ausências legais',ferias:'Peça o período ao RH'};
+const REQD={abonada:'Análise do RH e liberação do gestor',ajuste:'Esqueceu de registrar ou registrou no horário errado',justificativa:'Falta, atraso, saída antecipada ou outra situação',atestado:'Envie o atestado para abonar o dia',licenca:'Maternidade, paternidade, casamento, luto e outras',abono:'Cursos, compromissos e ausências legais',ferias:'Peça o período ao RH'};
 const LICT=['Licença médica','Licença-maternidade','Licença-paternidade','Casamento (gala)','Falecimento de familiar (nojo)','Doação de sangue','Serviço eleitoral ou júri','Outra'];
 const reqTit=r=>REQT[r.tipo]+(r.subtipo?' · '+r.subtipo:'');
 const anexosHTML=r=>(r.anexos||[]).map(a=>`<button type="button" class="anx" data-act="anexo" data-path="${esc(a.path)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>${esc(a.nome)}</span></button>`).join('');
@@ -1204,7 +1208,7 @@ function reqLine(r,showEmp){
   return `<div class="li"><div class="grow"><div class="ttl">${showEmp?esc(e.nome)+' · ':''}${esc(reqTit(r))}</div>
   <div class="sub">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · '+r.hora:''} · ${esc(r.motivo)}</div>
   ${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}
-  ${r.resposta&&r.status!=='cancelado'?`<div class="sub"><b>Comentário do gestor:</b> ${esc(r.resposta)}</div>`:''}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${!showEmp&&r.status==='pendente'&&ME&&r.empId===ME.id?`<button class="btn sm ghost" data-act="req-cancel" data-id="${r.id}">Cancelar</button>`:''}<span class="chip ${REQS[r.status][1]}">${REQS[r.status][0]}</span></div></div>`;
+  ${r.resposta&&r.status!=='cancelado'?`<div class="sub"><b>Comentário do gestor:</b> ${esc(r.resposta)}</div>`:''}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${!showEmp&&r.status==='pendente'&&ME&&r.empId===ME.id?`<button class="btn sm ghost" data-act="req-cancel" data-id="${r.id}">Cancelar</button>`:''}<span class="chip ${reqSt(r)[1]}">${reqSt(r)[0]}</span></div></div>`;
 }
 function empSolic(e){
   const mine=S.requests.filter(r=>r.empId===e.id).sort((a,b)=>a.criado<b.criado?1:-1);
@@ -1436,6 +1440,22 @@ function sugereLogin(nome){
 }
 function genPass(){const L='abcdefghjkmnpqrstuvwxyz',N='23456789',c=L+N;const a=new Uint32Array(10);crypto.getRandomValues(a);const s=Array.from(a,x=>c[x%c.length]);s[a[0]%10]=L[a[1]%L.length];s[(a[0]+3)%10]=N[a[2]%N.length];return s.join('')}
 
+function abRHacts(r,e){
+  const s=saldoAbonadas(e,+r.data.slice(0,4)),g=gestorDe(e);
+  const info=`<div class="muted ab-rh-info">${DOW[parseD(r.data).getDay()]} · ${s.ab.length} de ${s.c.ano} pedidas em ${s.ano} · ${+r.data.slice(5,7)<=6?s.s1:s.s2} de ${s.c.sem} no semestre${s.at?` · ${s.at} atestado(s) no ano`:''} · vínculo: ${esc(e.vinculo||'não informado')} · admissão ${e.admissao?fmtDate(e.admissao):'não informada'}</div>`;
+  if(r.etapa==='gestor')return `${info}${rhLib(r)}<div class="row" style="justify-content:flex-end">${g?`<span class="chip warn">Aguardando ${esc(g.nome.split(' ')[0])} (gestor)</span>`:`<span class="muted" style="font-size:.8rem">Setor sem gestor: o RH faz a aprovação final</span><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button>`}</div>`;
+  return `${info}<div class="row" style="justify-content:flex-end"><button class="btn sm danger" data-act="ab-lib" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="ab-lib" data-id="${r.id}" data-v="liberado">Liberar para o gestor</button></div>`;
+}
+function libForm(id,v){
+  const r=S.requests.find(x=>x.id===id);if(!r)return;const e=emp(r.empId)||{nome:'Colaborador'},g=gestorDe(e);
+  openModal(`<form data-form="ab-lib" data-id="${id}" data-v="${v}"><div class="modal-h"><div><div class="eyebrow">Falta abonada · análise do RH</div><h3>${v==='liberado'?'Liberar para o gestor':'Recusar pedido'}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+    <div>${esc(e.nome)} · ${fmtDate(r.data)} (${DOW[parseD(r.data).getDay()]})</div>
+    ${r.motivo&&r.motivo!=='Falta abonada'?`<div class="notice"><b>Observação do colaborador:</b> ${esc(r.motivo)}</div>`:''}
+    <div class="notice">${v==='liberado'?(g?`O pedido segue para <b>${esc(g.nome)}</b>, gestor da área, que faz a aprovação final. O colaborador é avisado quando o gestor decidir.`:'O setor não tem gestor cadastrado: a aprovação final fica com o RH, na própria fila de Aprovações.'):'O colaborador recebe um aviso com o motivo da recusa. O pedido não vai para o gestor.'}</div>
+    <div class="field"><label for="l-o">Comentário do RH${v==='recusado'?' (obrigatório)':' (opcional, o gestor vê)'}</label><textarea class="input" id="l-o" name="obs" rows="3" maxlength="1000" ${v==='recusado'?'required':''} placeholder="${v==='liberado'?'Ex.: saldo conferido, dentro das regras':'Ex.: limite do semestre já atingido'}"></textarea></div>
+    <div class="err"></div>
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='liberado'?'primary':'danger'}" type="submit">${v==='liberado'?'Liberar para o gestor':'Recusar'}</button></div></form>`);
+}
 function rhAprov(){
   const reqs=S.requests.filter(r=>r.status==='pendente').sort((a,b)=>a.criado<b.criado?-1:1);
   const pun=S.punches.filter(p=>p.revisao==='pendente');
@@ -1443,7 +1463,7 @@ function rhAprov(){
   return `<div class="page-h"><div><div class="eyebrow">Fila de trabalho</div><h1>Aprovações</h1></div></div>
   <section class="card"><div class="card-h"><h3>Solicitações dos colaboradores</h3><span class="chip warn">${reqs.length}</span></div>
   ${reqs.length?reqs.map(r=>{const e=emp(r.empId)||{nome:'Colaborador'};return `<div class="req"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div style="font-weight:600">${esc(e.nome)} · ${esc(reqTit(r))}</div><div class="muted" style="font-size:.85rem">${fmtDate(r.data)}${r.ate&&r.ate!==r.data?' a '+fmtDate(r.ate):''}${r.hora?' · horário solicitado <b class="mono">'+r.hora+'</b>':''}</div><div style="font-size:.88rem;margin-top:4px">${esc(r.motivo)}</div>${r.anexos.length?`<div class="anx-list">${anexosHTML(r)}</div>`:''}<div class="muted" style="font-size:.75rem;margin-top:4px">Enviado em ${fmtDate(r.criado.slice(0,10))} às ${r.criado.slice(11,16)}</div></div>
-  <div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div></div>`}).join(''):'<div class="empty">Nenhuma solicitação aguardando.</div>'}</section>
+  ${r.tipo==='abonada'?abRHacts(r,e):`<div class="row"><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button></div>`}</div>`}).join(''):'<div class="empty">Nenhuma solicitação aguardando.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Registros fora da sede e jornadas extras</h3><span class="chip info">${pun.length}</span></div>
   ${pun.length?pun.map(revCard).join(''):'<div class="empty">Nenhuma marcação aguardando revisão.</div>'}</section>
   <section class="card"><div class="card-h"><h3>Decisões recentes</h3></div><div class="list">${hist.map(r=>reqLine(r,true)).join('')||'<div class="empty">Sem histórico.</div>'}</div></section>`;
@@ -1636,12 +1656,12 @@ function reqForm(tipo,keep){
     if(!d){const x=NOW();for(let i=1;i<40;i++){const y=new Date(x.getFullYear(),x.getMonth(),x.getDate()+i);const ds=dstr(y);if(jor(ME.jornadaId).dias.includes(y.getDay())&&!holOf(ds)){d=ds;break}}}
     openModal(`<form data-form="req"><div class="modal-h"><div><div class="eyebrow">Aprovação do gestor</div><h3>Solicitar falta abonada</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div class="field"><label for="r-t">Tipo</label><select class="input" id="r-t" name="tipo" data-change="reqtipo">${tiposOk.map(([x,v])=>`<option value="${x}" ${x===tipo?'selected':''}>${v}</option>`).join('')}</select></div>
-    <div class="ab-mini"><div><b>${s.disp}</b><span>disponíveis no ano</span></div><div><b>${s.dispSem}</b><span>neste semestre</span></div><div><b>${s.pend}</b><span>aguardando gestor</span></div></div>
+    <div class="ab-mini"><div><b>${s.disp}</b><span>disponíveis no ano</span></div><div><b>${s.dispSem}</b><span>neste semestre</span></div><div><b>${s.pend}</b><span>em análise</span></div></div>
     <div class="field"><label for="r-d">Dia da abonada</label><input class="input" type="date" id="r-d" name="data" value="${esc(d)}" min="${(()=>{const m=mesesAbertos().find(x=>!mesFechado(ME,x))||td.slice(0,7);const ini=m+'-01';return s.lib&&s.lib>ini?s.lib:ini})()}" required></div>
     <div class="field"><label for="r-m">Observação para o gestor (opcional)</label><textarea class="input" id="r-m" name="motivo" rows="3" maxlength="500" placeholder="Ex.: assunto pessoal">${esc(k.motivo||'')}</textarea></div>
-    <div class="notice">Até <b>${c.ano} por ano</b> e <b>${c.sem} por semestre</b>, com pelo menos <b>${c.intervalo} dias</b> entre uma e outra${c.atestado?'. Cada atestado médico aprovado no ano desconta uma abonada':''}. A abonada vale para o dia inteiro e só entra na folha depois que o seu <b>gestor aprovar</b>.</div>
+    <div class="notice">Até <b>${c.ano} por ano</b> e <b>${c.sem} por semestre</b>, com pelo menos <b>${c.intervalo} dias</b> entre uma e outra${c.atestado?'. Cada atestado médico aprovado no ano desconta uma abonada':''}. A abonada vale para o dia inteiro. O pedido passa primeiro pelo <b>RH</b>, que confere se pode ser concedida, e depois pelo seu <b>gestor</b>, que faz a liberação. Você recebe um aviso com a decisão.</div>
     <div class="err" id="req-err"></div>
-  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit" ${s.disp?'':'disabled'}>Enviar ao gestor</button></div></form>`);
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit" ${s.disp?'':'disabled'}>Enviar pedido</button></div></form>`);
     return;
   }
   const precisa=tipo==='atestado'||tipo==='licenca';
@@ -1992,6 +2012,7 @@ document.addEventListener('click',async ev=>{
       </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Criar ${n} acesso(s)</button></div></form>`);break}
     case 'add-punch':addPunchForm(t.dataset.id);break;
     case 'req-dec':decideForm(t.dataset.id,t.dataset.v);break;
+    case 'ab-lib':libForm(t.dataset.id,t.dataset.v);break;
     case 'req-cancel':{if(t.dataset.ok!=='1'){t.dataset.ok='1';t.textContent='Confirmar cancelamento';break}const {error}=await sb.rpc('cancelar_solicitacao',{p_id:t.dataset.id});if(error)throw error;await loadReqs();render();toast('Pedido cancelado');break}
     case 'notif-open':notifModal();break;
     case 'geo-retry':iniciarGeo();break;
@@ -2169,7 +2190,7 @@ document.addEventListener('submit',async ev=>{
     const sem=+fd.data.slice(5,7)<=6?s.s1:s.s2;if(sem>=c.sem)throw new Error(`O limite é de ${c.sem} faltas abonadas por semestre.`);
     const perto=s.ab.find(r=>Math.abs((parseD(r.data)-dd)/864e5)<c.intervalo);if(perto)throw new Error(`É preciso um intervalo de pelo menos ${c.intervalo} dias entre faltas abonadas. Você já tem uma em ${fmtDate(perto.data)}.`);
     const {error}=await sb.from('solicitacoes').insert({colaborador_id:ME.id,tipo:'abonada',data:fd.data,ate:fd.data,motivo:(fd.motivo||'').trim()||'Falta abonada'});
-    if(error)throw error;await loadAll();closeModal();UI.empTab='solic';render();toast('Pedido de falta abonada enviado ao seu gestor');return;
+    if(error)throw error;await loadAll();closeModal();UI.empTab='solic';render();toast('Pedido de falta abonada enviado ao RH');return;
   }
   if(k==='req'){
     const inp=f.querySelector('[name=anexo]');const fls=inp?[...inp.files]:[];
@@ -2220,6 +2241,7 @@ document.addEventListener('submit',async ev=>{
     await loadAll();closeModal();toast('Jornada salva');return;
   }
   if(k==='addp'){const {error}=await sb.rpc('incluir_marcacao',{p_colab:f.dataset.id,p_ts:brIso(fd.data,fd.hora),p_obs:fd.obs});if(error)throw error;await loadAll({punches:true});closeModal();toast('Marcação incluída');return}
+  if(k==='ab-lib'){const {error}=await sb.rpc('liberar_abonada',{p_id:f.dataset.id,p_status:f.dataset.v,p_obs:fd.obs||''});if(error)throw error;await loadAll();closeModal();toast(f.dataset.v==='liberado'?'Abonada liberada para o gestor':'Pedido recusado e colaborador avisado');return}
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='u-reset'){
     const id=f.dataset.id;if(!fd.motivo||fd.motivo.trim().length<3)throw new Error('Informe o motivo.');
