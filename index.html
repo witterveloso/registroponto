@@ -650,7 +650,7 @@ const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,me
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em),etapa:r.etapa||null,rhPor:r.rh_por||'',rhEm:r.rh_em||null,rhObs:r.rh_obs||''});
 const reqSt=r=>r.status==='pendente'&&r.tipo==='abonada'?(r.etapa==='gestor'?['Aguardando gestor','warn']:['Em análise no RH','warn']):REQS[r.status];
 const gestorDe=e=>{const st=e&&S.setores.find(x=>x.id===e.setorId);const g=st&&st.gestor_id&&st.gestor_id!==e.id?emp(st.gestor_id):null;return g&&g.ativo!==false?g:null};
-const rhLib=r=>r.rhPor?`<div class="rev-just g-obs-v"><b>Liberada pelo RH · ${esc(r.rhPor)}${r.rhEm?' · '+fmtDate(localTs(r.rhEm).slice(0,10)):''}</b>${r.rhObs?`<span>${esc(r.rhObs)}</span>`:''}</div>`:'';
+const rhLib=r=>r.rhPor?`<div class="rev-just g-obs-v"><b>Análise do RH · ${esc(r.rhPor)}${r.rhEm?' · '+fmtDate(localTs(r.rhEm).slice(0,10)):''}</b>${r.rhObs?`<span>${esc(r.rhObs)}</span>`:''}</div>`:'';
 
 let LOADED_FROM=null;
 const PCOLS='id,colaborador_id,ts,nsr,metodo,score,lat,lng,acc,local,fora_cerca,revisao,obs,hash,endereco,motivo_revisao,justificativa,justificado_em,revisado_em,revisao_obs,revisao_obs_em,revisao_obs_por';
@@ -787,7 +787,7 @@ async function loadAll(opts){
   await loadFotosPendentes();
   const co=e.data;
   S.company={razao:co.razao,cnpj:co.cnpj,local:co.local};
-  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||100,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
+  S.config={cerca:{ativa:co.cerca_ativa,lat:co.cerca_lat,lng:co.cerca_lng,raio:co.cerca_raio,bloquear:co.cerca_bloquear},limiar:+co.limiar,exigirFace:co.revisar_sem_bio,modoSenha:co.modo_senha||'permitida',facial:co.facial_ativo!==false,dominios:co.dominios_google||[],termoVersao:co.termo_versao||'v1',diaFech:+co.dia_fechamento||5,inicioPonto:co.inicio_ponto||'',exigirMfa:co.exigir_mfa!==false,precisao:+co.precisao_max||100,abAnalista:co.abonada_analista||null,ab:{ano:+(co.abonada_ano??6),sem:+(co.abonada_semestre??3),intervalo:+(co.abonada_intervalo??15),carencia:+(co.abonada_carencia??30),atestado:co.abonada_desconta_atestado!==false}};
   S.jornadas=j.data.map(mapJor);
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
@@ -1440,21 +1440,24 @@ function sugereLogin(nome){
 }
 function genPass(){const L='abcdefghjkmnpqrstuvwxyz',N='23456789',c=L+N;const a=new Uint32Array(10);crypto.getRandomValues(a);const s=Array.from(a,x=>c[x%c.length]);s[a[0]%10]=L[a[1]%L.length];s[(a[0]+3)%10]=N[a[2]%N.length];return s.join('')}
 
+const analistaAb=empId=>{const a=S.config.abAnalista&&emp(S.config.abAnalista);return a&&a.ativo!==false&&a.papel==='rh'&&a.id!==empId?a:null};
 function abRHacts(r,e){
   const s=saldoAbonadas(e,+r.data.slice(0,4)),g=gestorDe(e);
   const info=`<div class="muted ab-rh-info">${DOW[parseD(r.data).getDay()]} · ${s.ab.length} de ${s.c.ano} pedidas em ${s.ano} · ${+r.data.slice(5,7)<=6?s.s1:s.s2} de ${s.c.sem} no semestre${s.at?` · ${s.at} atestado(s) no ano`:''} · vínculo: ${esc(e.vinculo||'não informado')} · admissão ${e.admissao?fmtDate(e.admissao):'não informada'}</div>`;
   if(r.etapa==='gestor')return `${info}${rhLib(r)}<div class="row" style="justify-content:flex-end">${g?`<span class="chip warn">Aguardando ${esc(g.nome.split(' ')[0])} (gestor)</span>`:`<span class="muted" style="font-size:.8rem">Setor sem gestor: o RH faz a aprovação final</span><button class="btn sm danger" data-act="req-dec" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="req-dec" data-id="${r.id}" data-v="aprovado">Aprovar</button>`}</div>`;
-  return `${info}<div class="row" style="justify-content:flex-end"><button class="btn sm danger" data-act="ab-lib" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="ab-lib" data-id="${r.id}" data-v="liberado">Liberar para o gestor</button></div>`;
+  const an=analistaAb(r.empId);
+  if(an&&(!ME||ME.id!==an.id))return `${info}<div class="row" style="justify-content:flex-end"><span class="chip warn">Em análise com ${esc(an.nome.split(' ').slice(0,2).join(' '))}</span></div>`;
+  return `${info}<div class="row" style="justify-content:flex-end"><button class="btn sm danger" data-act="ab-lib" data-id="${r.id}" data-v="recusado">Recusar</button><button class="btn sm primary" data-act="ab-lib" data-id="${r.id}" data-v="liberado">Encaminhar ao gestor</button></div>`;
 }
 function libForm(id,v){
   const r=S.requests.find(x=>x.id===id);if(!r)return;const e=emp(r.empId)||{nome:'Colaborador'},g=gestorDe(e);
-  openModal(`<form data-form="ab-lib" data-id="${id}" data-v="${v}"><div class="modal-h"><div><div class="eyebrow">Falta abonada · análise do RH</div><h3>${v==='liberado'?'Liberar para o gestor':'Recusar pedido'}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
+  openModal(`<form data-form="ab-lib" data-id="${id}" data-v="${v}"><div class="modal-h"><div><div class="eyebrow">Falta abonada · análise do RH</div><h3>${v==='liberado'?'Encaminhar ao gestor':'Recusar pedido'}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">
     <div>${esc(e.nome)} · ${fmtDate(r.data)} (${DOW[parseD(r.data).getDay()]})</div>
     ${r.motivo&&r.motivo!=='Falta abonada'?`<div class="notice"><b>Observação do colaborador:</b> ${esc(r.motivo)}</div>`:''}
     <div class="notice">${v==='liberado'?(g?`O pedido segue para <b>${esc(g.nome)}</b>, gestor da área, que faz a aprovação final. O colaborador é avisado quando o gestor decidir.`:'O setor não tem gestor cadastrado: a aprovação final fica com o RH, na própria fila de Aprovações.'):'O colaborador recebe um aviso com o motivo da recusa. O pedido não vai para o gestor.'}</div>
     <div class="field"><label for="l-o">Comentário do RH${v==='recusado'?' (obrigatório)':' (opcional, o gestor vê)'}</label><textarea class="input" id="l-o" name="obs" rows="3" maxlength="1000" ${v==='recusado'?'required':''} placeholder="${v==='liberado'?'Ex.: saldo conferido, dentro das regras':'Ex.: limite do semestre já atingido'}"></textarea></div>
     <div class="err"></div>
-  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='liberado'?'primary':'danger'}" type="submit">${v==='liberado'?'Liberar para o gestor':'Recusar'}</button></div></form>`);
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='liberado'?'primary':'danger'}" type="submit">${v==='liberado'?'Encaminhar ao gestor':'Recusar'}</button></div></form>`);
 }
 function rhAprov(){
   const reqs=S.requests.filter(r=>r.status==='pendente').sort((a,b)=>a.criado<b.criado?-1:1);
@@ -1529,6 +1532,7 @@ function rhConfig(){
     <div class="grid2"><div class="field"><label for="c-raz">Razão social</label><input class="input" id="c-raz" name="razao" value="${esc(co.razao)}" required></div><div class="field"><label for="c-cnpj">CNPJ</label><input class="input mono" id="c-cnpj" name="cnpj" value="${esc(co.cnpj)}" required></div><div class="field"><label for="c-loc">Nome do local principal</label><input class="input" id="c-loc" name="local" value="${esc(co.local)}" required></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Localização da sede</div><div class="grid2">
       <div class="field"><label for="c-at">Conferir se o registro foi feito na sede</label><select class="input" id="c-at" name="ativa"><option value="1" ${c.cerca.ativa?'selected':''}>Ativada (usa os locais de trabalho abaixo)</option><option value="0" ${!c.cerca.ativa?'selected':''}>Desativada</option></select></div>
+      <div class="field"><label for="c-an">Análise das faltas abonadas</label><select class="input" id="c-an" name="abAnalista"><option value="">Qualquer pessoa do RH</option>${S.emps.filter(x=>x.papel==='rh'&&x.ativo!==false).map(x=>`<option value="${x.id}" ${c.abAnalista===x.id?'selected':''}>${esc(x.nome)}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Recebe os pedidos de abonada primeiro, analisa e encaminha ao gestor da área.</span></div>
       <div class="field"><label for="c-pre">Precisão mínima da localização</label><select class="input" id="c-pre" name="precisao">${[[50,'50 m (muito rigorosa, só GPS ao ar livre)'],[100,'100 m (recomendada)'],[150,'150 m (tolerante)']].map(([v,t])=>`<option value="${v}" ${+c.precisao===v?'selected':''}>${t}</option>`).join('')}</select><span class="muted" style="font-size:.78rem">Leituras com margem de erro maior são recusadas. Evita registros com posição aproximada pela internet, que pode cair em outra cidade.</span></div>
       <div class="field"><label for="c-blq">Registro fora da sede</label><select class="input" id="c-blq" name="bloquear"><option value="0" ${!c.cerca.bloquear?'selected':''}>Registrar e enviar para revisão</option><option value="1" ${c.cerca.bloquear?'selected':''}>Bloquear a marcação</option></select></div></div></div>
     <div><div class="eyebrow" style="margin-bottom:10px">Registro de ponto</div><div class="grid2">
@@ -1659,7 +1663,7 @@ function reqForm(tipo,keep){
     <div class="ab-mini"><div><b>${s.disp}</b><span>disponíveis no ano</span></div><div><b>${s.dispSem}</b><span>neste semestre</span></div><div><b>${s.pend}</b><span>em análise</span></div></div>
     <div class="field"><label for="r-d">Dia da abonada</label><input class="input" type="date" id="r-d" name="data" value="${esc(d)}" min="${(()=>{const m=mesesAbertos().find(x=>!mesFechado(ME,x))||td.slice(0,7);const ini=m+'-01';return s.lib&&s.lib>ini?s.lib:ini})()}" required></div>
     <div class="field"><label for="r-m">Observação para o gestor (opcional)</label><textarea class="input" id="r-m" name="motivo" rows="3" maxlength="500" placeholder="Ex.: assunto pessoal">${esc(k.motivo||'')}</textarea></div>
-    <div class="notice">Até <b>${c.ano} por ano</b> e <b>${c.sem} por semestre</b>, com pelo menos <b>${c.intervalo} dias</b> entre uma e outra${c.atestado?'. Cada atestado médico aprovado no ano desconta uma abonada':''}. A abonada vale para o dia inteiro. O pedido passa primeiro pelo <b>RH</b>, que confere se pode ser concedida, e depois pelo seu <b>gestor</b>, que faz a liberação. Você recebe um aviso com a decisão.</div>
+    <div class="notice">Até <b>${c.ano} por ano</b> e <b>${c.sem} por semestre</b>, com pelo menos <b>${c.intervalo} dias</b> entre uma e outra${c.atestado?'. Cada atestado médico aprovado no ano desconta uma abonada':''}. A abonada vale para o dia inteiro. O pedido passa primeiro pela análise do <b>RH${(()=>{const a=analistaAb(ME&&ME.id);return a?' ('+esc(a.nome.split(' ')[0])+')':''})()}</b>, que encaminha ao seu <b>gestor</b> para aprovar ou recusar. Você recebe um aviso com a decisão.</div>
     <div class="err" id="req-err"></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit" ${s.disp?'':'disabled'}>Enviar pedido</button></div></form>`);
     return;
@@ -1718,8 +1722,9 @@ function decideForm(id,v){
     <div>${esc(e.nome)} · ${esc(reqTit(r))} · ${fmtDate(r.data)}${r.hora?' às '+r.hora:''}</div>
     ${r.tipo==='ajuste'?`<div class="notice"><b>Justificativa:</b> ${esc(r.motivo)}</div>`:''}
     ${r.tipo==='ajuste'&&v==='aprovado'?`<div class="notice">Uma marcação às <b class="mono">${r.hora}</b> será incluída em ${fmtDate(r.data)}, identificada como marcação manual aprovada.</div>`:''}
-    ${r.tipo!=='ajuste'&&r.motivo?`<div class="notice"><b>Justificativa do colaborador:</b> ${esc(r.motivo)}</div>`:''}
-    <div class="field"><label for="d-r">Comentário do gestor${v==='recusado'?' (obrigatório)':' (opcional)'}</label><textarea class="input" id="d-r" name="resposta" rows="3" maxlength="1000" ${v==='recusado'?'required':''} placeholder="${v==='aprovado'?'Ex.: ciente, combinado com a coordenação':'Explique o motivo da recusa'}"></textarea><span class="muted" style="font-size:.76rem">O colaborador vê o comentário na solicitação e recebe um aviso.</span></div>
+    ${r.tipo!=='ajuste'&&r.motivo&&r.motivo!=='Falta abonada'?`<div class="notice"><b>${r.tipo==='abonada'?'Observação':'Justificativa'} do colaborador:</b> ${esc(r.motivo)}</div>`:''}
+    ${r.tipo==='abonada'?rhLib(r):''}
+    <div class="field"><label for="d-r">${r.tipo==='abonada'?'Justificativa do gestor':'Comentário do gestor'}${v==='recusado'?' (obrigatória)':' (opcional)'}</label><textarea class="input" id="d-r" name="resposta" rows="3" maxlength="1000" ${v==='recusado'?'required':''} placeholder="${v==='aprovado'?'Ex.: ciente, combinado com a coordenação':'Explique o motivo da recusa'}"></textarea><span class="muted" style="font-size:.76rem">O colaborador vê o comentário na solicitação e recebe um aviso.</span></div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn ${v==='aprovado'?'primary':'danger'}" type="submit">${v==='aprovado'?'Aprovar':'Recusar'}</button></div></form>`);
 }
 
@@ -2241,7 +2246,7 @@ document.addEventListener('submit',async ev=>{
     await loadAll();closeModal();toast('Jornada salva');return;
   }
   if(k==='addp'){const {error}=await sb.rpc('incluir_marcacao',{p_colab:f.dataset.id,p_ts:brIso(fd.data,fd.hora),p_obs:fd.obs});if(error)throw error;await loadAll({punches:true});closeModal();toast('Marcação incluída');return}
-  if(k==='ab-lib'){const {error}=await sb.rpc('liberar_abonada',{p_id:f.dataset.id,p_status:f.dataset.v,p_obs:fd.obs||''});if(error)throw error;await loadAll();closeModal();toast(f.dataset.v==='liberado'?'Abonada liberada para o gestor':'Pedido recusado e colaborador avisado');return}
+  if(k==='ab-lib'){const {error}=await sb.rpc('liberar_abonada',{p_id:f.dataset.id,p_status:f.dataset.v,p_obs:fd.obs||''});if(error)throw error;await loadAll();closeModal();toast(f.dataset.v==='liberado'?'Pedido encaminhado ao gestor':'Pedido recusado e colaborador avisado');return}
   if(k==='dec'){const {error}=await sb.rpc('decidir_solicitacao',{p_id:f.dataset.id,p_status:f.dataset.v,p_resposta:fd.resposta||(f.dataset.v==='aprovado'?'Aprovado.':'')});if(error)throw error;await loadAll({punches:true});closeModal();toast(f.dataset.v==='aprovado'?'Solicitação aprovada':'Solicitação recusada');return}
   if(k==='u-reset'){
     const id=f.dataset.id;if(!fd.motivo||fd.motivo.trim().length<3)throw new Error('Informe o motivo.');
@@ -2250,7 +2255,7 @@ document.addEventListener('submit',async ev=>{
   }
   if(k==='cfg'){
     if(fd.ativa==='1'&&!(S.locais||[]).length)throw new Error('Para ativar a cerca virtual, adicione pelo menos um local de trabalho.');
-    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(150,Math.max(20,+fd.precisao||100)),atualizado_em:new Date().toISOString()}).eq('id',1);
+    const {error}=await sb.from('empresa').update({razao:fd.razao.trim(),cnpj:fd.cnpj.trim(),local:fd.local.trim(),cerca_ativa:fd.ativa==='1',cerca_bloquear:fd.bloquear==='1',modo_senha:fd.modoSenha==='revisao'?'revisao':'permitida',facial_ativo:false,exigir_mfa:fd.mfa==='1',dia_fechamento:Math.min(10,Math.max(1,+fd.diaFech||5)),inicio_ponto:fd.inicioPonto||null,precisao_max:Math.min(150,Math.max(20,+fd.precisao||100)),abonada_analista:fd.abAnalista||null,atualizado_em:new Date().toISOString()}).eq('id',1);
     if(error)throw error;await loadAll();render();toast('Configurações salvas');return;
   }
   }catch(err){showErr(errMsg(err));if(btn)btn.disabled=false}
