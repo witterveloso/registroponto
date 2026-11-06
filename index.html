@@ -537,6 +537,14 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .btn.warn-btn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
 @media (max-width:520px){.reset-o{grid-template-columns:1fr}}
 .ab-rh-info{font-size:.8rem;margin:4px 0 8px}
+
+.hol-li{flex-wrap:wrap;gap:12px}
+.ico-pdf{flex:none;width:40px;height:40px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,var(--surface-2));color:var(--accent);display:grid;place-items:center;font-size:.68rem;font-weight:700;letter-spacing:.04em}
+.hol-acts{flex-wrap:wrap;gap:8px;margin-left:auto}
+@media (max-width:560px){.hol-acts{width:100%;margin-left:0}.hol-acts .btn{flex:1}}
+.hol-doc{display:flex;flex-direction:column;gap:12px}.hol-doc-h{display:flex;flex-direction:column;gap:2px;font-size:.85rem}.hol-doc-f{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px 16px;padding:10px 12px;background:var(--surface-2);border-radius:10px}.hol-doc-f span,.hol-tot span,.hol-bases span{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.hol-doc-f b,.hol-bases b{font-size:.9rem}.hol-tot{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:flex-end}.hol-tot .liq{background:color-mix(in srgb,var(--accent) 12%,var(--surface-2));padding:6px 12px;border-radius:8px}.hol-tot b{font-size:1rem}.hol-bases{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px 14px;border-top:1px solid var(--line);padding-top:10px}.hol-t{min-width:480px}@media (max-width:560px){.hol-doc-f{grid-template-columns:1fr 1fr}.hol-doc-f .g{grid-column:1/-1}}
+.hol-pv{display:flex;flex-direction:column;gap:12px;align-items:center;max-height:68vh;overflow:auto;background:var(--surface-2);border-radius:10px;padding:8px}
+.hol-pv canvas{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(0,0,0,.18)}
 </style>
 </head><body>
 <div id="app"></div>
@@ -609,6 +617,7 @@ const IC={
  face:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="9.5" cy="10" r=".6" fill="currentColor"/><circle cx="14.5" cy="10" r=".6" fill="currentColor"/><path d="M9 15c1.6 1.3 4.4 1.3 6 0"/></svg>',
  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
  table:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg>',
+ doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
  inbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 13.5 6.5 5h11l2.5 8.5V19H4z"/><path d="M4 13.5h4.5l1 2h5l1-2H20"/></svg>',
  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>',
  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
@@ -778,7 +787,7 @@ async function loadAll(opts){
     sb.from('colaboradores').select(CCOLS).order('nome'),
     sb.from('setores').select('*').order('nome')]);
   for(const x of [e,j,c,st])if(x.error)throw x.error;
-  await Promise.all([loadReqs(),loadAprov(),loadNotif()]);
+  await Promise.all([loadReqs(),loadAprov(),loadNotif(),loadHol()]);
   if(MODE==='rh'||isRHsession()){const cv=await sb.from('convites').select('id,colaborador_id,email,criado_em,expira_em,usado_em,cancelado_em').order('criado_em',{ascending:false});S.convites=cv.data||[]}else S.convites=[];
   if(!LOADED_FROM||opts.punches){
     const d=NOW();const from=LOADED_FROM||new Date(d.getFullYear(),d.getMonth()-1,1);
@@ -1005,8 +1014,8 @@ function viewLogin(){
 /* ================= COLABORADOR ================= */
 function viewEmp(e){
   const t=UI.empTab;let body='';
-  if(t==='ponto')body=empPonto(e);else if(t==='equipe'&&isGestor())body=empEquipe();else if(t==='espelho')body=empEspelho(e);else if(t==='solic')body=empSolic(e);else body=empPerfil(e);
-  const tabs=[['ponto','Ponto',IC.clock],...(isGestor()?[['equipe','Equipe',IC.team]]:[]),['espelho','Folha',IC.table],['solic','Solicitações',IC.inbox],['perfil','Perfil',IC.user]];
+  if(t==='ponto')body=empPonto(e);else if(t==='equipe'&&isGestor())body=empEquipe();else if(t==='espelho')body=empEspelho(e);else if(t==='solic')body=empSolic(e);else if(t==='holerite')body=empHolerite(e);else body=empPerfil(e);
+  const tabs=[['ponto','Ponto',IC.clock],...(isGestor()?[['equipe','Equipe',IC.team]]:[]),['espelho','Folha',IC.table],['solic','Solicitações',IC.inbox],['holerite','Holerite',IC.doc||IC.table],['perfil','Perfil',IC.user]];
   return `<div class="emp">
     <div class="topbar"><button class="logo-btn" data-act="home" aria-label="Voltar ao início">${logoPill(30)}</button><div class="spacer"></div>${UI.empTab!=='ponto'||UI.teamEmp?`<button class="btn sm ghost top-act" data-act="home"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-6h-6v6H4.5a.5.5 0 0 1-.5-.5z"/></svg><span>Início</span></button>`:''}${notifBtn()}<button class="btn sm ghost top-act" data-act="logout">${IC.out.replace('<svg','<svg width="16" height="16"')}<span>Sair</span></button>
       <div class="top-who" style="text-align:right;line-height:1.2;min-width:0"><div style="font-weight:600;font-size:.9rem">${esc(first(e.nome))}</div><div class="muted" style="font-size:.75rem">${esc(e.login)}</div></div>
@@ -1236,12 +1245,201 @@ function empPerfil(e){
   <section class="card"><div class="card-h"><h3>Comprovantes recentes</h3></div><div class="list">${last.map(p=>`<div class="li"><div class="grow"><div class="ttl mono">${fmtDate(p.ts.slice(0,10))} ${p.ts.slice(11,16)}</div><div class="sub">NSR ${String(p.nsr).padStart(9,'0')} · ${esc(p.local)}</div></div><button class="btn sm" data-act="receipt" data-id="${p.id}">Ver</button></div>`).join('')||'<div class="empty">Sem marcações ainda.</div>'}</div></section>`;
 }
 
+/* ================= HOLERITES (lidos dos PDFs, guardados como dados) ================= */
+const LIBS_HOL={
+  pdfjs:['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js','sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e'],
+  worker:['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js','sha384-SnzOobpRMLXZ52iJvZm/C0fYw0OQemTXzTjIsdsfMcrCtCEe9qgzxTd3RSklO5x2'],
+  zip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG']
+};
+function addScript([src,sri]){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.integrity=sri;s.crossOrigin='anonymous';s.referrerPolicy='no-referrer';s.onload=ok;s.onerror=()=>ko(new Error('Não foi possível carregar a biblioteca de leitura. Verifique a conexão.'));document.head.appendChild(s)})}
+let _leitor=null;
+function carregaLeitor(){
+  if(!_leitor)_leitor=(async()=>{await addScript(LIBS_HOL.pdfjs);await addScript(LIBS_HOL.zip);
+    // o worker roda no thread principal (a política de segurança não permite worker externo); o script vem do mesmo CDN com integridade
+    await addScript(LIBS_HOL.worker);window.pdfjsLib.GlobalWorkerOptions.workerSrc=LIBS_HOL.worker[0]})().catch(e=>{_leitor=null;throw e});
+  return _leitor;
+}
+const normNome=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim();
+const mesNome=ym=>`${MES[+ym.slice(5,7)-1]} de ${ym.slice(0,4)}`;
+const moeda=v=>v==null||v===''?'':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtNum=v=>v==null?'':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const numBR=s=>+String(s).replace(/\./g,'').replace(',','.');
+const RE_NUM=/^-?\d{1,3}(?:\.\d{3})*,\d{2}$|^-?\d+,\d{2}$/;
+function tituloHol(raw){
+  const T=normNome(raw);
+  return /ADIANT/.test(T)?'Adiantamento':/13/.test(raw)?'13º salário':/FERIAS/.test(T)?'Férias':/RESCIS/.test(T)?'Rescisão':/SALARIO|MENSAL/.test(T)?'Mensal':raw.charAt(0)+raw.slice(1).toLowerCase();
+}
+// lê uma página do PDF da folha: usa o texto e a posição de cada item na página
+function lerPagina(items){
+  const it=items.filter(i=>i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:i.transform[5],w:i.width}));
+  const tits=it.filter(i=>/^DEMONSTRATIVO DE PAGAMENTO/.test(i.s)).sort((a,b)=>b.y-a.y);
+  if(!tits.length)return null;
+  const topo=tits[0].y,base=tits[1]?tits[1].y:-1e9;       // só o primeiro bloco: o PDF repete a via do funcionário
+  const B=it.filter(i=>i.y<=topo+2&&i.y>base+2&&i.x<540);
+  const linha=y=>B.filter(i=>Math.abs(i.y-y)<=1.5).sort((a,b)=>a.x-b.x);
+  const achar=re=>B.find(i=>re.test(i.s));
+  const hRef=B.find(i=>/^Refer[êe]ncia:\s*\d{2}\/\d{4}/.test(i.s)),hCod=B.filter(i=>/^C[óo]digo$/.test(i.s)).sort((a,b)=>b.y-a.y)[0],hNome=achar(/^Nome do Funcion/);
+  if(!hRef||!hCod||!hNome)return null;
+  const m=hRef.s.match(/(\d{2})\/(\d{4})/);
+  const ln=B.filter(i=>i.y<hCod.y-4&&i.y>hCod.y-14).sort((a,b)=>a.x-b.x);
+  const cod=(ln.find(i=>/^\d+$/.test(i.s)&&i.x<hNome.x)||{}).s,nome=(ln.find(i=>Math.abs(i.x-hNome.x)<4)||{}).s;
+  if(!cod||!nome)return null;
+  const cbo=(ln.find(i=>/^\d{3,4}-\d{2}$/.test(i.s))||{}).s||'';
+  const yEmp=B.filter(i=>i.y<tits[0].y-6&&i.y>tits[0].y-16).sort((a,b)=>a.x-b.x);
+  const empresa=(yEmp[0]||{}).s||'',endereco=((B.filter(i=>Math.abs(i.y-(tits[0].y-22))<=2.5)[0])||{}).s||'';
+  const cnpj=(B.find(i=>/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(i.s))||{}).s||'';
+  const tcar=B.find(i=>/^Cargo:/.test(i.s));
+  const mc=tcar?tcar.s.match(/^Cargo:\s*(.*?)\s*Fun[çc][ãa]o:\s*(.*)$/):null;
+  const adm=(B.find(i=>/^Admiss[ãa]o:/.test(i.s))||{s:''}).s.replace(/^.*?:\s*/,''),nasc=(B.find(i=>/^Nascimento:/.test(i.s))||{s:''}).s.replace(/^.*?:\s*/,'');
+  const hv=B.filter(i=>/^(Refer[êe]ncia|Vencimentos|Descontos)$/.test(i.s)&&i.y<hCod.y-20);
+  const cRef=hv.find(i=>/^Refer/.test(i.s)),cV=hv.find(i=>/^Venc/.test(i.s)),cD=hv.find(i=>/^Desc/.test(i.s));
+  const tot=B.find(i=>/^Total de Vencimentos/.test(i.s));
+  if(!cV||!cD||!tot)return null;
+  const centro=i=>i.x+i.w/2,cen={ref:cRef?centro(cRef):1e9,v:centro(cV),d:centro(cD)};
+  const lanc=[];
+  const yIni=cV.y-3,cand=B.filter(i=>i.y<yIni&&i.y>tot.y+4).sort((a,b)=>b.y-a.y),grupos=[];
+  cand.forEach(i=>{const g=grupos[grupos.length-1];if(g&&Math.abs(g.y-i.y)<=3)g.it.push(i);else grupos.push({y:i.y,it:[i]})});
+  grupos.forEach(G=>{
+    const L=G.it.sort((a,b)=>a.x-b.x);
+    const c=L.find(i=>/^\d+$/.test(i.s)&&i.x<68);if(!c)return;
+    const desc=L.filter(i=>i.x>=68&&i.x<300&&!RE_NUM.test(i.s)).map(i=>i.s).join(' ');
+    const o={cod:c.s,desc,ref:null,venc:null,descto:null};
+    L.filter(i=>i.x>=300&&RE_NUM.test(i.s)).forEach(n=>{const cx=centro(n);const d=[['ref',Math.abs(cx-cen.ref)],['v',Math.abs(cx-cen.v)],['d',Math.abs(cx-cen.d)]].sort((a,b)=>a[1]-b[1])[0][0];
+      if(d==='ref')o.ref=numBR(n.s);else if(d==='v')o.venc=numBR(n.s);else o.descto=numBR(n.s)});
+    lanc.push(o);
+  });
+  const vl=B.find(i=>/^Valor L[íi]quido/.test(i.s));
+  const dir=(y,xmin,xmax)=>B.filter(i=>Math.abs(i.y-y)<=2&&i.x>=xmin&&i.x<xmax&&RE_NUM.test(i.s)).map(i=>numBR(i.s))[0];
+  const totV=B.filter(i=>Math.abs(i.y-(tot.y-10))<=2&&i.x<cV.x+60&&RE_NUM.test(i.s)).map(i=>numBR(i.s))[0];
+  const totD=B.filter(i=>Math.abs(i.y-(tot.y-10))<=2&&i.x>=cD.x-10&&RE_NUM.test(i.s)).map(i=>numBR(i.s))[0];
+  const liquido=vl?B.filter(i=>Math.abs(i.y-vl.y)<=2&&i.x>vl.x+vl.w&&RE_NUM.test(i.s)).map(i=>numBR(i.s))[0]:null;
+  if(!lanc.length||liquido==null)return null;
+  const labels=B.filter(i=>/^(Sal[áa]rio Base|Sal\. Contr\. INSS|Base Calc\. FGTS|FGTS do M[êe]s|Base Calc\. IRRF|Faixa IRRF)$/.test(i.s));
+  const bases=[];labels.forEach(l=>{const v=B.filter(i=>Math.abs(i.y-(l.y-8))<=3&&RE_NUM.test(i.s)).sort((a,b)=>Math.abs(centro(a)-centro(l))-Math.abs(centro(b)-centro(l)))[0];bases.push({r:l.s,v:v?numBR(v.s):null})});
+  const emissao=(B.find(i=>/^FX Sistemas/.test(i.s))||{s:''}).s;
+  return {empresa,endereco,cnpj,ref:`${m[1]}/${m[2]}`,comp:`${m[2]}-${m[1]}`,titulo:tituloHol(tits[0].s.replace(/^DEMONSTRATIVO DE PAGAMENTO DE\s*/,'')),
+    cod,nome,cbo,cargo:mc?mc[1]:'',funcao:mc?mc[2]:'',admissao:adm,nascimento:nasc,lancamentos:lanc,totVenc:totV,totDesc:totD,liquido,bases,emissao};
+}
+async function lerPDF(buf){
+  const doc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise,out=[],falhas=[];
+  for(let p=1;p<=doc.numPages;p++){const c=await (await doc.getPage(p)).getTextContent();const r=lerPagina(c.items);if(r)out.push(r);else falhas.push(p)}
+  return {itens:out,falhas};
+}
+async function analisarArquivos(files){
+  await carregaLeitor();
+  const pdfs=[],falhas=[];
+  for(const f of files){
+    if(/\.zip$/i.test(f.name)||f.type==='application/zip'||f.type==='application/x-zip-compressed'){
+      const z=await JSZip.loadAsync(await f.arrayBuffer());
+      for(const n of Object.keys(z.files)){const e=z.files[n];if(e.dir||/__MACOSX|\/\./.test(n)||!/\.pdf$/i.test(n))continue;pdfs.push({nome:n,buf:await e.async('arraybuffer')})}
+    }else if(/\.pdf$/i.test(f.name))pdfs.push({nome:f.name,buf:await f.arrayBuffer()});
+  }
+  if(!pdfs.length)throw new Error('Não encontrei PDFs. Envie o arquivo .zip da folha ou os PDFs.');
+  const itens=[];
+  for(const a of pdfs){const r=await lerPDF(a.buf);r.itens.forEach(x=>{x.arquivo=a.nome;itens.push(x)});r.falhas.forEach(p=>falhas.push(`${a.nome} (página ${p})`))}
+  const folha=(await sb.from('folha_dados').select('colaborador_id,codigo')).data||[];
+  const porCod={};folha.forEach(f=>{if(f.codigo)porCod[String(f.codigo).trim()]=f.colaborador_id});
+  const ativos=S.emps.filter(e=>e.ativo!==false);
+  itens.forEach(g=>{
+    const n=normNome(g.nome),porNome=ativos.filter(e=>normNome(e.nome)===n),porCodigo=porCod[g.cod]?ativos.find(e=>e.id===porCod[g.cod]):null;
+    const tk=n.split(' '),aprox=ativos.filter(e=>{const k=normNome(e.nome).split(' ');return k[0]===tk[0]&&k[k.length-1]===tk[tk.length-1]});
+    if(porNome.length===1){g.empId=porNome[0].id;g.conf='certo'}
+    else if(porCodigo&&(!porNome.length||porNome.some(e=>e.id===porCodigo.id))){g.empId=porCodigo.id;g.conf=normNome(porCodigo.nome)===n?'certo':'revisar'}
+    else if(aprox.length===1){g.empId=aprox[0].id;g.conf='revisar'}
+    else{g.empId='';g.conf='sem'}
+    g.sel=g.conf==='certo';
+  });
+  return {itens,falhas};
+}
+async function publicarHolerites(){
+  const sel=(UI.holRev||[]).filter(g=>g.sel&&g.empId);
+  if(!sel.length)throw new Error('Marque pelo menos um holerite com colaborador definido.');
+  const ids=new Set();for(const g of sel){const k=g.empId+g.comp+g.titulo;if(ids.has(k))throw new Error(`Há dois holerites de ${g.nome} no mesmo mês e tipo. Desmarque um deles.`);ids.add(k)}
+  const rows=sel.map(g=>{const {empId,conf,sel:_s,arquivo,...dados}=g;return {colaborador_id:empId,competencia:g.comp,titulo:g.titulo,dados,liquido:g.liquido,enviado_por:ME.id,enviado_em:new Date().toISOString(),visto_em:null}});
+  for(let i=0;i<rows.length;i+=50){const r=await sb.from('holerites_folha').upsert(rows.slice(i,i+50),{onConflict:'colaborador_id,competencia,titulo'});if(r.error)throw r.error}
+  UI.holRev=null;UI.holFalhas=null;await loadHol();render();toast(`${rows.length} holerite${rows.length>1?'s publicados':' publicado'}. Cada colaborador foi avisado.`);
+}
+async function loadHol(){const r=await sb.from('holerites_folha').select('*').order('competencia',{ascending:false}).order('enviado_em',{ascending:false});S.hol=r.error?[]:r.data}
+const holNome=h=>`Holerite-${h.competencia}-${normNome(h.titulo).toLowerCase().replace(/ /g,'-')}.pdf`;
+function holVisto(h){if(h.visto_em||!ME||h.colaborador_id!==ME.id)return;h.visto_em=new Date().toISOString();sb.rpc('holerite_visto',{p_id:h.id})}
+function baixarBlob(blob,nome){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function holHTML(h){
+  const d=h.dados||{};const L=d.lancamentos||[];
+  return `<div class="hol-doc"><div class="hol-doc-h"><div class="eyebrow">Demonstrativo de pagamento · ${esc(h.titulo)}</div><b>${esc(d.empresa||'')}</b><span>${esc(d.endereco||'')}</span><span>CNPJ ${esc(d.cnpj||'')} · Referência ${esc(d.ref||'')}</span></div>
+  <div class="hol-doc-f"><div><span>Código</span><b>${esc(d.cod||'')}</b></div><div class="g"><span>Nome</span><b>${esc(d.nome||'')}</b></div><div><span>Cargo</span><b>${esc(d.cargo||'-')}</b></div><div><span>Admissão</span><b>${esc(d.admissao||'-')}</b></div></div>
+  <div class="tablewrap no-resp"><table class="hol-t"><thead><tr><th>Cód.</th><th>Descrição</th><th class="num">Ref.</th><th class="num">Vencimentos</th><th class="num">Descontos</th></tr></thead><tbody>${L.map(x=>`<tr><td class="mono">${esc(x.cod)}</td><td>${esc(x.desc)}</td><td class="num mono">${x.ref!=null?fmtNum(x.ref):''}</td><td class="num mono">${x.venc!=null?fmtNum(x.venc):''}</td><td class="num mono">${x.descto!=null?fmtNum(x.descto):''}</td></tr>`).join('')}</tbody></table></div>
+  <div class="hol-tot"><div><span>Total de vencimentos</span><b class="mono">${fmtNum(d.totVenc)}</b></div><div><span>Total de descontos</span><b class="mono">${fmtNum(d.totDesc)}</b></div><div class="liq"><span>Valor líquido</span><b class="mono">${fmtNum(d.liquido)}</b></div></div>
+  ${(d.bases||[]).length?`<div class="hol-bases">${d.bases.map(b=>`<div><span>${esc(b.r)}</span><b class="mono">${fmtNum(b.v)}</b></div>`).join('')}</div>`:''}</div>`;
+}
+async function holPDF(h){
+  await carregaPdf();const {jsPDF}=window.jspdf;const d=h.dados||{};
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const W=210,M=14;
+  const INK=[13,26,43],MUTED=[90,107,130],LINE=[190,200,212];
+  doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('DEMONSTRATIVO DE PAGAMENTO',M,18);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);doc.text(h.titulo+' · Referência '+(d.ref||''),W-M,18,{align:'right'});
+  doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(d.empresa||'',M,26);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUTED);doc.text(d.endereco||'',M,31);doc.text('CNPJ '+(d.cnpj||''),M,35.5);
+  doc.setDrawColor(...LINE);doc.line(M,39,W-M,39);
+  const campo=(r,v,x,y)=>{doc.setFontSize(7.5);doc.setTextColor(...MUTED);doc.text(r.toUpperCase(),x,y);doc.setFontSize(9.5);doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.text(String(v||'-'),x,y+4.6);doc.setFont('helvetica','normal')};
+  campo('Código',d.cod,M,45);campo('Nome do funcionário',d.nome,M+22,45);campo('CBO',d.cbo,128,45);campo('Admissão',d.admissao,152,45);
+  campo('Cargo',d.cargo,M,57);campo('Função',d.funcao,M+60,57);campo('Nascimento',d.nascimento,152,57);
+  const n=v=>v==null?'':fmtNum(v);
+  doc.autoTable({startY:68,margin:{left:M,right:M},theme:'grid',head:[['Cód.','Descrição','Referência','Vencimentos','Descontos']],
+    body:(d.lancamentos||[]).map(x=>[x.cod,x.desc,n(x.ref),n(x.venc),n(x.descto)]),
+    styles:{fontSize:9,cellPadding:1.8,lineColor:LINE,lineWidth:.15,textColor:INK},headStyles:{fillColor:[10,22,40],textColor:255,fontSize:8.5},
+    columnStyles:{0:{cellWidth:16},2:{halign:'right',cellWidth:26},3:{halign:'right',cellWidth:30},4:{halign:'right',cellWidth:30}}});
+  let y=doc.lastAutoTable.finalY+6;
+  doc.setFontSize(9);doc.setTextColor(...MUTED);doc.text('Total de vencimentos',W-M-70,y);doc.text('Total de descontos',W-M-30,y,{align:'left'});
+  doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.text(n(d.totVenc),W-M-70,y+5);doc.text(n(d.totDesc),W-M-30,y+5);
+  y+=13;doc.setFillColor(237,246,246);doc.rect(W-M-86,y-5,86,10,'F');doc.setFontSize(10);doc.setTextColor(...MUTED);doc.setFont('helvetica','normal');doc.text('Valor líquido',W-M-83,y+1.3);doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('R$ '+n(d.liquido),W-M-3,y+1.6,{align:'right'});
+  y+=14;const bs=d.bases||[];const cw=(W-2*M)/Math.max(bs.length,1);
+  bs.forEach((b,i)=>{doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUTED);doc.text(b.r,M+i*cw,y);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...INK);doc.text(n(b.v),M+i*cw,y+4.6)});
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUTED);doc.text('Documento gerado a partir dos dados da folha de pagamento. '+(d.emissao||''),M,287);
+  return doc.output('blob');
+}
+async function holVer(id){
+  const h=(S.hol||[]).find(x=>x.id===id);if(!h)return;
+  openModal(`<div class="modal-h"><div><div class="eyebrow">Holerite · ${esc(h.titulo)}</div><h3>${esc(mesNome(h.competencia))}</h3></div><button type="button" class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${holHTML(h)}</div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Fechar</button><button type="button" class="btn" data-act="hol-share" data-id="${h.id}">Compartilhar</button><button type="button" class="btn primary" data-act="hol-dl" data-id="${h.id}">Baixar PDF</button></div>`,true);
+  holVisto(h);
+}
+async function holDownload(id){const h=(S.hol||[]).find(x=>x.id===id);if(!h)return;toast('Gerando PDF…');baixarBlob(await holPDF(h),holNome(h));holVisto(h)}
+async function holShare(id){
+  const h=(S.hol||[]).find(x=>x.id===id);if(!h)return;const blob=await holPDF(h);const file=new File([blob],holNome(h),{type:'application/pdf'});holVisto(h);
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:`Holerite ${mesNome(h.competencia)}`});return}catch(e){if(e&&e.name==='AbortError')return}}
+  baixarBlob(blob,file.name);toast('Seu navegador não compartilha arquivos direto. O PDF foi baixado, e você pode enviá-lo por onde quiser.');
+}
+function empHolerite(e){
+  const L=(S.hol||[]).filter(h=>h.colaborador_id===e.id);
+  const novos=L.filter(h=>!h.visto_em).length;
+  return `<section class="page-h"><div><div class="eyebrow">Só você vê esta página</div><h1>Meus holerites</h1></div></section>
+  <div class="notice">Seus holerites ficam guardados aqui, com acesso apenas para você e para o RH. Você pode visualizar, baixar em PDF ou compartilhar${novos?`. <b>${novos} ainda não ${novos>1?'foram vistos':'foi visto'}.</b>`:'.'}</div>
+  <section class="card">${L.length?`<div class="list">${L.map(h=>`<div class="li hol-li"><div class="ico-pdf" aria-hidden="true">PDF</div><div class="grow"><div class="ttl">${esc(mesNome(h.competencia))} ${h.visto_em?'':'<span class="chip acc plain">Novo</span>'}</div><div class="sub">${esc(h.titulo)}${h.liquido!=null?' · líquido '+moeda(h.liquido):''}</div></div>
+    <div class="row hol-acts"><button class="btn sm" data-act="hol-view" data-id="${h.id}">Ver</button><button class="btn sm" data-act="hol-dl" data-id="${h.id}">Baixar</button><button class="btn sm" data-act="hol-share" data-id="${h.id}">Compartilhar</button></div></div>`).join('')}</div>`:'<div class="empty">Seu primeiro holerite aparece aqui assim que o RH publicar. Você recebe um aviso.</div>'}</section>`;
+}
+function rhHolerites(){
+  const rev=UI.holRev,L=S.hol||[];
+  const meses=[...new Set(L.map(h=>h.competencia))];const f=UI.holMes||'';
+  const vis=L.filter(h=>!f||h.competencia===f);
+  const opts=g=>`<option value="">Escolher colaborador…</option>${S.emps.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}" ${g.empId===x.id?'selected':''}>${esc(x.nome)}</option>`).join('')}`;
+  return `<div class="page-h"><div><div class="eyebrow">Folha de pagamento</div><h1>Holerites</h1></div><div class="spacer"></div><button class="btn sm" data-act="rtab" data-v="holerite">Abrir gerador de holerite</button></div>
+  <section class="card"><div class="card-h"><h3>Importar a folha</h3></div><div class="card-b" style="display:flex;flex-direction:column;gap:12px">
+    <label class="drop" for="hol-f"><b>Escolha o arquivo .zip da folha</b><span class="muted">Também aceita os PDFs soltos. O sistema lê nome, mês e valores de cada holerite e guarda só os dados, sem armazenar os arquivos.</span></label>
+    <input class="sr-only" type="file" id="hol-f" accept=".zip,.pdf,application/zip,application/pdf" multiple data-change="holfiles">
+    ${UI.holBusy?'<div class="muted">Lendo os holerites…</div>':''}
+    ${rev?`<div class="tablewrap no-resp"><table><thead><tr><th></th><th>Lido no arquivo</th><th>Mês</th><th>Tipo</th><th class="num">Líquido</th><th>Colaborador</th><th>Situação</th></tr></thead><tbody>${rev.map((g,i)=>{const ja=L.some(h=>h.colaborador_id===g.empId&&h.competencia===g.comp&&h.titulo===g.titulo);return `<tr><td><input type="checkbox" data-change="holsel" data-i="${i}" ${g.sel?'checked':''} ${g.empId?'':'disabled'} aria-label="Publicar"></td><td>${esc(g.nome)}<div class="muted" style="font-size:.75rem">cód. ${esc(g.cod)} · ${esc(g.cargo||'')}</div></td><td>${esc(mesNome(g.comp))}</td><td>${esc(g.titulo)}</td><td class="num mono">${fmtNum(g.liquido)}</td><td><select class="input" data-change="holemp" data-i="${i}">${opts(g)}</select></td><td>${g.conf==='certo'?'<span class="chip ok plain">Identificado</span>':g.conf==='revisar'?'<span class="chip warn plain">Confira</span>':'<span class="chip bad plain">Escolha a pessoa</span>'}${ja?' <span class="chip info plain">Substitui o atual</span>':''}</td></tr>`}).join('')}</tbody></table></div>
+    ${UI.holFalhas&&UI.holFalhas.length?`<div class="notice">Não consegui ler: ${esc(UI.holFalhas.join('; '))}</div>`:''}
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-act="hol-clear">Cancelar</button><button class="btn primary" data-act="hol-pub">Publicar ${rev.filter(g=>g.sel&&g.empId).length} holerite(s)</button></div>`:''}
+  </div></section>
+  <section class="card"><div class="card-h"><h3>Publicados</h3><span class="chip plain">${vis.length}</span><div class="spacer"></div><select class="input" style="max-width:220px" data-change="holmes" aria-label="Filtrar por mês"><option value="">Todos os meses</option>${meses.map(m=>`<option value="${m}" ${m===f?'selected':''}>${esc(mesNome(m))}</option>`).join('')}</select></div>
+  ${vis.length?`<div class="list">${vis.map(h=>{const e=emp(h.colaborador_id)||{nome:'Colaborador'};return `<div class="li"><div class="avatar">${initials(e.nome)}</div><div class="grow"><div class="ttl">${esc(e.nome)}</div><div class="sub">${esc(mesNome(h.competencia))} · ${esc(h.titulo)} · ${h.visto_em?'visto em '+fmtDate(h.visto_em.slice(0,10)):'ainda não visto'}</div></div><button class="btn sm" data-act="hol-view" data-id="${h.id}">Ver</button><button class="btn sm danger" data-act="hol-del" data-id="${h.id}">Excluir</button></div>`}).join('')}</div>`:'<div class="empty">Nenhum holerite publicado ainda.</div>'}</section>`;
+}
+
 /* ================= RH ================= */
 function pendingCount(){return S.requests.filter(r=>r.status==='pendente').length+S.punches.filter(p=>p.revisao==='pendente').length}
 function viewRH(){
   const t=UI.rhTab,pc=pendingCount();
-  const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['holerite','Holerites',IC.inbox],['auditoria','Auditoria',IC.check],['config','Configurações',IC.gear]];
-  const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,auditoria:rhAuditoria,config:rhConfig}[t]();
+  const nav=[['painel','Painel',IC.grid],['equipe','Colaboradores',IC.team],['usuarios','Usuários e acessos',IC.user],['setores','Setores e gestores',IC.grid],['aprov','Aprovações',IC.check,pc],['espelho','Espelho de ponto',IC.table],['relat','Relatórios',IC.chart],['holpdf','Holerites',IC.inbox],['auditoria','Auditoria',IC.check],['config','Configurações',IC.gear]];
+  const body={painel:rhPainel,equipe:rhEquipe,usuarios:rhUsuarios,setores:rhSetores,aprov:rhAprov,espelho:rhEspelho,relat:rhRelat,auditoria:rhAuditoria,config:rhConfig,holpdf:rhHolerites}[t]();
   return `<div class="rh"><aside class="side${UI.navOpen?' open':''}"><div class="side-logo"><button class="logo-btn" data-act="home" aria-label="Voltar ao painel">${logoPill(38)}</button><span class="eyebrow" style="color:var(--deep-muted)">Gestão de ponto</span></div>
     <div class="m-cur">${esc((nav.find(n=>n[0]===t)||[])[1]||'')}</div>
     <button class="menu-btn" data-act="nav-toggle" aria-expanded="${!!UI.navOpen}" aria-label="Abrir menu">${UI.navOpen?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'}Menu${pc&&!UI.navOpen?`<span class="badge">${pc}</span>`:''}</button>
@@ -2025,7 +2223,14 @@ document.addEventListener('click',async ev=>{
     case 'notif-lidas':await marcarLidas((S.notif||[]).filter(n=>!n.lida_em).map(n=>n.id));notifModal();render();break;
     case 'notif-perm':{try{await Notification.requestPermission()}catch(e){}notifModal();break}
     case 'notif-go':{const n=(S.notif||[]).find(x=>x.id===t.dataset.id);if(!n)break;await marcarLidas([n.id]);closeModal();
-      if(n.destino==='ponto'&&n.marcacao_id&&S.punches.some(x=>x.id===n.marcacao_id)){showReceipt(n.marcacao_id);break}if(MODE==='rh'){UI.rhTab='aprov'}else if(n.destino==='equipe'&&isGestor()){UI.empTab='equipe';UI.teamEmp=null}else if(n.destino==='ponto'){UI.empTab='espelho'}else{UI.empTab='solic'}render();window.scrollTo(0,0);break}
+      if(n.destino==='ponto'&&n.marcacao_id&&S.punches.some(x=>x.id===n.marcacao_id)){showReceipt(n.marcacao_id);break}if(MODE==='rh'){UI.rhTab=n.destino==='holerite'?'holpdf':'aprov'}else if(n.destino==='equipe'&&isGestor()){UI.empTab='equipe';UI.teamEmp=null}else if(n.destino==='ponto'){UI.empTab='espelho'}else if(n.destino==='holerite'){UI.empTab='holerite'}else{UI.empTab='solic'}render();window.scrollTo(0,0);break}
+    case 'hol-view':await holVer(t.dataset.id);break;
+    case 'hol-dl':await holDownload(t.dataset.id);break;
+    case 'hol-share':await holShare(t.dataset.id);break;
+    case 'hol-clear':UI.holRev=null;render();break;
+    case 'hol-pub':t.disabled=true;try{await publicarHolerites()}finally{t.disabled=false}break;
+    case 'hol-del':{const h=(S.hol||[]).find(x=>x.id===t.dataset.id);if(!h)break;if(t.dataset.ok!=='1'){t.dataset.ok='1';t.textContent='Confirmar exclusão';setTimeout(()=>{if(t.isConnected){t.dataset.ok='';t.textContent='Excluir'}},4000);break}
+      const {error}=await sb.from('holerites_folha').delete().eq('id',h.id);if(error)throw error;await loadHol();render();toast('Holerite excluído');break}
     case 'anexo':{const {data,error}=await sb.storage.from('anexos').createSignedUrl(t.dataset.path,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');break}
     case 'pun-obs':{const ta=$('#go-'+t.dataset.id);const v=ta?ta.value.trim():'';if(v.length<3){toast('Escreva o comentário antes de enviar');if(ta)ta.focus();break}t.disabled=true;const {error}=await sb.rpc('comentar_marcacao',{p_id:t.dataset.id,p_obs:v});if(error){t.disabled=false;throw error}await loadAll({punches:true});if($('#modal-root').innerHTML)closeModal();else render();toast('Comentário enviado ao colaborador');break}
     case 'pun-dec':{const ta=$('#go-'+t.dataset.id);const obs=ta?ta.value.trim():'';if(t.dataset.v==='desconsiderada'&&!obs){toast('Escreva um comentário explicando por que vai desconsiderar');if(ta)ta.focus();break}t.disabled=true;const {error}=await sb.rpc('revisar_marcacao',{p_id:t.dataset.id,p_status:t.dataset.v,p_obs:obs||null});if(error)throw error;await loadAll({punches:true});if($('#modal-root').innerHTML)closeModal();else render();toast(t.dataset.v==='aceita'?'Registro aceito':'Registro desconsiderado: não conta nas horas');break}
@@ -2034,6 +2239,10 @@ document.addEventListener('click',async ev=>{
 document.addEventListener('change',ev=>{
   const t=ev.target;
   const c=t.dataset.change;if(!c)return;
+  if(c==='holfiles'){const fs=[...t.files];t.value='';if(!fs.length)return;UI.holBusy=true;UI.holRev=null;render();analisarArquivos(fs).then(r=>{UI.holRev=r.itens;UI.holFalhas=r.falhas;UI.holBusy=false;render();if(!r.itens.length)toast('Não encontrei holerites nesses arquivos.')}).catch(e=>{UI.holBusy=false;render();toast(errMsg(e))})}
+  if(c==='holsel'){const g=UI.holRev[+t.dataset.i];if(g){g.sel=t.checked;render()}}
+  if(c==='holemp'){const g=UI.holRev[+t.dataset.i];if(g){g.empId=t.value;g.sel=!!t.value;if(t.value)g.conf=g.conf==='sem'?'revisar':g.conf;render()}}
+  if(c==='holmes'){UI.holMes=t.value;render()}
   if(c==='month'){UI.mirrorMonth=t.value;ensureMonth(t.value).then(render).catch(e=>toast(errMsg(e)))}
   if(c==='memp'){UI.mirrorEmp=t.value;render()}
   if(c==='reqtipo'){const f=t.form;reqForm(t.value,{data:f.data&&f.data.value,ate:f.ate&&f.ate.value,hora:f.hora&&f.hora.value,motivo:f.motivo&&f.motivo.value})}
