@@ -2091,7 +2091,7 @@ async function afterLogin(){
   }
   if(!data.ativo){await sb.auth.signOut();BOOT.msg='Seu acesso não está ativo. Fale com o RH.';MODE='login';return}
   ME=mapEmp(data);ME.google=provs.includes('google')&&!provs.includes('email');
-  {const md=user.user_metadata||{};const gf=ME.google?String(md.avatar_url||md.picture||''):'';if(gf&&/^https:\/\/[a-z0-9-]+\.googleusercontent\.com\//.test(gf)&&gf!==ME.foto){ME.foto=gf;sb.rpc('atualizar_minha_foto',{p_url:gf})}}
+  {const md=user.user_metadata||{};const gf=String(md.avatar_url||md.picture||'');if(gf&&/^https:\/\/[a-z0-9-]+\.googleusercontent\.com\//.test(gf)&&gf!==ME.foto){ME.foto=gf;sb.rpc('atualizar_minha_foto',{p_url:gf})}}
   if(perfil==='rh'&&ME.papel!=='rh'){await sb.auth.signOut();ME=null;BOOT.msg='Seu usuário não tem acesso ao painel do RH. Escolha "Colaborador" para bater o ponto.';MODE='login';return}
   safeStorage.setItem('batida.perfil',perfil);
   if(perfil==='rh'){
