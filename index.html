@@ -804,7 +804,7 @@ async function loadAll(opts){
   S.setores=st.data;
   S.emps=c.data.map(mapEmp);
   const me=S.emps.find(x=>x.id===ME.id);
-  if(me){me.consent=ME.consent;me.google=ME.google;ME=me}
+  if(me){me.consent=ME.consent;me.google=ME.google;me.foto=ME.foto;ME=me}
 }
 // Meses antigos são buscados só quando alguém abre esse mês
 async function ensureMonth(ym){
