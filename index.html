@@ -1857,7 +1857,7 @@ function receiptHTML(p){
     <hr><div style="color:var(--muted)">Código de verificação (SHA-256)</div><div class="hash">${esc(p.hash)}</div>
   </div>`;
 }
-function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.geo&&!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);const meu=ME&&p.empId===ME.id;openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${meu&&precisaJust(p)?justMarcHTML(p):''}${!meu&&(isRHsession()||(ME&&minhaEquipe().some(x=>x.id===p.empId)))?(p.revisao==='pendente'?revCard(p):((p.motivo&&p.motivo.length)||p.foraCerca||p.just||p.gObs?gObsForm(p):'')):''}${receiptHTML(p)}</div><div class="modal-f"><button class="btn primary" data-act="close">Fechar</button></div>`)}
+function showReceipt(id){const p=S.punches.find(x=>x.id===id);if(!p)return;if(p.geo&&!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);const meu=ME&&p.empId===ME.id;openModal(`<div class="modal-h"><h3>Comprovante</h3><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${meu&&precisaJust(p)?justMarcHTML(p):''}${!meu&&(isRHsession()||(ME&&minhaEquipe().some(x=>x.id===p.empId)))?(p.revisao==='pendente'?revCard(p):((p.motivo&&p.motivo.length)||p.foraCerca||p.just||p.gObs?gObsForm(p):'')):''}${receiptHTML(p)}</div><div class="modal-f"><button class="btn" data-act="pdf-receipt" data-id="${p.id}">Baixar PDF</button><button class="btn primary" data-act="close">Fechar</button></div>`)}
 
 /* ---------- Captura facial ---------- */
 let CAP=null;
@@ -1993,6 +1993,35 @@ function carregaPdf(){
   const um=([src,sri])=>new Promise((ok,erro)=>{const s=document.createElement('script');s.src=src;s.integrity=sri;s.crossOrigin='anonymous';s.referrerPolicy='no-referrer';s.onload=ok;s.onerror=()=>erro(new Error('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.'));document.head.appendChild(s)});
   PDF_OK=um(PDF_LIBS[0]).then(()=>um(PDF_LIBS[1])).catch(e=>{PDF_OK=null;throw e});
   return PDF_OK;
+}
+async function pdfReceipt(id){
+  const p=S.punches.find(x=>x.id===id);if(!p)return;
+  toast('Gerando PDF…');await carregaPdf();
+  const {jsPDF}=window.jspdf;const e=emp(p.empId)||ME,idx=marksOf(p.empId,p.ts.slice(0,10)).findIndex(x=>x.id===p.id);
+  const NAVY=[10,22,40],GLOW=[23,201,182],INK=[13,26,43],MUTED=[90,107,130],LINE=[216,224,233];
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(),M=18,CW=W-2*M;
+  doc.setFillColor(...NAVY);doc.rect(0,0,W,34,'F');doc.setFillColor(...GLOW);doc.rect(0,34,W,1.2,'F');
+  doc.setFillColor(255,255,255);doc.roundedRect(M,7,30,20,2.5,2.5,'F');try{doc.addImage(LOGO,'PNG',M+2.5,9,25,16)}catch(x){}
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('Comprovante de registro de ponto',M+36,16);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(200,214,230);doc.text(String(S.company.razao||'FTVTEC'),M+36,22);doc.text('CNPJ '+String(S.company.cnpj||''),M+36,27);
+  let y=52;doc.setTextColor(...INK);doc.setFont('courier','bold');doc.setFontSize(30);doc.text(p.ts.slice(11,19),W/2,y,{align:'center'});y+=12;
+  const t=locTipo(p);
+  const linhas=[['Data',fmtDate(p.ts.slice(0,10))],['Tipo',tipoN(idx<0?0:idx)],['Trabalhador',e.nome],['CPF',e.cpf||'Não informado'],['NSR',String(p.nsr).padStart(9,'0')],['Local',p.local||'']];
+  if(t==='sede')linhas.push(['Localização','Registrado na sede da emissora']);else if(t==='fora')linhas.push(['Localização','Registrado fora da sede (localização do celular)']);
+  linhas.push(['Validação',p.metodo==='facial'?'Facial · '+Math.round((p.score||0)*100)+'%':p.metodo==='cadastro'?'Cadastro facial inicial':p.metodo==='pin'?'Assinatura com PIN':p.metodo==='senha'?'Senha pessoal':p.metodo==='ajuste-rh'?'Inclusão pelo RH':'Sem biometria']);
+  if((p.motivo&&p.motivo.length)||p.foraCerca){linhas.push(['Análise',motivoTxt(p)+' · '+(({pendente:'aguardando gestor',aceita:'aceita',desconsiderada:'desconsiderada'})[p.revisao]||'registrada')]);if(p.just)linhas.push(['Justificativa',p.just])}
+  if(p.gObs)linhas.push(['Gestor',p.gObs]);
+  if(p.geo){if(p.endereco)linhas.push(['Endereço',p.endereco]);linhas.push(['Coordenadas',p.geo.lat.toFixed(5)+', '+p.geo.lng.toFixed(5)+' ±'+Math.round(p.geo.acc)+'m']);linhas.push(['Mapa','https://www.google.com/maps?q='+p.geo.lat+','+p.geo.lng])}
+  else linhas.push(['Coordenadas','Não informadas']);
+  doc.setFontSize(10);
+  linhas.forEach(([k,v])=>{const ls=doc.splitTextToSize(String(v),CW-42);doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.line(M,y-4.6,W-M,y-4.6);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);doc.text(k,M,y);doc.setFont('helvetica','bold');doc.setTextColor(...INK);doc.text(ls,M+42,y);y+=Math.max(7,ls.length*4.8+2.2)});
+  y+=4;doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUTED);doc.text('Código de verificação (SHA-256)',M,y);y+=5;
+  doc.setFont('courier','normal');doc.setFontSize(8.5);doc.setTextColor(...INK);doc.text(doc.splitTextToSize(String(p.hash||''),CW),M,y);
+  const agora=tstr(NOW());doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);
+  doc.text(`Registro de Ponto FTVTEC · gerado em ${fmtDate(agora.slice(0,10))} às ${agora.slice(11,16)}`,M,285);
+  const nome=`comprovante_${(e.nome||'colaborador').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase()}_${p.ts.slice(0,10)}_${p.ts.slice(11,16).replace(':','h')}.pdf`;
+  doc.save(nome);toast('PDF gerado: '+nome);
 }
 async function pdfMirror(eid,ym){
   toast('Gerando PDF…');
@@ -2204,6 +2233,7 @@ document.addEventListener('click',async ev=>{
     case 'receipt':showReceipt(t.dataset.id);break;
     case 'new-req':reqForm(t.dataset.tipo||'ajuste',t.dataset.data?{data:t.dataset.data,ate:t.dataset.data}:null);break;
     case 'csv-mirror':csvMirror(t.dataset.emp,t.dataset.ym);break;
+    case 'pdf-receipt':{t.disabled=true;try{await pdfReceipt(t.dataset.id)}catch(x){toast(x.message||'Não foi possível gerar o PDF.')}finally{t.disabled=false}break}
     case 'pdf-mirror':{t.disabled=true;try{await pdfMirror(t.dataset.emp,t.dataset.ym)}finally{t.disabled=false}break}
     case 'csv-report':csvReport(t.dataset.ym);break;
     case 'afd':afd(t.dataset.ym);break;
