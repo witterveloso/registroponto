@@ -1938,7 +1938,7 @@ function reqForm(tipo,keep){
       <input class="sr-only" type="file" id="r-f" name="anexo" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" multiple data-change="anexos">
       <div class="anx-list" id="r-fl"></div></div>`:''}
     <div class="err" id="req-err"></div>
-  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Enviar ao RH</button></div></form>`);
+  </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Enviar</button></div></form>`);
 }
 function empForm(id){
   const e=id?emp(id):{nome:'',cargo:'',depto:'',jornadaId:(S.jornadas[0]||{}).id,cpf:'',login:'',email:'',admissao:today(),ativo:true,papel:'colaborador'};
