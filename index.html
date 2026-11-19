@@ -555,10 +555,11 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .hol-pv canvas{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(0,0,0,.18)}
 .side .nav .nav-sair{color:var(--deep-ink)}
 .side .nav .nav-sair:hover{color:#fff}
-.sit{min-width:250px;max-width:340px;white-space:normal}.sit-ch{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.sit{min-width:200px;white-space:normal}.sit-ch{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .just-dia{display:flex;flex-direction:column;gap:3px;margin-top:6px;padding:6px 8px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:6px;font-size:.78rem;line-height:1.35;white-space:normal;word-break:break-word}
 .just-dia .jd-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.just-dia b{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.just-dia .jd-t{color:var(--ink)}.just-dia .jd-h{color:var(--muted);font-size:.74rem}
 .mlist .dia-h{flex-wrap:wrap;gap:6px}.mlist .dia-h>span:last-child{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.mirror-t{font-size:.84rem}.mirror-t th,.mirror-t td{padding:9px 6px}.mirror-t th:first-child,.mirror-t td:first-child{padding-left:12px}.mirror-t th:last-child,.mirror-t td:last-child{padding-right:12px;width:100%}.mirror-t td .ext-pin{margin-left:2px}.mirror-t th{letter-spacing:.04em}
 </style>
 </head><body>
 <div id="app"></div>
@@ -1102,7 +1103,7 @@ function mirrorTable(e,ym,opt){
     const desc=m.length?m.join(' · '):(di.hol?esc(di.hol):fut?(wk?'':'Previsto '+di.j.ini+' às '+di.j.fim):pre?'antes do início do controle':wk?'sem expediente':'sem marcações');
     return `<div class="dia${di.ds===td?' hoje':''}${fut?' fut':''}${wk?' wk':''}"><div class="dia-h"><span class="mono" style="font-weight:600">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted" style="font-weight:400">${DOW[di.dow]}</span>${di.ds===td?' <span class="chip acc plain">Hoje</span>':''}</span><span>${st}${tag(di)}</span></div>
       <div class="dia-b"><span class="mono">${desc}${obsLoc(di)}</span><span class="mono">${fut||pre?'':`${dur(di.credit)} <b class="${saldoCls(di.saldo)}">${saldoTxt(di.saldo)}</b>`}</span></div>${justDia(e,di.ds)}</div>`}).join('');
-  return {ms,html:`<div class="only-mob mlist">${lista}</div><div class="tablewrap only-desk no-resp"><table><thead><tr><th>Dia</th><th>Entrada</th><th>Saída int.</th><th>Retorno</th><th>Saída</th><th>Extra</th><th class="num">Trabalhado</th><th class="num">Saldo</th><th>Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`};
+  return {ms,html:`<div class="only-mob mlist">${lista}</div><div class="tablewrap only-desk no-resp"><table class="mirror-t"><thead><tr><th>Dia</th><th>Entrada</th><th>Saída int.</th><th>Retorno</th><th>Saída</th><th>Extra</th><th class="num">Trabalhado</th><th class="num">Saldo</th><th>Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`};
 }
 function monthOpts(sel){const d=NOW();let o='';for(let i=0;i<6;i++){const x=new Date(d.getFullYear(),d.getMonth()-i,1);const v=`${x.getFullYear()}-${pad(x.getMonth()+1)}`;o+=`<option value="${v}" ${v===sel?'selected':''}>${MES[x.getMonth()]} de ${x.getFullYear()}</option>`}return o}
 function checkSig(e,ym){
