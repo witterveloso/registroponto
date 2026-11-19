@@ -1226,7 +1226,7 @@ function empEspelho(e){
   <section class="card">${html}</section>
   <p class="notice">Em vermelho, as marcações incluídas por ajuste do RH. A tolerância diária segue o art. 58, §1º da CLT: até 10 minutos por dia não geram saldo.</p>`;
 }
-const REQT={abonada:'Falta abonada',ajuste:'Marcação manual',justificativa:'Justificativa de ausência',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
+const REQT={abonada:'Falta abonada',ajuste:'Marcação manual',justificativa:'Justificativa',atestado:'Atestado médico',licenca:'Licença',abono:'Abono de ausência',ferias:'Férias'};
 const REQD={abonada:'Aprovação do diretor da área',ajuste:'Esqueceu de registrar ou registrou no horário errado',justificativa:'Falta, atraso, saída antecipada ou outra situação',atestado:'Envie o atestado para abonar o dia',licenca:'Maternidade, paternidade, casamento, luto e outras',abono:'Cursos, compromissos e ausências legais',ferias:'Peça o período ao RH'};
 const LICT=['Licença médica','Licença-maternidade','Licença-paternidade','Casamento (gala)','Falecimento de familiar (nojo)','Doação de sangue','Serviço eleitoral ou júri','Outra'];
 const reqTit=r=>REQT[r.tipo]+(r.subtipo?' · '+r.subtipo:'');
