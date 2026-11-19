@@ -16,12 +16,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
+<style>
 /* Layout: login dividido (painel escuro + formulário); app do colaborador mobile-first com abas; painel RH com barra lateral que vira abas no celular */
 :root{
   --bg:#EDF1F5; --surface:#FFFFFF; --surface-2:#F5F7FA; --ink:#0D1A2B; --muted:#5A6B82; --line:#D8E0E9;
   --accent:#0A7B84; --accent-ink:#FFFFFF; --accent-soft:#DCF1F1; --glow:#17C9B6;
   --deep:#0A1628; --deep-2:#12223A; --deep-ink:#E6EFF8; --deep-muted:#8EA3BE; --deep-line:#223552;
   --ok:#157F51; --ok-bg:#E0F2E8; --warn:#9A6600; --warn-bg:#FBEFD5; --bad:#B9362C; --bad-bg:#FAE3E0; --info:#2C5BC4; --info-bg:#E3EAFA;
+  --loc-ext:#D9600A; --loc-ext-bg:#FDE9D9; --loc-sede:#1D5FD1; --loc-sede-bg:#DDE8FB;
   --shadow:0 1px 2px rgba(13,26,43,.06),0 8px 24px rgba(13,26,43,.06);
   --f-display:'Sora','Segoe UI',system-ui,sans-serif; --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --r:10px;
@@ -31,12 +33,14 @@
   --accent:#2CC4B4; --accent-ink:#04201D; --accent-soft:#103534; --glow:#3FE0CC;
   --deep:#0B1626; --deep-2:#122139; --deep-ink:#E6EFF8; --deep-muted:#8EA3BE; --deep-line:#25395A;
   --ok:#4CC88C; --ok-bg:#12321F; --warn:#E3B04B; --warn-bg:#3A2C0C; --bad:#F07A6E; --bad-bg:#3E1714; --info:#7FA4F5; --info-bg:#172A4D;
+  --loc-ext:#FF9A4D; --loc-ext-bg:#43240D; --loc-sede:#6FA2FF; --loc-sede-bg:#14284D;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#08111E; --surface:#0F1B2D; --surface-2:#132238; --ink:#E5EDF6; --muted:#8C9FB8; --line:#22334B;
   --accent:#2CC4B4; --accent-ink:#04201D; --accent-soft:#103534; --glow:#3FE0CC;
   --deep:#0B1626; --deep-2:#122139; --deep-ink:#E6EFF8; --deep-muted:#8EA3BE; --deep-line:#25395A;
   --ok:#4CC88C; --ok-bg:#12321F; --warn:#E3B04B; --warn-bg:#3A2C0C; --bad:#F07A6E; --bad-bg:#3E1714; --info:#7FA4F5; --info-bg:#172A4D;
+  --loc-ext:#FF9A4D; --loc-ext-bg:#43240D; --loc-sede:#6FA2FF; --loc-sede-bg:#14284D;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -462,11 +466,16 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .cap1{text-transform:lowercase}.cap1::first-letter{text-transform:uppercase}
 .geo-b{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);max-width:100%}
 .geo-end{display:flex;gap:6px;align-items:flex-start;font-size:.88rem;font-weight:500}
-.geo-end svg{flex:none;width:16px;height:16px;color:var(--warn);margin-top:2px}
+.geo-end svg{flex:none;width:16px;height:16px;color:var(--loc-ext);margin-top:2px}
+.geo-end.sede svg{color:var(--loc-sede)}
 .geo-meta{font-size:.75rem;color:var(--muted)}
 .geo-b .btn{margin-top:4px;text-decoration:none}
-.ext-pin{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;margin-left:2px;border:0;border-radius:50%;background:var(--warn-bg);color:var(--warn);cursor:pointer;vertical-align:middle}
+.ext-pin{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;margin-left:2px;border:0;border-radius:50%;background:var(--loc-ext-bg);color:var(--loc-ext);cursor:pointer;vertical-align:middle}
+.ext-pin.sede{background:var(--loc-sede-bg);color:var(--loc-sede)}
 .ext-pin svg{width:12px;height:12px}
+.loc-badge{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:var(--loc-ext)}
+.loc-badge.sede{color:var(--loc-sede)}
+.loc-badge svg{width:14px;height:14px;flex:none}
 .receipt [data-end]{word-break:normal;overflow-wrap:anywhere;text-align:right;font-family:var(--f-body)}
 .kpi-btn{font:inherit;color:inherit;text-align:left;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s}
 .kpi-btn:hover,.kpi-btn:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent);outline:none;transform:translateY(-1px)}
@@ -545,6 +554,7 @@ button.anx:hover{border-color:var(--accent);color:var(--accent)}
 .hol-doc{display:flex;flex-direction:column;gap:12px}.hol-doc-h{display:flex;flex-direction:column;gap:2px;font-size:.85rem}.hol-doc-f{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px 16px;padding:10px 12px;background:var(--surface-2);border-radius:10px}.hol-doc-f span,.hol-tot span,.hol-bases span{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.hol-doc-f b,.hol-bases b{font-size:.9rem}.hol-tot{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:flex-end}.hol-tot .liq{background:color-mix(in srgb,var(--accent) 12%,var(--surface-2));padding:6px 12px;border-radius:8px}.hol-tot b{font-size:1rem}.hol-bases{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px 14px;border-top:1px solid var(--line);padding-top:10px}.hol-t{min-width:480px}@media (max-width:560px){.hol-doc-f{grid-template-columns:1fr 1fr}.hol-doc-f .g{grid-column:1/-1}}
 .hol-pv{display:flex;flex-direction:column;gap:12px;align-items:center;max-height:68vh;overflow:auto;background:var(--surface-2);border-radius:10px;padding:8px}
 .hol-pv canvas{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(0,0,0,.18)}
+</style>
 </style>
 </head><body>
 <div id="app"></div>
@@ -659,7 +669,7 @@ const mapJor=j=>({id:j.id,nome:j.nome,ini:j.ini.slice(0,5),intIni:j.int_ini.slic
 const fotoDe=e=>e&&ME&&e.id===ME.id?ME.foto:'';
 const avFoto=e=>fotoDe(e)?`<img src="${esc(fotoDe(e))}" alt="" referrerpolicy="no-referrer" loading="lazy">`:e&&e.face?`<img src="${e.face.thumb}" alt="">`:initials(e?e.nome:'');
 const mapEmp=c=>({id:c.id,userId:c.user_id,temAcesso:!!c.user_id,trocarSenha:!!c.trocar_senha,vinculo:c.vinculo||'',nome:c.nome,cargo:c.cargo,depto:c.depto,email:c.email,cpf:c.cpf,matricula:c.matricula,login:c.login||'',setorId:c.setor_id||null,admissao:c.admissao||'',jornadaId:c.jornada_id,ativo:c.ativo,papel:c.papel,bio:c.bio_status,face:(c.face_thumb||c.face_em)?{thumb:c.face_thumb}:null,temPin:!!c.tem_pin,abonada:c.direito_abonada!==false});
-const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,gObs:p.revisao_obs||'',gObsEm:p.revisao_obs_em||null,gObsPor:p.revisao_obs_por||'',revisao:p.revisao,foto:p.foto||null,obs:p.obs,hash:p.hash});
+const mapPunch=p=>({id:p.id,empId:p.colaborador_id,ts:localTs(p.ts),nsr:p.nsr,metodo:p.metodo,score:p.score==null?null:+p.score,local:p.local||'',geo:p.lat!=null?{lat:p.lat,lng:p.lng,acc:p.acc||0}:null,foraCerca:p.fora_cerca,endereco:p.endereco||'',motivo:(p.motivo_revisao||'').split(',').filter(Boolean),just:p.justificativa||'',justEm:p.justificado_em||null,gObs:p.revisao_obs||'',gObsEm:p.revisao_obs_em||null,gObsPor:p.revisao_obs_por||'',revisao:p.revisao,foto:p.foto||null,obs:p.obs,semLoc:/^Funcionário não aceitou/.test(p.obs||''),hash:p.hash});
 const horasTxt=r=>r.horas&&r.horas.length>1?r.horas.join(' · '):(r.hora||'');
 const mapReq=r=>({id:r.id,empId:r.colaborador_id,tipo:r.tipo,subtipo:r.subtipo||'',anexos:(Array.isArray(r.anexos)&&r.anexos.length?r.anexos:(r.anexo_path?[{path:r.anexo_path,nome:r.anexo_nome||'anexo'}]:[])),data:r.data,ate:r.ate||undefined,hora:r.hora?r.hora.slice(0,5):undefined,horas:Array.isArray(r.horas)&&r.horas.length?r.horas.map(x=>String(x).slice(0,5)):undefined,motivo:r.motivo,anexo:r.anexo_nome||undefined,anexoPath:r.anexo_path||undefined,status:r.status,resposta:r.resposta||'',criado:localTs(r.criado_em),etapa:r.etapa||null,rhPor:r.rh_por||'',rhEm:r.rh_em||null,rhObs:r.rh_obs||''});
 const reqSt=r=>r.status==='pendente'&&r.tipo==='abonada'?['Aguardando diretor','warn']:REQS[r.status];
@@ -719,11 +729,14 @@ async function pedirEnderecos(lista){
 function geoBloco(p){
   if(!p.geo)return '<div class="geo-b muted">Localização não informada</div>';
   if(!p.endereco)setTimeout(()=>pedirEnderecos([p]),0);
-  return `<div class="geo-b"><div class="geo-end">${IC.pin}<span data-end="${p.id}">${esc(p.endereco||'Buscando o endereço…')}</span></div>
+  return `<div class="geo-b"><div class="geo-end ${locTipo(p)}">${IC.pin}<span data-end="${p.id}">${esc(p.endereco||'Buscando o endereço…')}</span></div>
     <div class="geo-meta mono">${p.geo.lat.toFixed(6)}, ${p.geo.lng.toFixed(6)} · precisão de ${Math.round(p.geo.acc||0)} m</div>
     <a class="btn sm" href="${mapsUrl(p.geo)}" target="_blank" rel="noopener noreferrer">Ver no mapa</a></div>`;
 }
-const extPin=x=>(x.foraCerca||(x.motivo&&x.motivo.length))&&x.geo?` <button type="button" class="ext-pin" data-act="receipt" data-id="${x.id}" title="Registro externo: ver localização">${IC.pin}</button>`:'';
+/* Localizador: azul = registrado na sede da emissora (rede da empresa ou GPS dentro da sede); laranja = registrado fora da sede, pela localização do celular */
+const locTipo=x=>{if(!x||x.semLoc||x.metodo==='ajuste-rh'||x.metodo==='cadastro')return '';if(x.foraCerca)return 'fora';if(/rede da sede/i.test(x.local||''))return 'sede';return x.geo&&S.config&&S.config.cerca&&S.config.cerca.ativa?'sede':''};
+const extPin=x=>{const t=locTipo(x);return t?` <button type="button" class="ext-pin ${t}" data-act="receipt" data-id="${x.id}" title="${t==='sede'?'Registrado na sede da emissora':'Registrado fora da sede (localização do celular)'}" aria-label="${t==='sede'?'Registrado na sede da emissora':'Registrado fora da sede'}">${IC.pin}</button>`:''};
+const obsLoc=di=>di.marks.some(x=>x.semLoc)?'<div class="muted" style="font-size:.74rem;margin-top:2px">Observação: o funcionário não aceitou informar a localização.</div>':'';
 const CCOLS='id,user_id,login,matricula,nome,cargo,depto,vinculo,email,cpf,admissao,jornada_id,ativo,papel,bio_status,face_thumb,face_em,setor_id,trocar_senha,tem_pin,direito_abonada';
 const monthStart=ym=>new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);
 async function fetchPunches(fromDate,toDate){
@@ -1076,14 +1089,14 @@ function mirrorTable(e,ym,opt){
     const m=di.marks.map(x=>x.ts.slice(11,16));const cell=i=>m[i]?`<span class="mono${['ajuste-rh','sem-biometria'].includes(di.marks[i].metodo)?' neg':''}" title="${esc({pin:'Assinatura com PIN',facial:'Reconhecimento facial',cadastro:'Cadastro facial',senha:'Senha pessoal','ajuste-rh':'Ajuste do RH','sem-biometria':'Sem biometria'}[di.marks[i].metodo]||'')}">${m[i]}${di.marks[i].metodo==='senha'?'<sup class="muted" style="font-size:.65em"> S</sup>':''}</span>${extPin(di.marks[i])}`:'<span class="muted">·</span>';
     const wk=!di.j.dias.includes(di.dow)||di.hol;const fut=di.ds>td||di.status==='futuro';const pre=!!di.pre;
     return `<tr class="${wk?'weekend':''}"><td class="mono">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted">${DOW[di.dow]}</span></td><td>${cell(0)}</td><td>${cell(1)}</td><td>${cell(2)}</td><td>${cell(3)}</td><td class="mono">${m.length>4?'+'+(m.length-4):''}</td>
-    <td class="num mono">${fut||pre?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut||pre?'':saldoTxt(di.saldo)}</td><td>${fut?(di.hol?'<span class="chip plain">Feriado</span>':wk?'<span class="chip plain">Folga</span>':'<span class="muted" style="font-size:.78rem">Previsto</span>'):stChip(di.status)}${tag(di)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}</td></tr>`}).join('');
+    <td class="num mono">${fut||pre?'':dur(di.credit)}</td><td class="num mono ${saldoCls(di.saldo)}">${fut||pre?'':saldoTxt(di.saldo)}</td><td>${fut?(di.hol?'<span class="chip plain">Feriado</span>':wk?'<span class="chip plain">Folga</span>':'<span class="muted" style="font-size:.78rem">Previsto</span>'):stChip(di.status)}${tag(di)}${di.hol?` <span class="muted" style="font-size:.75rem">${esc(di.hol)}</span>`:''}${obsLoc(di)}</td></tr>`}).join('');
   const lista=ms.days.map(di=>{
     const fut=di.ds>td,pre=!!di.pre,wk=!di.j.dias.includes(di.dow)||di.hol;
     const m=di.marks.map(x=>`<span class="${['ajuste-rh','sem-biometria'].includes(x.metodo)?'neg':''}">${x.ts.slice(11,16)}${x.metodo==='senha'?'<sup> S</sup>':''}</span>${extPin(x)}`);
     const st=fut?(di.hol?'<span class="chip plain">Feriado</span>':wk?'<span class="chip plain">Folga</span>':''):stChip(di.status);
     const desc=m.length?m.join(' · '):(di.hol?esc(di.hol):fut?(wk?'':'Previsto '+di.j.ini+' às '+di.j.fim):pre?'antes do início do controle':wk?'sem expediente':'sem marcações');
     return `<div class="dia${di.ds===td?' hoje':''}${fut?' fut':''}${wk?' wk':''}"><div class="dia-h"><span class="mono" style="font-weight:600">${di.ds.slice(8)}/${di.ds.slice(5,7)} <span class="muted" style="font-weight:400">${DOW[di.dow]}</span>${di.ds===td?' <span class="chip acc plain">Hoje</span>':''}</span><span>${st}${tag(di)}</span></div>
-      <div class="dia-b"><span class="mono">${desc}</span><span class="mono">${fut||pre?'':`${dur(di.credit)} <b class="${saldoCls(di.saldo)}">${saldoTxt(di.saldo)}</b>`}</span></div></div>`}).join('');
+      <div class="dia-b"><span class="mono">${desc}${obsLoc(di)}</span><span class="mono">${fut||pre?'':`${dur(di.credit)} <b class="${saldoCls(di.saldo)}">${saldoTxt(di.saldo)}</b>`}</span></div></div>`}).join('');
   return {ms,html:`<div class="only-mob mlist">${lista}</div><div class="tablewrap only-desk no-resp"><table><thead><tr><th>Dia</th><th>Entrada</th><th>Saída int.</th><th>Retorno</th><th>Saída</th><th>Extra</th><th class="num">Trabalhado</th><th class="num">Saldo</th><th>Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`};
 }
 function monthOpts(sel){const d=NOW();let o='';for(let i=0;i<6;i++){const x=new Date(d.getFullYear(),d.getMonth()-i,1);const v=`${x.getFullYear()}-${pad(x.getMonth()+1)}`;o+=`<option value="${v}" ${v===sel?'selected':''}>${MES[x.getMonth()]} de ${x.getFullYear()}</option>`}return o}
@@ -1819,7 +1832,7 @@ function confirmar(titulo,texto,act,id,v){openModal(`<div class="modal-h"><h3>${
 
 /* ================= MODAIS ================= */
 function openModal(html,wide){$('#modal-root').innerHTML=`<div class="modal-bg" data-act="modal-bg"><div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div></div>`}
-function closeModal(){stopCam();CAP=null;$('#modal-root').innerHTML='';DIRTY=false;render()}
+function closeModal(){stopCam();CAP=null;if(GEO_STOP){try{GEO_STOP()}catch(e){}GEO_STOP=null}$('#modal-root').innerHTML='';DIRTY=false;render()}
 function toast(msg){const r=$('#toast-root');r.innerHTML=`<div class="toast">${esc(msg)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3600)}
 
 function receiptHTML(p){
@@ -1834,6 +1847,7 @@ function receiptHTML(p){
     <div class="rl"><span>CPF</span><span>${esc(e.cpf||'Não informado')}</span></div>
     <div class="rl"><span>NSR</span><span>${String(p.nsr).padStart(9,'0')}</span></div>
     <div class="rl"><span>Local</span><span>${esc(p.local)}</span></div>
+    ${(()=>{const t=locTipo(p);return t==='sede'?'<div class="rl"><span>Localização</span><span class="loc-badge sede">'+IC.pin+'Registrado na sede da emissora</span></div>':t==='fora'?'<div class="rl"><span>Localização</span><span class="loc-badge fora">'+IC.pin+'Registrado fora da sede (localização do celular)</span></div>':''})()}
     <div class="rl"><span>Validação</span><span>${p.metodo==='facial'?`Facial · ${Math.round((p.score||0)*100)}%`:p.metodo==='cadastro'?'Cadastro facial inicial':p.metodo==='pin'?'Assinatura com PIN':p.metodo==='senha'?'Senha pessoal':p.metodo==='ajuste-rh'?'Inclusão pelo RH':'Sem biometria'}</span></div>
     ${(p.motivo&&p.motivo.length)||p.foraCerca?`<div class="rl"><span>Análise</span><span>${esc(motivoTxt(p))} · ${({pendente:'aguardando gestor',aceita:'aceita',desconsiderada:'desconsiderada'})[p.revisao]||'registrada'}</span></div>${p.just?`<div class="rl"><span>Justificativa</span><span data-end="j">${esc(p.just)}</span></div>`:''}`:''}${p.gObs?`<div class="rl"><span>Gestor</span><span data-end="j">${esc(p.gObs)}</span></div>`:''}
     ${p.geo?`<div class="rl"><span>Endereço</span><span data-end="${p.id}">${esc(p.endereco||'Buscando o endereço…')}</span></div>`:''}
@@ -1848,12 +1862,13 @@ let CAP=null;
 function stopCam(){}
 /* Localização precisa: acompanha o GPS por alguns segundos e fica com a melhor leitura.
    Leituras aproximadas (rede, Wi-Fi ou IP) chegam a errar dezenas de km e não são aceitas. */
+let GEO_STOP=null;
 const precisaoMax=()=>+(S.config&&S.config.precisao)||100;
 function getGeo(onUpd,tempo){return new Promise(res=>{
   if(!navigator.geolocation)return res(null);
   let best=null,done=false,wid=null,erro=null;
   const fim=()=>{if(done)return;done=true;clearTimeout(t);if(wid!=null)navigator.geolocation.clearWatch(wid);res(best?best:(erro?{erro}:null))};
-  const t=setTimeout(fim,tempo||20000);
+  const t=setTimeout(fim,tempo||20000);GEO_STOP=fim;
   try{wid=navigator.geolocation.watchPosition(p=>{const g={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
       // descarta posição antiga guardada no aparelho e leituras sem margem válida
       if(!(g.acc>0)||!isFinite(g.lat)||!isFinite(g.lng)||(p.timestamp&&Math.abs(Date.now()-p.timestamp)>30000))return;
@@ -1862,7 +1877,7 @@ function getGeo(onUpd,tempo){return new Promise(res=>{
     {enableHighAccuracy:true,maximumAge:0,timeout:20000})}catch(e){fim()}
 })}
 function geoStatus(g,final){const el=$('#geo-st');if(!el||UI.naRede)return;const lim=precisaoMax();const sp=el.querySelector('span');
-  if(!g||g.erro){el.dataset.st=final?'erro':'busca';sp.textContent=g&&g.erro==='negado'?'A localização está bloqueada. Toque no cadeado ao lado do endereço do site e permita a localização.':(final?'Não foi possível obter a localização. Ative o GPS do aparelho e tente de novo.':'Obtendo a sua localização pelo GPS…');return}
+  if(!g||g.erro){el.dataset.st=final?'erro':'busca';sp.textContent=g&&g.erro==='negado'?'Localização não autorizada. Você pode registrar assim mesmo: a folha de ponto vai informar que você não aceitou informar a localização.':(final?'Não foi possível obter a localização. Ative o GPS do aparelho e tente de novo.':'Obtendo a sua localização pelo GPS…');return}
   const a=Math.round(g.acc);
   if(a<=lim){el.dataset.st='ok';sp.textContent=`Localização precisa capturada (margem de ${a} m)`}
   else{el.dataset.st=final?'erro':'busca';sp.textContent=final?`Localização imprecisa (margem de ${a>=1000?(a/1000).toFixed(1).replace('.',',')+' km':a+' m'}). Ative o GPS e a "localização precisa" do aparelho, vá para perto de uma janela e toque em Tentar de novo.`:`Melhorando a precisão… margem atual de ${a>=1000?(a/1000).toFixed(1).replace('.',',')+' km':a+' m'}`}
@@ -1881,10 +1896,10 @@ function pwForm(){
     <button type="button" class="btn sm" id="geo-retry" data-act="geo-retry" hidden>Tentar de novo</button>
     <div class="field"><label for="pw-s">Seu PIN de ponto (6 números)</label><input class="input mono pin-in" id="pw-s" name="senha" type="password" inputmode="numeric" pattern="\\d{6}" maxlength="6" autocomplete="off" required autofocus></div>
     <div class="err" id="pw-err"></div>
-    <div class="notice">O horário oficial é definido pelo servidor e a localização do aparelho fica gravada junto com o registro.</div>
+    <div class="notice">O horário oficial é definido pelo servidor. A localização é lida só no instante do registro, com a sua autorização, e não é acompanhada depois. Se você não autorizar, o ponto é registrado e a folha de ponto informa que a localização não foi aceita.</div>
   </div><div class="modal-f"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn primary" type="submit">Registrar ponto</button></div></form>`);
   setTimeout(()=>{const i=$('#pw-s');if(i)i.focus()},50);
-  UI.naRede=false;UI.redeP=Promise.resolve(sb.rpc('minha_rede_sede')).then(r=>{const d=r&&r.data;if(d&&d.na_rede){UI.naRede=true;UI.geoP=null;const el=$('#geo-st');if(el){el.dataset.st='ok';el.querySelector('span').textContent='Rede da sede reconhecida: o ponto será registrado sem GPS.'}const b=$('#geo-retry');if(b)b.hidden=true}return UI.naRede}).catch(()=>false);
+  UI.naRede=false;UI.redeP=Promise.resolve(sb.rpc('minha_rede_sede')).then(r=>{const d=r&&r.data;if(d&&d.na_rede){UI.naRede=true;UI.geoP=null;const el=$('#geo-st');if(el){el.dataset.st='ok';el.querySelector('span').textContent='Rede da emissora reconhecida: o ponto será registrado na sede, sem usar o GPS.'}const b=$('#geo-retry');if(b)b.hidden=true}return UI.naRede}).catch(()=>false);
   iniciarGeo();
 }
 
@@ -2040,6 +2055,9 @@ async function pdfMirror(eid,ym){
   doc.text('M = marcação manual aprovada (gestor ou RH).  * = registro feito fora da sede (detalhes abaixo).  Tolerância de até 10 minutos por dia (CLT, art. 58, §1º).',M,y);y+=6;
   // Registros externos
   if(ext.length){titulo('Registros fora da sede');ext.forEach(x=>linha(`${fmtDate(x.ts.slice(0,10))} às ${x.ts.slice(11,16)} · ${x.endereco||x.local}${x.geo?` · ${x.geo.lat.toFixed(6)}, ${x.geo.lng.toFixed(6)} (±${Math.round(x.geo.acc||0)} m)`:''}`));y+=2}
+  // Observações de localização (só na folha de ponto)
+  const semLoc=ms.days.flatMap(di=>di.marks.filter(x=>x.semLoc));
+  if(semLoc.length){titulo('Observações');semLoc.forEach(x=>linha(`${fmtDate(x.ts.slice(0,10))} às ${x.ts.slice(11,16)} · Funcionário não aceitou informar a localização no momento do registro.`));y+=2}
   // Ocorrências e justificativas
   const ini=ym+'-01',fim=ym+'-31';
   const reqs=S.requests.filter(r=>r.empId===e.id&&r.data<=fim&&(r.ate||r.data)>=ini).sort((x,z)=>x.data<z.data?-1:1);
@@ -2331,13 +2349,14 @@ document.addEventListener('submit',async ev=>{
     }
     if(!geo){if(btn)btn.textContent='Aguardando o GPS…';if(!UI.geoP)iniciarGeo();geo=await UI.geoP;}
     const volta=m=>{errEl.textContent=m;if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}};
-    if(!geo||geo.erro){UI.geoP=null;volta(geo&&geo.erro==='negado'?'A localização está bloqueada neste navegador. Toque no cadeado ao lado do endereço do site, permita a localização e tente de novo.':'Não foi possível obter a sua localização. Ative o GPS do aparelho e toque em Tentar de novo.');return}
-    if(geo.acc>lim){UI.geoP=null;geoStatus(geo,true);volta('Ponto não registrado: a localização está imprecisa. Computadores sem GPS costumam errar a posição, prefira registrar pelo celular.');return}
+    const negou=!!(geo&&geo.erro==='negado');
+    if(!negou&&(!geo||geo.erro)){UI.geoP=null;volta('Não foi possível obter a sua localização. Ative o GPS do aparelho e toque em Tentar de novo.');return}
+    if(!negou&&geo.acc>lim){UI.geoP=null;geoStatus(geo,true);volta('Ponto não registrado: a localização está imprecisa. Computadores sem GPS costumam errar a posição, prefira registrar pelo celular.');return}
     if(btn)btn.textContent='Registrando…';
-    const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:geo?geo.lat:null,p_lng:geo?geo.lng:null,p_acc:geo?geo.acc:null});
+    const {data,error}=await sb.rpc('registrar_ponto_senha',{p_senha:fd.senha,p_lat:negou||!geo?null:geo.lat,p_lng:negou||!geo?null:geo.lng,p_acc:negou||!geo?null:geo.acc,p_negou:negou});
     if(error||!data||!data.ok){errEl.textContent=error?errMsg(error):(data&&data.erro)||'Não foi possível registrar.';const i=$('#pw-s');if(i){i.value='';i.focus()}if(btn){btn.disabled=false;btn.textContent='Registrar ponto'}return}
     const p=mapPunch(data.marcacao);S.punches.push(p);setTimeout(()=>pedirEnderecos([p]),300);
-    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${marcado(p)&&!precisaJust(p)?`<div class="notice"><b>${esc(motivoTxt(p))}.</b> Você justifica o dia todo de uma vez, ao registrar a última saída.</div>`:''}${!geo?'<div class="notice">A localização não foi enviada. Permita o acesso à localização no navegador para os próximos registros.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
+    $('.modal').innerHTML=`<div class="modal-h"><div><div class="eyebrow" style="color:var(--ok)">Ponto registrado</div><h3>${esc(tipoN(marksOf(ME.id,p.ts.slice(0,10)).findIndex(x=>x.id===p.id)))}</h3></div><button class="x" data-act="close" aria-label="Fechar">×</button></div><div class="modal-b">${precisaJust(p)?justMarcHTML(p):''}${receiptHTML(p)}${marcado(p)&&!precisaJust(p)?`<div class="notice"><b>${esc(motivoTxt(p))}.</b> Você justifica o dia todo de uma vez, ao registrar a última saída.</div>`:''}${p.semLoc?'<div class="notice">Você não autorizou a localização. O ponto foi registrado e a folha de ponto informa que você não aceitou informar a localização.</div>':''}</div><div class="modal-f"><button class="btn primary" data-act="close">Concluir</button></div>`;
     return;
   }
   if(k==='convite'){const g=f.querySelector('[data-act="google-convite"]');if(g)g.click();if(btn)btn.disabled=false;return}
